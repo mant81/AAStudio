@@ -1,0 +1,2 @@
+"""AAStudio application package."""
+
