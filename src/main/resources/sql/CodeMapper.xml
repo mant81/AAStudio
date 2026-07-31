@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aastudio.mapper.CodeMapper">
+    <select id="countCodeGroups" resultType="long">
+        SELECT COUNT(*) FROM code_group
+    </select>
+
+    <select id="selectCodeGroupList" resultType="com.aastudio.domain.code.CodeVO">
+        SELECT id, group_code, group_name, description, enabled
+        FROM code_group
+        ORDER BY id DESC
+    </select>
+
+    <select id="searchCodeGroupList" parameterType="string" resultType="com.aastudio.domain.code.CodeVO">
+        SELECT id, group_code, group_name, description, enabled
+        FROM code_group
+        WHERE LOWER(group_code) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+           OR LOWER(group_name) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+           OR LOWER(description) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+           OR LOWER(enabled) LIKE LOWER(CONCAT('%', #{keyword}, '%'))
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectCodeGroupById" parameterType="long" resultType="com.aastudio.domain.code.CodeVO">
+        SELECT id, group_code, group_name, description, enabled
+        FROM code_group
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insertCodeGroup" parameterType="com.aastudio.domain.code.CodeVO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO code_group (group_code, group_name, description, enabled)
+        VALUES (#{groupCode}, #{groupName}, #{description}, #{enabled})
+    </insert>
+
+    <update id="updateCodeGroup" parameterType="com.aastudio.domain.code.CodeVO">
+        UPDATE code_group
+        SET group_code = #{groupCode},
+            group_name = #{groupName},
+            description = #{description},
+            enabled = #{enabled}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteCodeGroup" parameterType="long">
+        DELETE FROM code_group WHERE id = #{id}
+    </delete>
+</mapper>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('User Form')}"></head>
+<body>
+<div th:replace="~{layout/shell :: topbar}"></div>
+<main class="page-shell">
+    <section class="hero-card">
+        <div class="eyebrow">Admin</div>
+        <h1>Edit User</h1>
+        <p class="lead">Change credentials, role, or activation state.</p>
+        <form th:action="@{/users/{id}(id=${userForm.id})}" method="post" class="stack">
+            <label><span>Username</span><input type="text" name="username" th:value="${userForm.username}" /></label>
+            <label><span>Password</span><input type="password" name="password" placeholder="leave blank to keep current" /></label>
+            <label><span>Role</span><select name="roleName"><option th:selected="${userForm.roleName == 'EDITOR'}">EDITOR</option><option th:selected="${userForm.roleName == 'READONLY'}">READONLY</option><option th:selected="${userForm.roleName == 'OWNER'}">OWNER</option><option th:selected="${userForm.roleName == 'ADMIN'}">ADMIN</option></select></label>
+            <label><span>Enabled</span><input type="text" name="enabled" th:value="${userForm.enabled}" /></label>
+            <button type="submit">Save</button>
+        </form>
+    </section>
+</main>
+<div th:replace="~{layout/footer :: footer}"></div>
+</body>
+</html>

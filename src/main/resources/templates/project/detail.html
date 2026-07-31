@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Project Detail')}"></head>
+<body>
+<div th:replace="~{layout/shell :: topbar}"></div>
+<main class="page-shell">
+    <section class="hero-card">
+        <div class="eyebrow">Project</div>
+        <h1 th:text="${project.name}">Project Name</h1>
+        <p class="lead" th:text="${project.description}">Description</p>
+        <div class="summary-row">
+            <div class="summary-card">
+                <strong class="status-badge"
+                        th:classappend="${
+                          #strings.equalsIgnoreCase(project.status, 'active') ? ' status-active' :
+                          (#strings.equalsIgnoreCase(project.status, 'draft') ? ' status-draft' :
+                          (#strings.equalsIgnoreCase(project.status, 'archived') ? ' status-archived' : ' status-default'))
+                        }"
+                        th:text="${project.status}">status</strong>
+                <span>Status</span>
+            </div>
+            <div class="summary-card">
+                <strong th:text="${#temporals.format(project.createdAt, 'yyyy-MM-dd HH:mm')}">created</strong>
+                <span>Created</span>
+            </div>
+            <div class="summary-card">
+                <strong th:text="${#temporals.format(project.updatedAt, 'yyyy-MM-dd HH:mm')}">updated</strong>
+                <span>Updated</span>
+            </div>
+            <div class="summary-card"><strong th:text="${project.currentStage ?: 'Not set'}">Stage</strong><span>Current stage</span></div>
+            <div class="summary-card"><strong class="path-value" th:text="${project.rootPath ?: 'Not set'}">Path</strong><span>Source root</span></div>
+        </div>
+        <div class="action-row">
+            <a class="ghost-button" th:href="@{/projects/{id}/workbench(id=${project.id})}">Open Workbench</a>
+            <a class="ghost-button" th:if="${canEdit}" th:href="@{/projects/{id}/edit(id=${project.id})}">Edit</a>
+            <form th:if="${canEdit}" th:action="@{/projects/{id}/copy(id=${project.id})}" method="post">
+                <button type="submit" class="ghost-button">Copy</button>
+            </form>
+            <a class="ghost-button" th:href="@{/}">Back to Dashboard</a>
+            <form th:if="${canEdit}" th:action="@{/projects/{id}/delete(id=${project.id})}" method="post">
+                <button type="submit" class="danger-button">Delete</button>
+            </form>
+        </div>
+    </section>
+</main>
+<div th:replace="~{layout/footer :: footer}"></div>
+</body>
+</html>

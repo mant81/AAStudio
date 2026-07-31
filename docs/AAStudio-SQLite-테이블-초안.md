@@ -4,7 +4,7 @@
 
 이 문서는 AAStudio의 로컬 저장 구조를 위한 SQLite 테이블 초안을 정의한다.
 
-목표는 프로젝트, 소스 분석 결과, 소스코드 점검, 보안점검, DB 모델링, 다이어그램, API 명세, Wiki, WBS, 파일 첨부, 접근 로그를 한 저장소에서 관리하는 것이다.
+목표는 로그인 사용자, 프로젝트, 소스 분석 결과, 소스코드 점검, 보안점검, DB 모델링, 다이어그램, API 명세, Wiki, WBS, 파일 첨부, 접근 로그를 한 저장소에서 관리하는 것이다.
 
 ## 2. 설계 원칙
 
@@ -13,10 +13,13 @@
 - Wiki는 버전 이력을 남긴다.
 - 소스코드 점검과 보안점검은 분리해서 저장한다.
 - 외부 readonly 공유를 위해 접근 권한과 로그를 남긴다.
+- 로그인 사용자와 공통 코드 그룹은 기본 관리 데이터로 함께 저장한다.
 
 ## 3. 테이블 목록
 
 - `project`
+- `users`
+- `code_group`
 - `project_workspace`
 - `project_dashboard`
 - `project_stage_assignment`
@@ -55,7 +58,23 @@
 - `created_at`
 - `updated_at`
 
-### 4.2 project_workspace
+### 4.2 users
+
+- `id`
+- `username`
+- `password`
+- `role_name`
+- `enabled`
+
+### 4.3 code_group
+
+- `id`
+- `group_code`
+- `group_name`
+- `description`
+- `enabled`
+
+### 4.4 project_workspace
 
 - `id`
 - `project_id`
@@ -64,7 +83,9 @@
 - `is_active`
 - `created_at`
 
-### 4.3 project_dashboard
+> `project_workspace`는 프로젝트 내부의 활성 작업 영역을 뜻한다.
+
+### 4.5 project_dashboard
 
 - `id`
 - `project_id`
@@ -72,7 +93,7 @@
 - `summary`
 - `updated_at`
 
-### 4.4 project_stage_assignment
+### 4.6 project_stage_assignment
 
 - `id`
 - `project_id`
@@ -86,7 +107,7 @@
 - `status`
 - `created_at`
 
-### 4.5 project_stage_history
+### 4.7 project_stage_history
 
 - `id`
 - `project_id`
@@ -97,7 +118,7 @@
 - `change_note`
 - `created_at`
 
-### 4.6 source_scan
+### 4.8 source_scan
 
 - `id`
 - `project_id`
@@ -107,7 +128,7 @@
 - `status`
 - `created_at`
 
-### 4.7 source_code_scan
+### 4.9 source_code_scan
 
 - `id`
 - `project_id`
@@ -122,7 +143,7 @@
 - `confidence`
 - `created_at`
 
-### 4.8 security_scan
+### 4.10 security_scan
 
 - `id`
 - `project_id`
@@ -132,7 +153,7 @@
 - `status`
 - `created_at`
 
-### 4.9 security_issue
+### 4.11 security_issue
 
 - `id`
 - `security_scan_id`
@@ -147,7 +168,7 @@
 - `recommendation`
 - `created_at`
 
-### 4.10 db_model
+### 4.12 db_model
 
 - `id`
 - `project_id`
@@ -156,7 +177,7 @@
 - `created_at`
 - `updated_at`
 
-### 4.11 db_table
+### 4.13 db_table
 
 - `id`
 - `db_model_id`
@@ -165,7 +186,7 @@
 - `primary_key`
 - `created_at`
 
-### 4.12 db_column
+### 4.14 db_column
 
 - `id`
 - `db_table_id`
@@ -177,7 +198,7 @@
 - `is_indexed`
 - `description`
 
-### 4.13 db_relation
+### 4.15 db_relation
 
 - `id`
 - `db_model_id`
@@ -188,7 +209,7 @@
 - `to_column`
 - `description`
 
-### 4.14 diagram
+### 4.16 diagram
 
 - `id`
 - `project_id`
@@ -198,7 +219,7 @@
 - `created_at`
 - `updated_at`
 
-### 4.15 api_group
+### 4.17 api_group
 
 - `id`
 - `project_id`
@@ -206,7 +227,7 @@
 - `description`
 - `created_at`
 
-### 4.16 api_endpoint
+### 4.18 api_endpoint
 
 - `id`
 - `api_group_id`
@@ -342,6 +363,7 @@
 
 - `project`는 모든 작업의 루트다.
 - `project_workspace`는 프로젝트별 활성 작업 영역을 관리한다.
+- `project_workspace`는 프로젝트 내부의 활성 작업 영역을 관리한다.
 - `project_dashboard`는 프로젝트의 현재 상태를 요약한다.
 - `project_stage_assignment`는 개발 단계별 담당자 정보를 관리한다.
 - `project_stage_history`는 단계 상태 변경 이력을 남긴다.

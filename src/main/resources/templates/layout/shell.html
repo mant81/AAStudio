@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="topbar" class="app-chrome">
+    <header class="app-topbar">
+        <a class="app-brand" th:href="@{/}" aria-label="AAStudio home">
+            <span class="brand-mark">AA</span>
+            <span><strong>AAStudio</strong><small>AI Agent Workspace</small></span>
+        </a>
+        <div class="topbar-context">
+            <span class="context-label">Workspace</span>
+            <strong>Application Studio</strong>
+        </div>
+        <div class="topbar-status">
+            <span class="system-status"><i></i> System ready</span>
+            <span class="user-chip">AD</span>
+            <form th:action="@{/logout}" method="post" class="inline-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </header>
+    <aside class="app-sidebar">
+        <nav class="app-nav" aria-label="Main navigation">
+            <a th:href="@{/}" data-nav-path="/"><span class="nav-icon">⌂</span><span>Dashboard</span></a>
+            <a th:href="@{/}" data-nav-path="/projects"><span class="nav-icon">▦</span><span>Projects</span></a>
+            <a th:href="@{/users}" data-nav-path="/users"><span class="nav-icon">◎</span><span>Users</span></a>
+            <a th:href="@{/code-groups}" data-nav-path="/code-groups"><span class="nav-icon">◇</span><span>Codes</span></a>
+        </nav>
+        <nav class="app-nav recent-projects" th:if="${recentProjects != null and !#lists.isEmpty(recentProjects)}" aria-label="Recent projects">
+            <span class="sidebar-section-label">Recent</span>
+            <a th:each="recent:${recentProjects}" th:href="@{/projects/{id}/workbench(id=${recent.id})}" th:title="${recent.name}">
+                <span class="nav-icon">·</span><span th:text="${recent.name}">Project</span>
+            </a>
+        </nav>
+        <nav class="app-nav project-shortcuts" th:if="${project != null}" aria-label="Current project navigation">
+            <span class="sidebar-section-label" th:text="${project.name}">Current project</span>
+            <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='dashboard')}"><span class="nav-icon">◫</span><span>Overview</span></a>
+            <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='scan')}"><span class="nav-icon">⌁</span><span>Source</span></a>
+            <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='wiki')}"><span class="nav-icon">▤</span><span>Wiki</span></a>
+            <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='wbs')}"><span class="nav-icon">☑</span><span>WBS</span></a>
+            <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='files')}"><span class="nav-icon">⇩</span><span>Files</span></a>
+            <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='share')}"><span class="nav-icon">↗</span><span>Share</span></a>
+            <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='artifacts')}"><span class="nav-icon">⬡</span><span>Artifacts</span></a>
+        </nav>
+        <div class="sidebar-foot"><span class="nav-icon">?</span><span>Help &amp; guide</span></div>
+    </aside>
+</div>
+</body>
+</html>

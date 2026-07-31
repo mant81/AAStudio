@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('AAStudio Workbench')}"></head>
+<body>
+<div th:replace="~{layout/shell :: topbar}"></div>
+<main class="workbench-shell has-inspector" th:classappend="${!canEdit} ? ' readonly-mode'">
+    <div class="readonly-banner" th:if="${!canEdit}">Readonly mode · 조회만 가능하며 편집 동작은 표시되지 않습니다.</div>
+    <header class="workbench-head">
+        <div>
+            <div class="eyebrow">Project Workbench</div>
+            <h1 th:text="${project.name}">Project</h1>
+            <p th:text="${project.description}">Description</p>
+        </div>
+        <div class="action-row">
+            <label class="workbench-search"><span class="sr-only">현재 탭 검색</span><input type="search" data-workbench-search placeholder="Search current tab"></label>
+            <form th:if="${canEdit and tabArtifactType != null}" th:action="@{/projects/{id}/workbench/artifacts(id=${project.id})}" method="post">
+                <input type="hidden" name="artifactType" th:value="${tabArtifactType}">
+                <button type="submit">Generate final artifact</button>
+            </form>
+            <a class="ghost-button" th:href="@{/projects/{id}(id=${project.id})}">Project info</a>
+            <a class="ghost-button" th:href="@{/}">All projects</a>
+        </div>
+    </header>
+
+    <nav class="workbench-tabs" aria-label="Workbench sections">
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='dashboard')}" th:classappend="${tab == 'dashboard'} ? ' active'">Dashboard</a>
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='scan')}" th:classappend="${tab == 'scan'} ? ' active'">Source scan</a>
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='review')}" th:classappend="${tab == 'review'} ? ' active'">Code review</a>
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='standard')}" th:classappend="${tab == 'standard'} ? ' active'">Standard terms</a>
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='security')}" th:classappend="${tab == 'security'} ? ' active'">Security</a>
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='database')}" th:classappend="${tab == 'database'} ? ' active'">DB model</a>
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='diagram')}" th:classappend="${tab == 'diagram'} ? ' active'">Diagram</a>
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='api')}" th:classappend="${tab == 'api'} ? ' active'">API</a>
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='wiki')}" th:classappend="${tab == 'wiki'} ? ' active'">Wiki</a>
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='wbs')}" th:classappend="${tab == 'wbs'} ? ' active'">WBS</a>
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='files')}" th:classappend="${tab == 'files'} ? ' active'">Files</a>
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='share')}" th:classappend="${tab == 'share'} ? ' active'">Share</a>
+        <a th:href="@{/projects/{id}/workbench(id=${project.id},tab='artifacts')}" th:classappend="${tab == 'artifacts'} ? ' active'">Artifacts</a>
+    </nav>
+
+    <section class="workbench-content" th:if="${tab == 'dashboard'}">
+        <div class="metric-grid">
+            <article><strong th:text="${summary.SCAN_COUNT}">0</strong><span>Source scans</span></article>
+            <article><strong th:text="${summary.WORKSPACE_COUNT}">0</strong><span>Workspaces</span></article>
+            <article><strong th:text="${summary.CODE_ISSUE_COUNT}">0</strong><span>Code issues</span></article>
+            <article><strong th:text="${summary.SECURITY_ISSUE_COUNT}">0</strong><span>Security issues</span></article>
+            <article><strong th:text="${summary.STANDARD_TERM_COUNT}">0</strong><span>Standard terms</span></article>
+            <article><strong th:text="${summary.API_COUNT}">0</strong><span>API endpoints</span></article>
+            <article><strong th:text="${summary.API_TEST_COUNT}">0</strong><span>API tests</span></article>
+            <article><strong th:text="${summary.WIKI_COUNT}">0</strong><span>Wiki pages</span></article>
+            <article><strong th:text="${summary.WBS_COUNT}">0</strong><span>WBS items</span></article>
+            <article><strong th:text="${summary.ARTIFACT_COUNT}">0</strong><span>Artifacts</span></article>
+        </div>
+        <div class="workbench-columns">
+            <section class="workspace-panel">
+                <div class="panel-title"><div><h2>Stage assignments</h2><p>단계별 담당자와 진행 상태</p></div></div>
+                <div class="record-list">
+                    <article th:each="stage : ${stageAssignments}">
+                        <div><strong th:text="${stage.STAGE_NAME}">Stage</strong><span th:text="${stage.STATUS}">READY</span></div>
+                        <p><span th:text="${stage['ASSIGNEE_NAME'] ?: 'Unassigned'}">Unassigned</span> · <span th:text="${stage['ASSIGNEE_TITLE'] ?: '직급 미지정'}">Title</span> · <span th:text="${stage['ROLE_NAME'] ?: '역할 미지정'}">Role</span></p>
+                        <div class="task-meta">
+                            <a th:if="${stage['ASSIGNEE_PHONE'] != null and !#strings.isEmpty(stage['ASSIGNEE_PHONE'])}"
+                               th:href="|tel:${stage['ASSIGNEE_PHONE']}|" th:text="${stage['ASSIGNEE_PHONE']}">Phone</a>
+                            <a th:if="${stage['ASSIGNEE_EMAIL'] != null and !#strings.isEmpty(stage['ASSIGNEE_EMAIL'])}"
+                               th:href="|mailto:${stage['ASSIGNEE_EMAIL']}|" th:text="${stage['ASSIGNEE_EMAIL']}">Email</a>
+                        </div>
+                    </article>
+                    <p class="empty-state" th:if="${#lists.isEmpty(stageAssignments)}">아직 배정된 단계가 없습니다.</p>
+                </div>
+            </section>
+            <section class="workspace-panel">
+                <div class="panel-title"><div><h2>Assign stage</h2><p>프로젝트 단계 운영 정보 등록</p></div></div>
+                <form class="compact-form" th:action="@{/projects/{id}/workbench/stages(id=${project.id})}" method="post">
+                    <input name="stageName" placeholder="단계명 (예: 분석)" required>
+                    <input name="assigneeName" placeholder="담당자명">
+                    <input name="roleName" placeholder="역할">
+                    <input name="assigneeTitle" placeholder="직급">
+                    <input name="assigneePhone" placeholder="연락처">
+                    <input name="assigneeEmail" type="email" placeholder="이메일">
+                    <select name="status"><option>READY</option><option>IN_PROGRESS</option><option>DONE</option><option>HOLD</option></select>
+                    <input name="changeNote" placeholder="상태 변경 메모">
+                    <button type="submit">Save assignment</button>
+                </form>
+            </section>
+        </div>
+        <section class="workspace-panel history-panel">
+            <div class="panel-title"><div><h2>Stage history</h2><p>단계 상태 변경 이력</p></div></div>
+            <div class="record-list"><article th:each="history:${stageHistory}"><div><strong th:text="${history.STAGE_NAME}">Stage</strong><span th:text="|${history['BEFORE_STATUS'] ?: '-'} → ${history.AFTER_STATUS}|">change</span></div><p th:text="|${history.CHANGED_BY} · ${history['CHANGE_NOTE'] ?: '메모 없음'}|">history</p></article></div>
+        </section>
+        <section class="workspace-panel history-panel">
+            <div class="panel-title"><div><h2>Project workspaces</h2><p>프로젝트 내부 작업 단위</p></div></div>
+            <div class="workspace-manager"><div class="record-list"><article th:each="workspace:${projectWorkspaces}"><div><strong th:text="${workspace.WORKSPACE_NAME}">Workspace</strong><span th:text="${workspace.WORKSPACE_TYPE}">TYPE</span></div></article></div><form class="compact-form" th:action="@{/projects/{id}/workbench/workspaces(id=${project.id})}" method="post"><input name="workspaceName" placeholder="작업영역명" required><select name="workspaceType"><option>ANALYSIS</option><option>DESIGN</option><option>REVIEW</option><option>DOCUMENTATION</option></select><button>Add workspace</button></form></div>
+        </section>
+        <div class="workbench-columns">
+            <section class="workspace-panel"><div class="panel-title"><div><h2>Project summary</h2><p>대시보드 운영 요약</p></div></div><form class="compact-form" th:action="@{/projects/{id}/workbench/dashboard(id=${project.id})}" method="post"><textarea name="summary" th:text="${projectDashboard == null ? '' : projectDashboard.SUMMARY}" placeholder="현재 진행 상황과 주요 결정사항"></textarea><button>Save summary</button></form></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>Recent access</h2><p>프로젝트 접근 기록</p></div></div><div class="record-list"><article th:each="log:${accessLogs}"><div><strong th:text="|${log.ACTION} · ${log.TARGET_TYPE}|">GET</strong><span th:text="${log.ACTOR}">actor</span></div><p th:text="${log.TARGET_ID}">target</p></article></div></section>
+        </div>
+    </section>
+
+    <section class="workbench-content" th:if="${tab == 'standard'}">
+        <div class="workbench-columns">
+            <section class="workspace-panel"><div class="panel-title"><div><h2>Standard term review</h2><p>추출 단어의 표준 매칭과 제외 여부</p></div></div><form id="bulk-term-form" class="bulk-toolbar" th:action="@{/projects/{id}/workbench/standard-terms/bulk(id=${project.id})}" method="post"><select name="matchStatus"><option>MATCHED</option><option>UNREGISTERED</option><option>REVIEW</option></select><select name="excludedMode"><option value="KEEP">제외 상태 유지</option><option value="EXCLUDE">일괄 제외</option><option value="INCLUDE">제외 해제</option></select><button>Apply selected</button></form><div class="record-list"><article th:each="item:${standardTerms}"><form class="inline-editor" th:action="@{/projects/{id}/workbench/standard-terms/{termId}(id=${project.id},termId=${item.ID})}" method="post"><label class="bulk-check"><input type="checkbox" name="termIds" th:value="${item.ID}" form="bulk-term-form"><span class="sr-only">일괄 변경 선택</span></label><strong th:text="${item.SOURCE_WORD}">sourceWord</strong><input name="standardWord" th:value="${item.STANDARD_WORD}" placeholder="표준 단어"><select name="matchStatus"><option th:selected="${item.MATCH_STATUS == 'MATCHED'}">MATCHED</option><option th:selected="${item.MATCH_STATUS == 'UNREGISTERED'}">UNREGISTERED</option><option th:selected="${item.MATCH_STATUS == 'REVIEW'}">REVIEW</option></select><input name="recommendation" th:value="${item.RECOMMENDATION}" placeholder="권장 표기"><input name="reviewMemo" th:value="${item.REVIEW_MEMO}" placeholder="검토 메모"><label class="inline-check"><input type="checkbox" name="excluded" value="Y" th:checked="${item.EXCLUDED == 'Y'}"> 제외 처리</label><button>Update review</button></form></article></div></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>Add extracted term</h2><p>VO/DTO에서 추출한 후보 단어 등록</p></div></div><form class="compact-form" th:action="@{/projects/{id}/workbench/standard-terms(id=${project.id})}" method="post"><input name="sourceWord" placeholder="추출 단어" required><input name="standardWord" placeholder="표준 단어"><select name="matchStatus"><option>UNREGISTERED</option><option>MATCHED</option><option>REVIEW</option></select><input name="recommendation" placeholder="권장 표기"><textarea name="reviewMemo" placeholder="검토 메모"></textarea><button>Add term</button></form></section>
+        </div>
+    </section>
+
+    <section class="workbench-content" th:if="${tab == 'scan'}">
+        <div class="workbench-columns">
+            <section class="workspace-panel">
+                <div class="panel-title"><div><h2>Source scans</h2><p>분석할 로컬 소스 경로와 기술 스택</p></div></div>
+                <div class="record-list"><article th:each="item:${scans}"><div><strong th:text="${item.SCAN_PATH}">path</strong><span th:text="${item.STATUS}">READY</span></div><p th:text="|${item.LANGUAGE} · ${item.FRAMEWORK}|">stack</p><div class="scan-stats"><span th:text="|Files ${item.FILE_COUNT}|">Files 0</span><span th:text="|Code ${item.CODE_ISSUE_COUNT}|">Code 0</span><span th:text="|Security ${item.SECURITY_ISSUE_COUNT}|">Security 0</span></div><form class="scan-action" th:if="${item.STATUS != 'COMPLETED'}" th:action="@{/projects/{id}/workbench/scans/{scanId}/analyze(id=${project.id},scanId=${item.ID})}" method="post"><button>Run local analysis</button></form></article></div>
+            </section>
+            <section class="workspace-panel">
+                <div class="panel-title"><div><h2>Register source</h2><p>허용 루트 내부 디렉터리만 분석됩니다.</p></div></div>
+                <div class="allowed-root"><span>Allowed root</span><code th:text="${analysisRoot}">data/sources</code></div>
+                <form class="compact-form" th:action="@{/projects/{id}/workbench/scans(id=${project.id})}" method="post">
+                    <input name="scanPath" th:placeholder="|${analysisRoot}\project|" required><input name="language" placeholder="자동 감지 또는 Java"><input name="framework" placeholder="자동 감지 또는 Spring Boot"><button>Register scan</button>
+                </form>
+            </section>
+        </div>
+    </section>
+
+    <section class="workbench-content" th:if="${tab == 'review' or tab == 'security'}">
+        <div class="workbench-columns"><section class="workspace-panel">
+            <div class="panel-title"><div><h2 th:text="${tab == 'review' ? 'Code review findings' : 'Security findings'}">Findings</h2><p>규칙 기반 결과와 검토 후보를 분리해 관리합니다.</p></div><select data-record-filter aria-label="Finding filter"><option value="">All</option><option>CRITICAL</option><option>MAJOR</option><option>MINOR</option><option>INFO</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option><option>OPEN</option><option>CONFIRMED</option><option>RESOLVED</option><option>HOLD</option><option>FALSE_POSITIVE</option></select></div>
+            <div class="record-list" th:with="items=${tab == 'review' ? codeIssues : securityIssues}">
+                <article th:each="item:${items}" th:attr="data-filter-value=|${tab == 'review' ? item.SEVERITY : item.RISK_LEVEL} ${item.STATUS}|"><div><strong th:text="${tab == 'review' ? item.SUMMARY : item.TITLE}">Finding</strong><span th:text="|${tab == 'review' ? item.SEVERITY : item.RISK_LEVEL} · ${item.STATUS}|">LEVEL</span></div><p th:text="${item.FILE_PATH}">file</p><p class="review-note" th:if="${item['REVIEW_NOTE'] != null and !#strings.isEmpty(item['REVIEW_NOTE'])}" th:text="${item['REVIEW_NOTE']}">note</p><div class="llm-review" th:if="${tab == 'review' and item['LLM_EXPLANATION'] != null}"><div><strong>Local LLM review</strong><span th:text="${item['LLM_MODEL']}">model</span></div><p th:text="${item['LLM_EXPLANATION']}">explanation</p></div><form th:if="${tab == 'review'}" class="scan-action" th:action="@{/projects/{id}/workbench/code-issues/{issueId}/explain(id=${project.id},issueId=${item.ID})}" method="post"><button>Explain with local LLM</button></form><form class="review-form" th:action="${tab == 'review'} ? @{/projects/{id}/workbench/code-issues/{issueId}/review(id=${project.id},issueId=${item.ID})} : @{/projects/{id}/workbench/security-issues/{issueId}/review(id=${project.id},issueId=${item.ID})}" method="post"><select name="status"><option th:selected="${item.STATUS == 'OPEN'}">OPEN</option><option th:selected="${item.STATUS == 'CONFIRMED'}">CONFIRMED</option><option th:selected="${item.STATUS == 'RESOLVED'}">RESOLVED</option><option th:selected="${item.STATUS == 'HOLD'}">HOLD</option><option th:selected="${item.STATUS == 'FALSE_POSITIVE'}">FALSE_POSITIVE</option></select><input name="reviewNote" th:value="${item['REVIEW_NOTE']}" placeholder="검토 메모"><button>Save review</button></form></article>
+                <p class="empty-state" th:if="${#lists.isEmpty(items)}">등록된 분석 결과가 없습니다. Source scan에서 로컬 분석을 실행하거나 검토 후보를 직접 등록하세요.</p>
+            </div>
+        </section>
+        <section class="workspace-panel" th:if="${tab == 'review'}"><div class="panel-title"><div><h2>Add review finding</h2><p>규칙 또는 수동 검토 결과 등록</p></div></div><form class="compact-form" th:action="@{/projects/{id}/workbench/code-issues(id=${project.id})}" method="post"><input name="filePath" placeholder="src/main/App.java"><input name="ruleName" placeholder="규칙명" required><select name="severity"><option>CRITICAL</option><option>MAJOR</option><option>MINOR</option><option>INFO</option></select><input name="summary" placeholder="이슈 요약" required><textarea name="detail" placeholder="근거와 상세 설명"></textarea><button>Add finding</button></form></section>
+        <section class="workspace-panel" th:if="${tab == 'security'}"><div class="panel-title"><div><h2>Security review</h2><p>점검 세션과 코드 흐름 후보 등록</p></div></div><div class="record-list"><article th:each="scan:${securityScans}"><div><strong th:text="${scan.POLICY_NAME}">Policy</strong><span th:text="${scan.STATUS}">READY</span></div><p th:text="${scan.SCAN_TYPE}">STATIC</p></article></div><form class="compact-form" th:action="@{/projects/{id}/workbench/security-scans(id=${project.id})}" method="post"><select name="sourceScanId"><option value="">소스 스캔 연결 없음</option><option th:each="scan:${scans}" th:value="${scan.ID}" th:text="${scan.SCAN_PATH}"></option></select><select name="scanType"><option>STATIC</option><option>FLOW_REVIEW</option><option>EXTERNAL_IMPORT</option></select><input name="policyName" placeholder="점검 정책명" required><button>Create scan session</button></form><hr class="panel-divider"><form class="compact-form" th:action="@{/projects/{id}/workbench/security-issues(id=${project.id})}" method="post"><input name="category" placeholder="SQL_INJECTION" required><input name="title" placeholder="후보 제목" required><select name="riskLevel"><option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option></select><input name="filePath" placeholder="파일 경로"><textarea name="description" placeholder="설명"></textarea><textarea name="evidence" placeholder="근거"></textarea><textarea name="recommendation" placeholder="권고사항"></textarea><button>Add candidate</button></form><hr class="panel-divider"><div class="panel-title"><div><h2>External solution results</h2><p>전용 보안 도구 결과를 JSON으로 가져옵니다.</p></div></div><div class="record-list"><article th:each="result:${securityExternalResults}"><div><strong th:text="${result.TOOL_NAME}">Tool</strong><span th:text="${@time.format(result.IMPORTED_AT)}">date</span></div><p th:text="${result.SUMMARY_TEXT}">summary</p><details><summary>Imported JSON</summary><pre th:text="${result.PAYLOAD_JSON}">{}</pre></details></article></div><form class="compact-form" th:action="@{/projects/{id}/workbench/security-external-results(id=${project.id})}" method="post"><input name="toolName" placeholder="도구명" required><input name="summaryText" placeholder="결과 요약"><textarea name="payloadJson" placeholder='{"findings":[]}' required></textarea><button>Import result</button></form></section></div>
+    </section>
+
+    <section class="workbench-content" th:if="${tab == 'database'}">
+        <div class="workbench-columns"><section class="workspace-panel"><div class="panel-title"><div><h2>DB model drafts</h2><p>테이블·컬럼·관계 구조</p></div></div><div class="record-list"><article th:each="item:${dbModels}"><div><strong th:text="${item.NAME}">Model</strong><span th:text="${item.STATUS}">DRAFT</span></div><p th:text="${item.DESCRIPTION}">description</p><div class="schema-table" th:each="table:${dbTables}" th:if="${table.DB_MODEL_ID == item.ID}"><strong th:text="${table.NAME}">table</strong><ul><li th:each="column:${dbColumns}" th:if="${column.DB_TABLE_ID == table.ID}" th:text="|${column.NAME} : ${column.DATA_TYPE}${column.IS_PRIMARY == 'Y' ? ' · PK' : ''}|">column</li></ul></div><div class="relation-row" th:each="relation:${dbRelations}" th:if="${relation.DB_MODEL_ID == item.ID}" th:text="|${relation.FROM_TABLE_NAME}.${relation.FROM_COLUMN} → ${relation.TO_TABLE_NAME}.${relation.TO_COLUMN} (${relation.RELATION_TYPE})|">relation</div><pre th:text="${item.DDL_TEXT}">DDL</pre></article></div></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>New DB model</h2><p>DDL 초안을 저장합니다.</p></div></div><form class="compact-form" th:action="@{/projects/{id}/workbench/db-models(id=${project.id})}" method="post"><input name="name" placeholder="모델명" required><input name="description" placeholder="설명"><textarea name="ddlText" placeholder="CREATE TABLE ..."></textarea><button>Save draft</button></form></section></div>
+        <div class="api-config-grid">
+            <section class="workspace-panel"><div class="panel-title"><div><h2>API groups</h2><p>Endpoint 분류</p></div></div><div class="record-list"><article th:each="item:${apiGroups}"><div><strong th:text="${item.NAME}">Group</strong></div><p th:text="${item.DESCRIPTION}">description</p></article></div><form class="compact-form" th:action="@{/projects/{id}/workbench/api-groups(id=${project.id})}" method="post"><input name="name" placeholder="그룹명" required><input name="description" placeholder="설명"><button>Add group</button></form></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>Add table</h2><p>모델에 테이블 정의 추가</p></div></div><form class="compact-form" th:action="@{/projects/{id}/workbench/db-tables(id=${project.id})}" method="post"><select name="modelId" required><option value="">모델 선택</option><option th:each="model:${dbModels}" th:value="${model.ID}" th:text="${model.NAME}"></option></select><input name="name" placeholder="테이블명" required><input name="primaryKeyName" placeholder="대표 PK명"><textarea name="description" placeholder="테이블 설명"></textarea><button>Add table</button></form></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>Add column</h2><p>제약조건을 포함한 컬럼 정의</p></div></div><form class="compact-form" th:action="@{/projects/{id}/workbench/db-columns(id=${project.id})}" method="post"><select name="tableId" required><option value="">테이블 선택</option><option th:each="table:${dbTables}" th:value="${table.ID}" th:text="|${table.MODEL_NAME} / ${table.NAME}|"></option></select><input name="name" placeholder="컬럼명" required><input name="dataType" placeholder="VARCHAR(200)" required><input name="defaultValue" placeholder="기본값"><label class="inline-check"><input type="checkbox" name="nullable" value="Y" checked> Nullable</label><label class="inline-check"><input type="checkbox" name="isPrimary" value="Y"> Primary key</label><label class="inline-check"><input type="checkbox" name="isUnique" value="Y"> Unique</label><label class="inline-check"><input type="checkbox" name="isIndexed" value="Y"> Index</label><input name="description" placeholder="설명"><button>Add column</button></form></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>Add relation</h2><p>테이블 간 FK 관계 정의</p></div></div><form class="compact-form" th:action="@{/projects/{id}/workbench/db-relations(id=${project.id})}" method="post"><select name="modelId" required><option value="">모델 선택</option><option th:each="model:${dbModels}" th:value="${model.ID}" th:text="${model.NAME}"></option></select><select name="fromTableId" required><option value="">원본 테이블</option><option th:each="table:${dbTables}" th:value="${table.ID}" th:text="${table.NAME}"></option></select><input name="fromColumn" placeholder="원본 컬럼" required><select name="toTableId" required><option value="">대상 테이블</option><option th:each="table:${dbTables}" th:value="${table.ID}" th:text="${table.NAME}"></option></select><input name="toColumn" placeholder="대상 컬럼" required><select name="relationType"><option>ONE_TO_ONE</option><option>ONE_TO_MANY</option><option>MANY_TO_ONE</option><option>MANY_TO_MANY</option></select><input name="description" placeholder="설명"><button>Add relation</button></form></section>
+        </div>
+        <section class="workspace-panel history-panel"><div class="panel-title"><div><h2>DB change history</h2><p>모델·테이블·컬럼·관계 변경 이력</p></div></div><div class="record-list"><article th:each="change:${dbChangeHistory}"><div><strong th:text="|${change.ENTITY_TYPE} · ${change.ENTITY_NAME}|">entity</strong><span th:text="${change.CHANGE_TYPE}">CREATE</span></div><p th:text="${change.DETAIL_TEXT}">detail</p><time th:text="${@time.format(change.CREATED_AT)}">date</time></article><p class="empty-state" th:if="${#lists.isEmpty(dbChangeHistory)}">DB 변경 이력이 없습니다.</p></div></section>
+    </section>
+
+    <section class="workbench-content" th:if="${tab == 'diagram'}">
+        <div class="workbench-columns"><section class="workspace-panel"><div class="panel-title"><div><h2>Diagrams</h2><p>ERD와 흐름도 초안 미리보기</p></div></div><div class="record-list"><article th:each="item:${diagrams}"><div><strong th:text="${item.NAME}">Diagram</strong><span th:text="${item.DIAGRAM_TYPE}">ERD</span></div><div class="diagram-toolbar"><button type="button" data-diagram-layout>Auto layout</button><button type="button" data-diagram-zoom="-0.1" aria-label="Zoom out">−</button><button type="button" data-diagram-zoom="0.1" aria-label="Zoom in">+</button><button type="button" data-diagram-export th:attr="data-diagram-name=${item.NAME}">Export SVG</button></div><div class="diagram-viewport"><div class="diagram-preview" th:attr="data-diagram-payload=${item.PAYLOAD_JSON}"><span class="empty-state">다이어그램을 렌더링합니다.</span></div></div></article></div></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>New diagram</h2><p>nodes와 edges 배열을 가진 JSON 정의를 저장합니다.</p></div></div><form class="compact-form" th:action="@{/projects/{id}/workbench/diagrams(id=${project.id})}" method="post"><input name="name" placeholder="다이어그램명" required><select name="diagramType"><option>ERD</option><option>FLOW</option><option>ARCHITECTURE</option></select><textarea name="payloadJson" placeholder='{"nodes":[{"id":"api","label":"API"}],"edges":[]}'></textarea><button>Save draft</button></form></section></div>
+    </section>
+
+    <section class="workbench-content" th:if="${tab == 'api'}">
+        <section class="workspace-panel">
+            <div class="panel-title"><div><h2>Source synchronization</h2><p>Spring Mapping 애노테이션을 읽어 SOURCE_SYNC endpoint를 갱신합니다.</p></div></div>
+            <form class="progress-form" th:action="@{/projects/{id}/workbench/apis/sync(id=${project.id})}" method="post">
+                <select name="scanId" required><option value="">소스 스캔 선택</option><option th:each="scan:${scans}" th:value="${scan.ID}" th:text="${scan.SCAN_PATH}"></option></select>
+                <button>Synchronize APIs</button>
+            </form>
+        </section>
+        <div class="workbench-columns"><section class="workspace-panel"><div class="panel-title"><div><h2>API specification</h2><p>그룹·스키마·인증 정책이 연결된 endpoint</p></div></div><div class="record-list"><article th:each="item:${apiEndpoints}"><div><strong><b class="method-chip" th:text="${item.METHOD}">GET</b> <span th:text="${item.PATH}">/api</span></strong><span th:text="${item.SOURCE_TYPE}">MANUAL</span></div><p th:text="${item.SUMMARY}">summary</p><div class="api-meta"><span th:text="${item.GROUP_NAME ?: 'Ungrouped'}">Group</span><span th:text="|Auth ${item.AUTH_REQUIRED}|">Auth N</span><span th:text="|HTTP ${item.STATUS_CODE}|">200</span><span th:text="|Req: ${item.REQUEST_SCHEMA_NAME ?: '-'}|">request</span><span th:text="|Res: ${item.RESPONSE_SCHEMA_NAME ?: '-'}|">response</span></div></article></div></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>Add endpoint</h2><p>수동 명세 항목과 스키마를 연결합니다.</p></div></div><form class="compact-form" th:action="@{/projects/{id}/workbench/apis(id=${project.id})}" method="post"><select name="apiGroupId"><option value="">그룹 없음</option><option th:each="group:${apiGroups}" th:value="${group.ID}" th:text="${group.NAME}"></option></select><select name="method"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select><input name="path" placeholder="/api/resource" required><input name="summary" placeholder="API 설명"><select name="requestSchemaId"><option value="">Request schema 없음</option><option th:each="schema:${apiSchemas}" th:value="${schema.ID}" th:text="${schema.NAME}"></option></select><select name="responseSchemaId"><option value="">Response schema 없음</option><option th:each="schema:${apiSchemas}" th:value="${schema.ID}" th:text="${schema.NAME}"></option></select><input name="statusCode" type="number" value="200" min="100" max="599"><label class="inline-check"><input type="checkbox" name="authRequired" value="Y"> 인증 필요</label><button>Add endpoint</button></form></section></div>
+        <div class="api-config-grid">
+            <section class="workspace-panel"><div class="panel-title"><div><h2>API schemas</h2><p>Request/response JSON schema</p></div></div><div class="record-list"><article th:each="item:${apiSchemas}"><div><strong th:text="${item.NAME}">Schema</strong><span th:text="${item.SCHEMA_TYPE}">REQUEST</span></div><pre th:text="${item.PAYLOAD_JSON}">{}</pre></article></div><form class="compact-form" th:action="@{/projects/{id}/workbench/api-schemas(id=${project.id})}" method="post"><input name="name" placeholder="스키마명" required><select name="schemaType"><option>REQUEST</option><option>RESPONSE</option><option>ERROR</option><option>COMMON</option></select><textarea name="payloadJson" placeholder='{"type":"object","properties":{}}'></textarea><button>Add schema</button></form></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>Auth profiles</h2><p>비밀값 대신 환경 변수 참조 등 설정 메타데이터만 저장하세요.</p></div></div><div class="record-list"><article th:each="item:${apiAuthProfiles}"><div><strong th:text="${item.NAME}">Auth</strong><span th:text="${item.AUTH_TYPE}">BEARER</span></div></article></div><form class="compact-form" th:action="@{/projects/{id}/workbench/api-auth(id=${project.id})}" method="post"><input name="name" placeholder="프로필명" required><select name="authType"><option>NONE</option><option>BEARER</option><option>BASIC</option><option>API_KEY</option></select><textarea name="configJson" placeholder='{"tokenEnv":"API_TOKEN"}'></textarea><label class="inline-check"><input type="checkbox" name="isDefault" value="Y"> 기본 프로필</label><button>Add profile</button></form></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>Sample datasets</h2><p>반복 테스트용 JSON 데이터</p></div></div><div class="record-list"><article th:each="item:${sampleDatasets}"><div><strong th:text="${item.NAME}">Dataset</strong><span th:text="${item.IS_SHARED == 'Y' ? 'SHARED' : 'PRIVATE'}">PRIVATE</span></div><ul class="dataset-items"><li th:each="entry:${sampleDatasetItems}" th:if="${entry.SAMPLE_DATASET_ID == item.ID}" th:text="|${entry.ITEM_KEY}: ${entry.ITEM_VALUE_JSON}|">item</li></ul></article></div><form class="compact-form" th:action="@{/projects/{id}/workbench/sample-datasets(id=${project.id})}" method="post"><input name="name" placeholder="데이터셋명" required><input name="description" placeholder="설명"><textarea name="payloadJson" placeholder='{"id":1}'></textarea><label class="inline-check"><input type="checkbox" name="isShared" value="Y"> 프로젝트 내 공유</label><button>Add dataset</button></form><hr class="panel-divider"><form class="compact-form" th:action="@{/projects/{id}/workbench/sample-dataset-items(id=${project.id})}" method="post"><select name="datasetId" required><option value="">데이터셋 선택</option><option th:each="dataset:${sampleDatasets}" th:value="${dataset.ID}" th:text="${dataset.NAME}"></option></select><input name="itemKey" placeholder="항목 키" required><textarea name="itemValueJson" placeholder='{"value":"sample"}'></textarea><button>Add item</button></form></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>Test cases</h2><p>예상 상태와 요청 스냅샷</p></div></div><div class="record-list"><article th:each="item:${apiTestCases}"><div><strong th:text="${item.NAME}">Test</strong><span th:text="|${item.METHOD} ${item.PATH}|">GET /</span></div><p th:text="|Expected ${item.EXPECTED_STATUS_CODE} · ${item.AUTH_NAME ?: 'No auth'}|">Expected</p><form class="progress-form" th:action="@{/projects/{id}/workbench/api-tests/{testId}/execute(id=${project.id},testId=${item.ID})}" method="post"><input name="baseUrl" type="url" value="http://localhost:8081" placeholder="http://localhost:8081" required><button>Run test</button></form></article><p class="empty-state" th:if="${#lists.isEmpty(apiTestCases)}">저장된 테스트 케이스가 없습니다.</p></div><form class="compact-form" th:action="@{/projects/{id}/workbench/api-tests(id=${project.id})}" method="post"><input name="name" placeholder="테스트명" required><select name="endpointId" required><option value="">Endpoint 선택</option><option th:each="endpoint:${apiEndpoints}" th:value="${endpoint.ID}" th:text="|${endpoint.METHOD} ${endpoint.PATH}|"></option></select><select name="authProfileId"><option value="">인증 없음</option><option th:each="auth:${apiAuthProfiles}" th:value="${auth.ID}" th:text="${auth.NAME}"></option></select><select name="sampleDatasetId"><option value="">샘플 데이터 없음</option><option th:each="dataset:${sampleDatasets}" th:value="${dataset.ID}" th:text="${dataset.NAME}"></option></select><textarea name="requestJson" placeholder="요청 JSON"></textarea><input name="expectedStatusCode" type="number" value="200"><textarea name="expectedResponseJson" placeholder="예상 응답 JSON"></textarea><button>Save test case</button></form></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>Test history</h2><p>실행 상태와 응답 스냅샷</p></div></div><div class="record-list"><article th:each="result:${apiTestResults}"><div><strong th:text="${result.TEST_NAME}">Test</strong><span th:text="|${result.RESULT_STATUS} · HTTP ${result['STATUS_CODE'] ?: '-'}|">STATUS</span></div><p th:text="|${result['DURATION_MS'] ?: 0} ms · ${@time.format(result.EXECUTED_AT)}|">meta</p><details><summary>Response</summary><pre th:text="${result['RESPONSE_SNAPSHOT_JSON'] ?: '응답 본문 없음'}">response</pre><p th:if="${result['MESSAGE'] != null and !#strings.isEmpty(result['MESSAGE'])}" th:text="${result['MESSAGE']}">message</p></details></article><p class="empty-state" th:if="${#lists.isEmpty(apiTestResults)}">아직 실행 이력이 없습니다.</p></div></section>
+        </div>
+    </section>
+
+    <section class="workbench-content" th:if="${tab == 'wiki'}">
+        <div class="wiki-workspace">
+            <aside class="workspace-panel wiki-tree"><div class="panel-title"><div><h2>Pages</h2><p th:text="|${#lists.size(wikiPages)} documents|">0 documents</p></div></div><nav><a th:each="item:${wikiPages}" th:href="@{/projects/{id}/workbench(id=${project.id},tab='wiki',wikiId=${item.ID})}" th:classappend="${selectedWiki != null and selectedWiki.ID == item.ID} ? ' active'"><strong th:text="${item.TITLE}">Title</strong><span th:text="${item.TAGS}">tags</span></a></nav><details class="new-wiki" th:if="${canEdit}"><summary>+ New page</summary><form class="compact-form" th:action="@{/projects/{id}/workbench/wiki(id=${project.id})}" method="post"><input name="title" placeholder="페이지 제목" required><input name="tags" placeholder="태그, 쉼표 구분"><textarea name="content" placeholder="# 문서 제목"></textarea><button>Save page</button></form></details></aside>
+            <section class="workspace-panel wiki-editor" th:if="${selectedWiki != null}"><div class="panel-title"><div><h2 th:text="${selectedWiki.TITLE}">Wiki page</h2><p th:text="${selectedWiki.TAGS}">tags</p></div><span class="viewer-chip" th:text="${canEdit ? 'EDIT MODE' : 'VIEW MODE'}">MODE</span></div><form class="inline-editor" th:if="${canEdit}" th:action="@{/projects/{id}/workbench/wiki/{wikiId}(id=${project.id},wikiId=${selectedWiki.ID})}" method="post"><input name="title" th:value="${selectedWiki.TITLE}" required><input name="tags" th:value="${selectedWiki.TAGS}" placeholder="태그"><div class="editor-toolbar"><button type="button" data-wiki-insert-link>Insert link</button></div><textarea class="wiki-content-editor" name="content" th:text="${selectedWiki.CONTENT}"></textarea><input name="changeNote" placeholder="변경 메모"><button>Save new version</button></form><article class="wiki-viewer" th:if="${!canEdit}"><pre th:text="${selectedWiki.CONTENT}">content</pre></article><div class="wiki-attachments"><h3>Attachments</h3><div class="record-list"><article th:each="file:${attachments}" th:if="${file['WIKI_PAGE_ID'] != null and file['WIKI_PAGE_ID'] == selectedWiki.ID}"><div><strong th:text="${file.ORIGINAL_NAME}">file</strong><span th:text="|${file.FILE_SIZE} bytes|">size</span></div><a class="ghost-button" th:href="@{/projects/{id}/workbench/attachments/{attachmentId}(id=${project.id},attachmentId=${file.ID})}">Download</a></article></div><form class="progress-form" th:if="${canEdit}" th:action="@{/projects/{id}/workbench/attachments(id=${project.id})}" method="post" enctype="multipart/form-data"><input type="hidden" name="wikiPageId" th:value="${selectedWiki.ID}"><input type="file" name="file" required><button>Attach file</button></form></div></section>
+            <section class="workspace-panel wiki-history"><div class="panel-title"><div><h2>Versions</h2><p>저장·복원·비교 이력</p></div></div><div class="version-compare" th:if="${#lists.size(selectedWikiVersions) > 1}"><select data-version-left><option th:each="version:${selectedWikiVersions}" th:value="${version.ID}" th:attr="data-content=${version.CONTENT_SNAPSHOT}" th:text="|v${version.VERSION_NO}|"></option></select><select data-version-right><option th:each="version:${selectedWikiVersions}" th:value="${version.ID}" th:attr="data-content=${version.CONTENT_SNAPSHOT}" th:text="|v${version.VERSION_NO}|"></option></select><button type="button" data-compare-versions>Compare</button><pre data-version-diff hidden></pre></div><div class="version-timeline"><article th:each="version:${selectedWikiVersions}"><div><strong th:text="|v${version.VERSION_NO}|">v1</strong><span th:text="${version.CREATED_BY}">user</span></div><p th:text="${version.CHANGE_NOTE ?: '변경 메모 없음'}">note</p><time th:text="${@time.format(version.CREATED_AT)}">date</time><details><summary>Snapshot</summary><pre th:text="${version.CONTENT_SNAPSHOT}">content</pre></details><form th:if="${canEdit}" th:action="@{/projects/{id}/workbench/wiki/{wikiId}/restore/{versionId}(id=${project.id},wikiId=${selectedWiki.ID},versionId=${version.ID})}" method="post"><button>Restore this version</button></form></article><p class="empty-state" th:if="${#lists.isEmpty(selectedWikiVersions)}">버전 이력이 없습니다.</p></div></section>
+            <section class="workspace-panel wiki-empty" th:if="${selectedWiki == null}"><div class="empty-state"><strong>Wiki 페이지가 없습니다.</strong><p>새 페이지를 만들어 프로젝트 지식을 기록하세요.</p></div></section>
+        </div>
+    </section>
+
+    <section class="workbench-content" th:if="${tab == 'wbs'}">
+        <div class="workbench-columns"><section class="workspace-panel"><div class="panel-title"><div><h2>WBS items</h2><p>계층·담당자·마감일·진척도</p></div></div><div class="record-list wbs-tree"><article th:each="item:${wbsItems}" th:classappend="${item.PARENT_ID != null} ? ' child-item'"><div><strong th:text="${item.TITLE}">Task</strong><span th:text="|${item.STATUS} · ${item.PROGRESS}%|">TODO</span></div><p th:if="${item.PARENT_TITLE != null}" th:text="|↳ ${item.PARENT_TITLE}|">parent</p><p th:text="${item.DESCRIPTION}">description</p><div class="task-meta"><span th:text="${item.ASSIGNEE_NAME ?: 'Unassigned'}">owner</span><span th:text="${item.DUE_DATE ?: 'No due date'}">date</span><span th:text="${item.PRIORITY}">MEDIUM</span></div><div class="linked-artifacts"><a th:each="link:${wbsArtifactLinks}" th:if="${link.WBS_ITEM_ID == item.ID}" th:href="@{/projects/{id}/workbench/artifacts/{artifactId}/download(id=${project.id},artifactId=${link.ARTIFACT_ID})}" th:text="|${link.ARTIFACT_NAME} · v${link.VERSION_NO}|">artifact</a></div><div class="status-notes"><p th:each="note:${wbsNotes}" th:if="${note.WBS_ITEM_ID == item.ID}" th:text="|${note.CREATED_BY}: ${note.NOTE_TEXT}|">note</p></div><form class="progress-form" th:action="@{/projects/{id}/workbench/wbs/{wbsId}(id=${project.id},wbsId=${item.ID})}" method="post"><select name="status"><option th:selected="${item.STATUS == 'TODO'}">TODO</option><option th:selected="${item.STATUS == 'IN_PROGRESS'}">IN_PROGRESS</option><option th:selected="${item.STATUS == 'DONE'}">DONE</option><option th:selected="${item.STATUS == 'HOLD'}">HOLD</option></select><input name="progress" type="number" min="0" max="100" th:value="${item.PROGRESS}"><button>Update</button></form><details class="wbs-links"><summary>Notes &amp; artifacts</summary><form class="progress-form" th:action="@{/projects/{id}/workbench/wbs/{wbsId}/notes(id=${project.id},wbsId=${item.ID})}" method="post"><input name="noteText" placeholder="상태 메모" required><button>Add note</button></form><form class="progress-form" th:action="@{/projects/{id}/workbench/wbs/{wbsId}/artifacts(id=${project.id},wbsId=${item.ID})}" method="post"><select name="artifactId" required><option value="">산출물 선택</option><option th:each="artifact:${artifacts}" th:value="${artifact.ID}" th:text="|${artifact.NAME} · v${artifact.VERSION_NO}|"></option></select><button>Link artifact</button></form></details></article><p class="empty-state" th:if="${#lists.isEmpty(wbsItems)}">등록된 WBS 항목이 없습니다.</p></div></section>
+            <section class="workspace-panel"><div class="panel-title"><div><h2>New work item</h2><p>상위 업무와 운영 정보를 연결합니다.</p></div></div><form class="compact-form" th:action="@{/projects/{id}/workbench/wbs(id=${project.id})}" method="post"><select name="parentId"><option value="">상위 업무 없음</option><option th:each="parent:${wbsItems}" th:value="${parent.ID}" th:text="${parent.TITLE}"></option></select><input name="title" placeholder="업무명" required><textarea name="description" placeholder="업무 설명"></textarea><input name="assigneeName" placeholder="담당자"><input name="dueDate" type="date"><select name="priority"><option>HIGH</option><option selected>MEDIUM</option><option>LOW</option></select><button>Add work item</button></form></section></div>
+    </section>
+
+    <section class="workbench-content" th:if="${tab == 'artifacts'}">
+        <div class="artifact-layout">
+            <aside class="workspace-panel artifact-tools"><div class="panel-title"><div><h2>Generate artifact</h2><p>현재 프로젝트 데이터를 버전 스냅샷으로 저장합니다.</p></div></div><form class="compact-form" th:action="@{/projects/{id}/workbench/artifacts(id=${project.id})}" method="post"><select name="artifactType"><option value="SOURCE_SUMMARY">Source scan summary</option><option value="CODE_REVIEW">Code review report</option><option value="STANDARD_REPORT">Standard term report</option><option value="STANDARD_CSV">Standard terms CSV</option><option value="SECURITY_REVIEW">Security candidate report</option><option value="DB_DDL">Database DDL</option><option value="DIAGRAM_DOCUMENT">Diagram definitions</option><option value="OPENAPI">OpenAPI draft</option><option value="API_TEST_REPORT">API test report</option><option value="WIKI_DOCUMENT">Wiki document</option><option value="WBS_DOCUMENT">WBS document</option></select><button>Generate snapshot</button></form><div class="artifact-policy"><strong>Internal snapshot</strong><p>산출물은 프로젝트 내부에 저장되며 외부로 자동 전송되지 않습니다.</p></div></aside>
+            <section class="workspace-panel artifact-list"><div class="panel-title"><div><h2>Generated artifacts</h2><p>유형별 버전 이력과 내용 미리보기</p></div></div><div class="record-list"><article th:each="item:${artifacts}"><div><strong th:text="${item.NAME}">Artifact</strong><span th:text="|${item.ARTIFACT_TYPE} · v${item.VERSION_NO}|">TYPE</span></div><p th:text="|${item.CREATED_BY} · ${@time.format(item.CREATED_AT)}|">meta</p><div class="action-row"><a class="ghost-button" th:href="@{/projects/{id}/workbench/artifacts/{artifactId}/download(id=${project.id},artifactId=${item.ID})}">Download</a></div><details class="artifact-preview"><summary>Preview content</summary><pre th:text="${item.CONTENT_TEXT}">content</pre></details></article><p class="empty-state" th:if="${#lists.isEmpty(artifacts)}">생성된 산출물이 없습니다.</p></div></section>
+        </div>
+    </section>
+
+    <section class="workbench-content" th:if="${tab == 'files'}">
+        <div class="workbench-columns">
+            <section class="workspace-panel">
+                <div class="panel-title"><div><h2>Project files</h2><p>프로젝트 및 Wiki 첨부파일</p></div></div>
+                <div class="record-list">
+                    <article th:each="item:${attachments}">
+                        <div><strong th:text="${item.ORIGINAL_NAME}">filename</strong><span th:text="|${item.FILE_SIZE} bytes|">0 bytes</span></div>
+                        <p th:text="|SHA-256 ${item.FILE_HASH}|">hash</p>
+                        <div class="action-row">
+                            <a class="ghost-button" th:href="@{/projects/{id}/workbench/attachments/{attachmentId}(id=${project.id},attachmentId=${item.ID})}">Download</a>
+                            <form th:if="${canEdit}" th:action="@{/projects/{id}/workbench/attachments/{attachmentId}/delete(id=${project.id},attachmentId=${item.ID})}" method="post">
+                                <button type="submit" class="danger-button">Delete</button>
+                            </form>
+                        </div>
+                    </article>
+                    <p class="empty-state" th:if="${#lists.isEmpty(attachments)}">첨부된 파일이 없습니다.</p>
+                </div>
+            </section>
+            <section class="workspace-panel" th:if="${canEdit}">
+                <div class="panel-title"><div><h2>Upload file</h2><p>최대 25MB · 프로젝트 내부 저장</p></div></div>
+                <form class="compact-form" th:action="@{/projects/{id}/workbench/attachments(id=${project.id})}" method="post" enctype="multipart/form-data">
+                    <select name="wikiPageId"><option value="">프로젝트 공통 파일</option><option th:each="page:${wikiPages}" th:value="${page.ID}" th:text="|Wiki · ${page.TITLE}|"></option></select>
+                    <input type="file" name="file" required>
+                    <button type="submit">Upload file</button>
+                </form>
+            </section>
+        </div>
+    </section>
+
+    <section class="workbench-content" th:if="${tab == 'share'}">
+        <div class="workbench-columns">
+            <section class="workspace-panel">
+                <div class="panel-title"><div><h2>Readonly share links</h2><p>토큰 원문은 생성 직후 한 번만 표시됩니다.</p></div></div>
+                <div class="share-result" th:if="${generatedSharePath != null}">
+                    <strong>새 공유 링크</strong>
+                    <input type="text" readonly th:value="${generatedSharePath}" data-share-path>
+                    <button type="button" data-copy-share>Copy link</button>
+                </div>
+                <div class="record-list">
+                    <article th:each="item:${shareTokens}">
+                        <div><strong th:text="${item.LABEL}">Share</strong><span th:text="${item.ENABLED == 'Y' ? 'ACTIVE' : 'REVOKED'}">ACTIVE</span></div>
+                        <p th:text="|Expires ${@time.format(item.EXPIRES_AT)} · Download ${item.ALLOW_DOWNLOAD}|">meta</p>
+                        <form th:if="${canEdit and item.ENABLED == 'Y'}" th:action="@{/projects/{id}/workbench/shares/{shareId}/revoke(id=${project.id},shareId=${item.ID})}" method="post"><button class="danger-button">Revoke</button></form>
+                    </article>
+                    <p class="empty-state" th:if="${#lists.isEmpty(shareTokens)}">생성된 공유 링크가 없습니다.</p>
+                </div>
+            </section>
+            <section class="workspace-panel" th:if="${canEdit}">
+                <div class="panel-title"><div><h2>Create share link</h2><p>최대 1년 · readonly 전용</p></div></div>
+                <form class="compact-form" th:action="@{/projects/{id}/workbench/shares(id=${project.id})}" method="post">
+                    <input name="label" placeholder="공유 목적" required>
+                    <label>Expires at<input name="expiresAt" type="datetime-local" required></label>
+                    <label class="inline-check"><input type="checkbox" name="allowDownload" value="Y"> 첨부파일 다운로드 허용</label>
+                    <button>Create readonly link</button>
+                </form>
+            </section>
+        </div>
+    </section>
+
+    <aside class="selection-inspector" data-selection-inspector aria-live="polite">
+        <div class="panel-title"><div><h2>Properties</h2><p>선택 항목 상세</p></div></div>
+        <div class="inspector-empty">목록의 항목을 선택하면 주요 속성이 표시됩니다.</div>
+        <div class="inspector-content" hidden>
+            <strong data-inspector-title>Selected item</strong>
+            <pre data-inspector-body></pre>
+        </div>
+    </aside>
+</main>
+<div th:replace="~{layout/footer :: footer}"></div>
+</body>
+</html>
+
+

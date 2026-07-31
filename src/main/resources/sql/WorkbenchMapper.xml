@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aastudio.mapper.WorkbenchMapper">
+    <select id="selectSummary" resultType="map">
+        SELECT
+          (SELECT COUNT(*) FROM source_scan WHERE project_id = #{projectId}) scan_count,
+          (SELECT COUNT(*) FROM project_workspace WHERE project_id = #{projectId}) workspace_count,
+          (SELECT COUNT(*) FROM source_code_scan WHERE project_id = #{projectId}) code_issue_count,
+          (SELECT COUNT(*) FROM security_issue WHERE project_id = #{projectId}) security_issue_count,
+          (SELECT COUNT(*) FROM standard_term WHERE project_id = #{projectId}) standard_term_count,
+          (SELECT COUNT(*) FROM db_model WHERE project_id = #{projectId}) db_model_count,
+          (SELECT COUNT(*) FROM diagram WHERE project_id = #{projectId}) diagram_count,
+          (SELECT COUNT(*) FROM api_endpoint WHERE project_id = #{projectId}) api_count,
+          (SELECT COUNT(*) FROM api_test_case WHERE project_id = #{projectId}) api_test_count,
+          (SELECT COUNT(*) FROM wiki_page WHERE project_id = #{projectId}) wiki_count,
+          (SELECT COUNT(*) FROM wbs_item WHERE project_id = #{projectId}) wbs_count
+          ,(SELECT COUNT(*) FROM project_artifact WHERE project_id = #{projectId}) artifact_count
+    </select>
+    <select id="selectScans" resultType="map">SELECT * FROM source_scan WHERE project_id=#{projectId} ORDER BY id DESC</select>
+    <select id="selectScan" resultType="map">SELECT * FROM source_scan WHERE project_id=#{projectId} AND id=#{scanId}</select>
+    <select id="selectProjectWorkspaces" resultType="map">SELECT * FROM project_workspace WHERE project_id=#{projectId} ORDER BY is_active DESC,id</select>
+    <select id="selectProjectDashboard" resultType="map">SELECT * FROM project_dashboard WHERE project_id=#{projectId}</select>
+    <select id="selectCodeIssues" resultType="map">SELECT * FROM source_code_scan WHERE project_id=#{projectId} ORDER BY id DESC</select>
+    <select id="selectCodeIssue" resultType="map">SELECT * FROM source_code_scan WHERE project_id=#{projectId} AND id=#{issueId}</select>
+    <select id="selectSecurityIssues" resultType="map">SELECT * FROM security_issue WHERE project_id=#{projectId} ORDER BY id DESC</select>
+    <select id="selectSecurityScans" resultType="map">SELECT * FROM security_scan WHERE project_id=#{projectId} ORDER BY id DESC</select>
+    <select id="selectSecurityExternalResults" resultType="map">
+        SELECT * FROM security_external_result WHERE project_id=#{projectId} ORDER BY imported_at DESC,id DESC
+    </select>
+    <select id="selectDbModels" resultType="map">SELECT * FROM db_model WHERE project_id=#{projectId} ORDER BY id DESC</select>
+    <select id="selectDbTables" resultType="map">
+        SELECT t.*,m.name model_name FROM db_table t JOIN db_model m ON m.id=t.db_model_id
+        WHERE m.project_id=#{projectId} ORDER BY t.id
+    </select>
+    <select id="selectDbColumns" resultType="map">
+        SELECT c.*,t.name table_name,m.project_id FROM db_column c JOIN db_table t ON t.id=c.db_table_id
+        JOIN db_model m ON m.id=t.db_model_id WHERE m.project_id=#{projectId} ORDER BY c.id
+    </select>
+    <select id="selectDbRelations" resultType="map">
+        SELECT r.*,ft.name from_table_name,tt.name to_table_name FROM db_relation r
+        JOIN db_model m ON m.id=r.db_model_id JOIN db_table ft ON ft.id=r.from_table_id
+        JOIN db_table tt ON tt.id=r.to_table_id WHERE m.project_id=#{projectId} ORDER BY r.id
+    </select>
+    <select id="selectDbChangeHistory" resultType="map">
+        SELECT * FROM db_change_history WHERE project_id=#{projectId} ORDER BY created_at DESC,id DESC
+    </select>
+    <select id="selectDiagrams" resultType="map">SELECT * FROM diagram WHERE project_id=#{projectId} ORDER BY id DESC</select>
+    <select id="selectApiEndpoints" resultType="map">
+        SELECT e.*,g.name group_name,rs.name request_schema_name,ps.name response_schema_name
+        FROM api_endpoint e LEFT JOIN api_group g ON g.id=e.api_group_id
+        LEFT JOIN api_schema rs ON rs.id=e.request_schema_id LEFT JOIN api_schema ps ON ps.id=e.response_schema_id
+        WHERE e.project_id=#{projectId} ORDER BY e.path,e.method
+    </select>
+    <select id="selectApiGroups" resultType="map">SELECT * FROM api_group WHERE project_id=#{projectId} ORDER BY id</select>
+    <select id="selectApiSchemas" resultType="map">SELECT * FROM api_schema WHERE project_id=#{projectId} ORDER BY id DESC</select>
+    <select id="selectApiAuthProfiles" resultType="map">SELECT * FROM api_auth_profile WHERE project_id=#{projectId} ORDER BY is_default DESC,id</select>
+    <select id="selectSampleDatasets" resultType="map">SELECT * FROM sample_dataset WHERE project_id=#{projectId} ORDER BY id DESC</select>
+    <select id="selectSampleDatasetItems" resultType="map">
+        SELECT i.*,d.name dataset_name FROM sample_dataset_item i JOIN sample_dataset d ON d.id=i.sample_dataset_id
+        WHERE d.project_id=#{projectId} ORDER BY i.id
+    </select>
+    <select id="selectApiTestCases" resultType="map">
+        SELECT t.*,e.method,e.path,a.name auth_name,d.name dataset_name FROM api_test_case t
+        JOIN api_endpoint e ON e.id=t.api_endpoint_id LEFT JOIN api_auth_profile a ON a.id=t.auth_profile_id
+        LEFT JOIN sample_dataset d ON d.id=t.sample_dataset_id WHERE t.project_id=#{projectId} ORDER BY t.id DESC
+    </select>
+    <select id="selectApiTestResults" resultType="map">
+        SELECT r.*,t.name test_name FROM api_test_result r JOIN api_test_case t ON t.id=r.api_test_case_id
+        WHERE t.project_id=#{projectId} ORDER BY r.executed_at DESC
+    </select>
+    <select id="selectApiTestCaseForExecution" resultType="map">
+        SELECT t.*,e.method,e.path,a.auth_type,a.config_json
+        FROM api_test_case t JOIN api_endpoint e ON e.id=t.api_endpoint_id
+        LEFT JOIN api_auth_profile a ON a.id=t.auth_profile_id
+        WHERE t.project_id=#{projectId} AND t.id=#{testCaseId}
+    </select>
+    <select id="selectWikiPages" resultType="map">SELECT * FROM wiki_page WHERE project_id=#{projectId} ORDER BY updated_at DESC</select>
+    <select id="selectWbsItems" resultType="map">
+        SELECT w.*,p.title parent_title FROM wbs_item w LEFT JOIN wbs_item p ON p.id=w.parent_id
+        WHERE w.project_id=#{projectId}
+        ORDER BY COALESCE(w.parent_id,w.id),CASE WHEN w.parent_id IS NULL THEN 0 ELSE 1 END,w.id
+    </select>
+    <select id="selectWbsItem" resultType="map">SELECT * FROM wbs_item WHERE project_id=#{projectId} AND id=#{wbsId}</select>
+    <select id="selectWbsNotes" resultType="map">
+        SELECT n.* FROM wbs_status_note n JOIN wbs_item w ON w.id=n.wbs_item_id
+        WHERE n.project_id=#{projectId} AND w.project_id=#{projectId} ORDER BY n.created_at DESC,n.id DESC
+    </select>
+    <select id="selectWbsArtifactLinks" resultType="map">
+        SELECT l.*,a.name artifact_name,a.artifact_type,a.version_no
+        FROM wbs_artifact_link l JOIN wbs_item w ON w.id=l.wbs_item_id
+        JOIN project_artifact a ON a.id=l.artifact_id
+        WHERE l.project_id=#{projectId} AND w.project_id=#{projectId} AND a.project_id=#{projectId}
+        ORDER BY l.id DESC
+    </select>
+    <select id="selectStageAssignments" resultType="map">SELECT * FROM project_stage_assignment WHERE project_id=#{projectId} ORDER BY id</select>
+    <select id="selectStageHistory" resultType="map">SELECT * FROM project_stage_history WHERE project_id=#{projectId} ORDER BY id DESC</select>
+    <select id="selectAccessLogs" resultType="map">SELECT * FROM access_log WHERE project_id=#{projectId} ORDER BY id DESC LIMIT 50</select>
+    <select id="selectArtifacts" resultType="map">SELECT * FROM project_artifact WHERE project_id=#{projectId} ORDER BY created_at DESC,id DESC</select>
+    <select id="selectArtifact" resultType="map">SELECT * FROM project_artifact WHERE project_id=#{projectId} AND id=#{artifactId}</select>
+    <select id="selectStandardTerms" resultType="map">SELECT * FROM standard_term WHERE project_id=#{projectId} ORDER BY id DESC</select>
+    <select id="selectStandardTerm" resultType="map">SELECT * FROM standard_term WHERE project_id=#{projectId} AND id=#{termId}</select>
+    <select id="selectWikiVersions" resultType="map">
+        SELECT v.* FROM wiki_page_version v JOIN wiki_page w ON w.id=v.wiki_page_id
+        WHERE w.project_id=#{projectId} AND w.id=#{wikiPageId} ORDER BY v.version_no DESC
+    </select>
+    <select id="selectAllWikiVersions" resultType="map">
+        SELECT v.*,w.project_id,w.title page_title FROM wiki_page_version v JOIN wiki_page w ON w.id=v.wiki_page_id
+        WHERE w.project_id=#{projectId} ORDER BY v.created_at DESC
+    </select>
+    <select id="selectWikiPage" resultType="map">SELECT * FROM wiki_page WHERE project_id=#{projectId} AND id=#{wikiPageId}</select>
+    <select id="selectWikiVersion" resultType="map">
+        SELECT v.* FROM wiki_page_version v JOIN wiki_page w ON w.id=v.wiki_page_id
+        WHERE w.project_id=#{projectId} AND v.id=#{versionId}
+    </select>
+    <select id="selectAttachments" resultType="map">SELECT * FROM attachment WHERE project_id=#{projectId} ORDER BY id DESC</select>
+    <select id="selectAttachment" resultType="map">SELECT * FROM attachment WHERE project_id=#{projectId} AND id=#{attachmentId}</select>
+    <select id="selectShareTokens" resultType="map">
+        SELECT id,project_id,label,expires_at,allow_download,enabled,created_by,created_at
+        FROM project_share_token WHERE project_id=#{projectId} ORDER BY created_at DESC
+    </select>
+    <select id="selectShareTokenByHash" resultType="map">
+        SELECT * FROM project_share_token WHERE token_hash=#{tokenHash}
+    </select>
+    <select id="selectShareAttachments" resultType="map">
+        SELECT id,project_id,wiki_page_id,original_name,mime_type,file_size,file_hash,created_at
+        FROM attachment WHERE project_id=#{projectId} ORDER BY created_at DESC
+    </select>
+
+    <insert id="insertScan">
+        INSERT INTO source_scan(project_id,scan_path,language,framework,status)
+        VALUES(#{projectId},#{scanPath},#{language},#{framework},'READY')
+    </insert>
+    <update id="updateScanResult">
+        UPDATE source_scan SET status=#{status},language=#{language},framework=#{framework},file_count=#{fileCount},
+        code_issue_count=#{codeIssueCount},security_issue_count=#{securityIssueCount}
+        WHERE project_id=#{projectId} AND id=#{scanId}
+    </update>
+    <insert id="insertAnalyzedCodeIssue" parameterType="map">
+        INSERT INTO source_code_scan(project_id,source_scan_id,file_path,rule_name,severity,summary,detail,line_from,line_to,confidence,status)
+        VALUES(#{projectId},#{scanId},#{filePath},#{ruleName},#{severity},#{summary},#{detail},#{line},#{line},#{confidence},'OPEN')
+    </insert>
+    <insert id="insertAnalyzedSecurityIssue" parameterType="map">
+        INSERT INTO security_issue(project_id,source_scan_id,category,title,description,file_path,risk_level,evidence,recommendation,status)
+        VALUES(#{projectId},#{scanId},#{category},#{title},#{description},#{filePath},#{riskLevel},#{evidence},#{recommendation},'OPEN')
+    </insert>
+    <insert id="insertProjectWorkspace">
+        INSERT INTO project_workspace(project_id,workspace_name,workspace_type) VALUES(#{projectId},#{workspaceName},#{workspaceType})
+    </insert>
+    <update id="updateProjectDashboard">
+        UPDATE project_dashboard SET summary=#{summary},updated_at=CURRENT_TIMESTAMP WHERE project_id=#{projectId}
+    </update>
+    <insert id="insertProjectDashboard">
+        INSERT INTO project_dashboard(project_id,summary,updated_at) VALUES(#{projectId},#{summary},CURRENT_TIMESTAMP)
+    </insert>
+    <insert id="insertCodeIssue">
+        INSERT INTO source_code_scan(project_id,file_path,rule_name,severity,summary,detail,confidence,status)
+        VALUES(#{projectId},#{filePath},#{ruleName},#{severity},#{summary},#{detail},1.0,'OPEN')
+    </insert>
+    <update id="updateCodeIssueReview">
+        UPDATE source_code_scan SET status=#{status},review_note=#{reviewNote}
+        WHERE project_id=#{projectId} AND id=#{issueId}
+    </update>
+    <update id="updateCodeIssueLlmReview">
+        UPDATE source_code_scan SET llm_explanation=#{explanation},llm_model=#{model},llm_reviewed_at=CURRENT_TIMESTAMP
+        WHERE project_id=#{projectId} AND id=#{issueId}
+    </update>
+    <insert id="insertSecurityIssue">
+        INSERT INTO security_issue(project_id,category,title,description,file_path,risk_level,evidence,recommendation,status)
+        VALUES(#{projectId},#{category},#{title},#{description},#{filePath},#{riskLevel},#{evidence},#{recommendation},'OPEN')
+    </insert>
+    <update id="updateSecurityIssueReview">
+        UPDATE security_issue SET status=#{status},review_note=#{reviewNote}
+        WHERE project_id=#{projectId} AND id=#{issueId}
+    </update>
+    <insert id="insertSecurityScan">
+        INSERT INTO security_scan(project_id,source_scan_id,scan_type,policy_name)
+        VALUES(#{projectId},#{sourceScanId},#{scanType},#{policyName})
+    </insert>
+    <insert id="insertSecurityExternalResult">
+        INSERT INTO security_external_result(project_id,tool_name,summary_text,payload_json)
+        VALUES(#{projectId},#{toolName},#{summaryText},#{payloadJson})
+    </insert>
+    <insert id="insertStandardTerm">
+        INSERT INTO standard_term(project_id,source_word,standard_word,match_status,recommendation,review_memo)
+        VALUES(#{projectId},#{sourceWord},#{standardWord},#{matchStatus},#{recommendation},#{reviewMemo})
+    </insert>
+    <update id="updateStandardTerm">
+        UPDATE standard_term SET standard_word=#{standardWord},match_status=#{matchStatus},
+        recommendation=#{recommendation},review_memo=#{reviewMemo},excluded=#{excluded}
+        WHERE project_id=#{projectId} AND id=#{termId}
+    </update>
+    <insert id="insertDbModel">
+        INSERT INTO db_model(project_id,name,description,ddl_text) VALUES(#{projectId},#{name},#{description},#{ddlText})
+    </insert>
+    <insert id="insertDbTable">
+        INSERT INTO db_table(db_model_id,name,description,primary_key_name)
+        SELECT #{modelId},#{name},#{description},#{primaryKeyName} FROM db_model
+        WHERE id=#{modelId} AND project_id=#{projectId}
+    </insert>
+    <insert id="insertDbColumn">
+        INSERT INTO db_column(db_table_id,name,data_type,nullable,default_value,is_primary,is_unique,is_indexed,description)
+        SELECT #{tableId},#{name},#{dataType},#{nullable},#{defaultValue},#{isPrimary},#{isUnique},#{isIndexed},#{description}
+        FROM db_table t JOIN db_model m ON m.id=t.db_model_id WHERE t.id=#{tableId} AND m.project_id=#{projectId}
+    </insert>
+    <insert id="insertDbRelation">
+        INSERT INTO db_relation(db_model_id,from_table_id,to_table_id,relation_type,from_column,to_column,description)
+        SELECT #{modelId},#{fromTableId},#{toTableId},#{relationType},#{fromColumn},#{toColumn},#{description}
+        FROM db_model m WHERE m.id=#{modelId} AND m.project_id=#{projectId}
+        AND EXISTS(SELECT 1 FROM db_table ft WHERE ft.id=#{fromTableId} AND ft.db_model_id=m.id)
+        AND EXISTS(SELECT 1 FROM db_table tt WHERE tt.id=#{toTableId} AND tt.db_model_id=m.id)
+    </insert>
+    <insert id="insertDbChange">
+        INSERT INTO db_change_history(project_id,entity_type,entity_name,change_type,detail_text)
+        VALUES(#{projectId},#{entityType},#{entityName},#{changeType},#{detailText})
+    </insert>
+    <insert id="insertDiagram">
+        INSERT INTO diagram(project_id,name,diagram_type,payload_json) VALUES(#{projectId},#{name},#{diagramType},#{payloadJson})
+    </insert>
+    <insert id="insertApiEndpoint">
+        INSERT INTO api_endpoint(project_id,api_group_id,method,path,summary,auth_required,request_schema_id,response_schema_id,status_code)
+        SELECT #{projectId},#{apiGroupId},#{method},#{path},#{summary},#{authRequired},#{requestSchemaId},#{responseSchemaId},#{statusCode}
+        WHERE (#{apiGroupId} IS NULL OR EXISTS(SELECT 1 FROM api_group WHERE id=#{apiGroupId} AND project_id=#{projectId}))
+        AND (#{requestSchemaId} IS NULL OR EXISTS(SELECT 1 FROM api_schema WHERE id=#{requestSchemaId} AND project_id=#{projectId}))
+        AND (#{responseSchemaId} IS NULL OR EXISTS(SELECT 1 FROM api_schema WHERE id=#{responseSchemaId} AND project_id=#{projectId}))
+    </insert>
+    <delete id="deleteSyncedApiEndpoints">
+        DELETE FROM api_endpoint WHERE project_id=#{projectId} AND source_type='SOURCE_SYNC'
+    </delete>
+    <insert id="insertSyncedApiEndpoint">
+        INSERT INTO api_endpoint(project_id,method,path,summary,auth_required,status_code,source_type)
+        VALUES(#{projectId},#{method},#{path},#{summary},'N',200,'SOURCE_SYNC')
+    </insert>
+    <insert id="insertApiGroup">
+        INSERT INTO api_group(project_id,name,description) VALUES(#{projectId},#{name},#{description})
+    </insert>
+    <insert id="insertApiSchema">
+        INSERT INTO api_schema(project_id,name,schema_type,payload_json) VALUES(#{projectId},#{name},#{schemaType},#{payloadJson})
+    </insert>
+    <insert id="insertApiAuthProfile">
+        INSERT INTO api_auth_profile(project_id,name,auth_type,config_json,is_default)
+        VALUES(#{projectId},#{name},#{authType},#{configJson},#{isDefault})
+    </insert>
+    <insert id="insertSampleDataset">
+        INSERT INTO sample_dataset(project_id,name,description,payload_json,is_shared)
+        VALUES(#{projectId},#{name},#{description},#{payloadJson},#{isShared})
+    </insert>
+    <insert id="insertSampleDatasetItem">
+        INSERT INTO sample_dataset_item(sample_dataset_id,item_key,item_value_json)
+        SELECT #{datasetId},#{itemKey},#{itemValueJson} FROM sample_dataset
+        WHERE id=#{datasetId} AND project_id=#{projectId}
+    </insert>
+    <insert id="insertApiTestCase">
+        INSERT INTO api_test_case(project_id,api_endpoint_id,auth_profile_id,name,request_json,expected_status_code,expected_response_json,sample_dataset_id)
+        VALUES(#{projectId},#{endpointId},#{authProfileId},#{name},#{requestJson},#{expectedStatusCode},#{expectedResponseJson},#{sampleDatasetId})
+    </insert>
+    <insert id="insertApiTestResult" parameterType="map">
+        INSERT INTO api_test_result(api_test_case_id,request_snapshot_json,response_snapshot_json,status_code,
+                                    result_status,message,duration_ms)
+        VALUES(#{testCaseId},#{requestSnapshot},#{responseSnapshot},#{statusCode},
+               #{resultStatus},#{message},#{durationMs})
+    </insert>
+    <insert id="insertWikiPage" parameterType="map" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO wiki_page(project_id,title,slug,content,tags,created_by)
+        VALUES(#{projectId},#{title},#{slug},#{content},#{tags},#{createdBy})
+    </insert>
+    <insert id="insertWikiVersion">
+        INSERT INTO wiki_page_version(wiki_page_id,version_no,content_snapshot,change_note,created_by)
+        VALUES(#{wikiPageId},(SELECT COUNT(*)+1 FROM wiki_page_version WHERE wiki_page_id=#{wikiPageId}),#{content},#{changeNote},#{createdBy})
+    </insert>
+    <update id="updateWikiPage">
+        UPDATE wiki_page SET title=#{title},content=#{content},tags=#{tags},updated_at=CURRENT_TIMESTAMP
+        WHERE project_id=#{projectId} AND id=#{wikiPageId}
+    </update>
+    <delete id="deleteWikiPage">DELETE FROM wiki_page WHERE project_id=#{projectId} AND id=#{wikiPageId}</delete>
+    <insert id="insertWbsItem">
+        INSERT INTO wbs_item(project_id,parent_id,title,description,priority,assignee_name,due_date)
+        VALUES(#{projectId},#{parentId},#{title},#{description},#{priority},#{assigneeName},NULLIF(#{dueDate},''))
+    </insert>
+    <update id="updateWbsItem">
+        UPDATE wbs_item SET status=#{status},progress=#{progress},updated_at=CURRENT_TIMESTAMP
+        WHERE project_id=#{projectId} AND id=#{wbsId}
+    </update>
+    <delete id="deleteWbsItem">DELETE FROM wbs_item WHERE project_id=#{projectId} AND id=#{wbsId}</delete>
+    <insert id="insertWbsNote">
+        INSERT INTO wbs_status_note(project_id,wbs_item_id,note_text,created_by)
+        VALUES(#{projectId},#{wbsId},#{noteText},#{createdBy})
+    </insert>
+    <insert id="insertWbsArtifactLink">
+        INSERT INTO wbs_artifact_link(project_id,wbs_item_id,artifact_id)
+        VALUES(#{projectId},#{wbsId},#{artifactId})
+    </insert>
+    <select id="selectStageAssignment" resultType="map">
+        SELECT * FROM project_stage_assignment WHERE project_id=#{projectId} AND stage_name=#{stageName}
+    </select>
+    <update id="updateStageAssignment" parameterType="map">
+        UPDATE project_stage_assignment
+        SET assignee_name=#{assigneeName},assignee_title=#{assigneeTitle},assignee_phone=#{assigneePhone},
+            assignee_email=#{assigneeEmail},role_name=#{roleName},status=#{status},updated_at=CURRENT_TIMESTAMP
+        WHERE project_id=#{projectId} AND stage_name=#{stageName}
+    </update>
+    <insert id="insertStageAssignment" parameterType="map">
+        INSERT INTO project_stage_assignment(project_id,stage_name,assignee_name,assignee_title,assignee_phone,assignee_email,role_name,status,updated_at)
+        VALUES(#{projectId},#{stageName},#{assigneeName},#{assigneeTitle},#{assigneePhone},#{assigneeEmail},#{roleName},#{status},CURRENT_TIMESTAMP)
+    </insert>
+    <insert id="insertStageHistory" parameterType="map">
+        INSERT INTO project_stage_history(project_id,stage_name,before_status,after_status,changed_by,change_note)
+        VALUES(#{projectId},#{stageName},#{beforeStatus},#{afterStatus},#{changedBy},#{changeNote})
+    </insert>
+    <update id="updateProjectCurrentStage">
+        UPDATE project SET current_stage=#{stageName},updated_at=CURRENT_TIMESTAMP WHERE id=#{projectId}
+    </update>
+    <insert id="insertAccessLog">
+        INSERT INTO access_log(project_id,actor,action,target_type,target_id,ip_address)
+        VALUES(#{projectId},#{actor},#{action},#{targetType},#{targetId},#{ipAddress})
+    </insert>
+    <insert id="insertArtifact">
+        INSERT INTO project_artifact(project_id,artifact_type,name,version_no,content_text,created_by)
+        VALUES(#{projectId},#{artifactType},#{name},
+        (SELECT COUNT(*)+1 FROM project_artifact WHERE project_id=#{projectId} AND artifact_type=#{artifactType}),
+        #{contentText},#{createdBy})
+    </insert>
+    <insert id="insertAttachment" parameterType="map" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO attachment(project_id,wiki_page_id,original_name,stored_name,file_path,mime_type,file_size,file_hash)
+        VALUES(#{projectId},#{wikiPageId},#{originalName},#{storedName},#{filePath},#{mimeType},#{fileSize},#{fileHash})
+    </insert>
+    <delete id="deleteAttachment">DELETE FROM attachment WHERE project_id=#{projectId} AND id=#{attachmentId}</delete>
+    <insert id="insertShareToken" parameterType="map" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO project_share_token(project_id,token_hash,label,expires_at,allow_download,enabled,created_by)
+        VALUES(#{projectId},#{tokenHash},#{label},#{expiresAt},#{allowDownload},'Y',#{createdBy})
+    </insert>
+    <update id="revokeShareToken">
+        UPDATE project_share_token SET enabled='N' WHERE project_id=#{projectId} AND id=#{shareId}
+    </update>
+</mapper>

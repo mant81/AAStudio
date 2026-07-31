@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: aastudio-test
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 26MB
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:sql/schema-sqlite.sql
+      data-locations: classpath:sql/data.sql
+
+app:
+  storage-root: build/test-storage
+  attachment:
+    max-size-bytes: 26214400
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    jdbc-url: jdbc:sqlite:file:aastudio-test?mode=memory&cache=shared
+    username:
+    password:
+    hikari:
+      maximum-pool-size: 1
+      minimum-idle: 1
+
+mybatis:
+  mapper-locations: classpath*:sql/**/*.xml
+  type-aliases-package: com.aastudio.domain

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Code Groups')}"></head>
+<body>
+<div th:replace="~{layout/shell :: topbar}"></div>
+<main class="page-shell">
+    <section class="hero-card">
+        <div class="eyebrow">Admin</div>
+        <h1>Code Group Management</h1>
+        <p class="lead">Manage shared code groups for the system.</p>
+        <div class="summary-row">
+            <div class="summary-card">
+                <strong th:text="${codeGroupCount}">0</strong>
+                <span>Groups</span>
+            </div>
+        </div>
+    </section>
+    <section class="hero-card">
+        <h2>New Code Group</h2>
+        <p class="lead">Add a reusable code group for shared application values.</p>
+        <form th:action="@{/code-groups}" method="post" class="stack">
+            <label><span>Group Code</span><input type="text" name="groupCode" /></label>
+            <label><span>Group Name</span><input type="text" name="groupName" /></label>
+            <label><span>Description</span><input type="text" name="description" /></label>
+            <label><span>Enabled</span><input type="text" name="enabled" placeholder="Y" /></label>
+            <button type="submit">Create Group</button>
+        </form>
+    </section>
+    <section class="hero-card">
+        <h2>Search Code Groups</h2>
+        <form th:action="@{/code-groups}" method="get" class="stack">
+            <label>
+                <span>Keyword</span>
+                <input type="text" name="q" th:value="${query}" placeholder="group code, name, or enabled" />
+            </label>
+            <button type="submit">Search</button>
+        </form>
+    </section>
+    <section class="grid">
+        <article class="card" th:if="${#lists.isEmpty(codeGroups)}">
+            <h2>No code groups yet</h2>
+            <p>Create the first shared code group to begin organizing application values.</p>
+        </article>
+        <article class="card" th:each="group : ${codeGroups}">
+            <h2><a th:href="@{/code-groups/{id}/edit(id=${group.id})}" th:text="${group.groupName}">group</a></h2>
+            <p th:text="${group.groupCode}">code</p>
+            <small th:text="${group.enabled}">enabled</small>
+            <div class="action-row">
+                <a class="ghost-button" th:href="@{/code-groups/{id}/edit(id=${group.id})}">Edit</a>
+                <form th:action="@{/code-groups/{id}/delete(id=${group.id})}" method="post">
+                    <button type="submit" class="danger-button">Delete</button>
+                </form>
+            </div>
+        </article>
+    </section>
+</main>
+<div th:replace="~{layout/footer :: footer}"></div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <title th:text="|${shared.project.name} · Readonly share|">Readonly share</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="share-page">
+<header class="share-header">
+    <div><span class="brand-mark">AA</span><strong>AAStudio readonly share</strong></div>
+    <span class="viewer-chip">VIEW ONLY</span>
+</header>
+<main class="share-shell">
+    <section class="hero-card">
+        <div class="eyebrow">Shared project</div>
+        <h1 th:text="${shared.project.name}">Project</h1>
+        <p class="lead" th:text="${shared.project.description}">Description</p>
+        <div class="task-meta"><span th:text="|Stage ${shared.project.currentStage ?: '-'}|">Stage</span><span th:text="${shared.project.status}">Status</span></div>
+    </section>
+
+    <div class="workbench-columns">
+        <section class="workspace-panel"><div class="panel-title"><div><h2>Project overview</h2><p>운영 요약</p></div></div><p th:text="${shared.dashboard == null ? '등록된 요약이 없습니다.' : shared.dashboard.SUMMARY}">Summary</p></section>
+        <section class="workspace-panel"><div class="panel-title"><div><h2>Stage contacts</h2><p>단계별 담당자</p></div></div><div class="record-list"><article th:each="stage:${shared.stages}"><div><strong th:text="${stage.STAGE_NAME}">Stage</strong><span th:text="${stage.STATUS}">READY</span></div><p th:text="|${stage['ASSIGNEE_NAME'] ?: 'Unassigned'} · ${stage['ASSIGNEE_TITLE'] ?: '-'} · ${stage['ROLE_NAME'] ?: '-'}|">owner</p><p th:text="|${stage['ASSIGNEE_PHONE'] ?: '-'} · ${stage['ASSIGNEE_EMAIL'] ?: '-'}|">contact</p></article><p class="empty-state" th:if="${#lists.isEmpty(shared.stages)}">담당자 정보가 없습니다.</p></div></section>
+    </div>
+
+    <section class="workspace-panel"><div class="panel-title"><div><h2>Diagrams</h2><p>공유된 설계 다이어그램</p></div></div><div class="record-list"><article th:each="item:${shared.diagrams}"><div><strong th:text="${item.NAME}">Diagram</strong><span th:text="${item.DIAGRAM_TYPE}">TYPE</span></div><div class="diagram-preview" th:attr="data-diagram-payload=${item.PAYLOAD_JSON}"><span class="empty-state">Rendering diagram…</span></div></article><p class="empty-state" th:if="${#lists.isEmpty(shared.diagrams)}">다이어그램이 없습니다.</p></div></section>
+
+    <div class="workbench-columns">
+        <section class="workspace-panel"><div class="panel-title"><div><h2>Wiki</h2><p>프로젝트 문서</p></div></div><div class="record-list"><article th:each="page:${shared.wikiPages}"><div><strong th:text="${page.TITLE}">Page</strong><span th:text="${page.TAGS}">tags</span></div><pre th:text="${page.CONTENT}">content</pre></article><p class="empty-state" th:if="${#lists.isEmpty(shared.wikiPages)}">Wiki 문서가 없습니다.</p></div></section>
+        <section class="workspace-panel"><div class="panel-title"><div><h2>WBS</h2><p>업무 구조와 진행 상태</p></div></div><div class="record-list"><article th:each="item:${shared.wbsItems}"><div><strong th:text="${item.TITLE}">Task</strong><span th:text="|${item.STATUS} · ${item.PROGRESS}%|">status</span></div><p th:text="${item.DESCRIPTION}">description</p></article><p class="empty-state" th:if="${#lists.isEmpty(shared.wbsItems)}">WBS 항목이 없습니다.</p></div></section>
+    </div>
+
+    <section class="workspace-panel"><div class="panel-title"><div><h2>Artifacts</h2><p>생성된 산출물</p></div></div><div class="record-list"><article th:each="item:${shared.artifacts}"><div><strong th:text="${item.NAME}">Artifact</strong><span th:text="|${item.ARTIFACT_TYPE} · v${item.VERSION_NO}|">type</span></div><details><summary>Preview</summary><pre th:text="${item.CONTENT_TEXT}">content</pre></details></article><p class="empty-state" th:if="${#lists.isEmpty(shared.artifacts)}">산출물이 없습니다.</p></div></section>
+
+    <section class="workspace-panel"><div class="panel-title"><div><h2>Files</h2><p th:text="${shared.allowDownload ? '다운로드가 허용된 공유입니다.' : '파일 목록만 공유됩니다.'}">Files</p></div></div><div class="record-list"><article th:each="item:${shared.attachments}"><div><strong th:text="${item.ORIGINAL_NAME}">File</strong><span th:text="|${item.FILE_SIZE} bytes|">size</span></div><a class="ghost-button" th:if="${shared.allowDownload}" th:href="@{/share/{token}/attachments/{attachmentId}(token=${shareToken},attachmentId=${item.ID})}">Download</a></article><p class="empty-state" th:if="${#lists.isEmpty(shared.attachments)}">첨부파일이 없습니다.</p></div></section>
+</main>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+spring:
+  server:
+    port: 8080  
+  application:
+    name: aastudio
+  thymeleaf:
+    cache: false
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 26MB
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:sql/schema-sqlite.sql
+      data-locations: classpath:sql/data.sql
+
+app:
+  storage-root: data
+  analysis-root: data/sources
+  attachment:
+    max-size-bytes: 26214400
+  api-test:
+    allowed-hosts: localhost,127.0.0.1,::1
+  local-llm:
+    base-url: http://127.0.0.1:11434
+    model: qwen2.5-coder:7b
+  datasource:
+    pool-name: aaPool
+    driver-class-name: org.sqlite.JDBC
+    jdbc-url: jdbc:sqlite:./data/aastudio.sqlite3
+    username:
+    password:
+    hikari:
+      connection-timeout: 10000
+      idle-timeout: 600000
+      maximum-pool-size: 1
+      minimum-idle: 1
+      leak-detection-threshold: 30000
+
+mybatis:
+  mapper-locations: classpath*:sql/**/*.xml
+  type-aliases-package: com.aastudio.domain
