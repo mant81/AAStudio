@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Detail</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<div class="project-detail" data-project-shell th:attr="data-project-id=${projectId}">
+    <header class="topbar compact">
+        <a class="brand" th:href="@{/}">
+            <span class="brand-mark">✦</span>
+            <span>Project Studio</span>
+        </a>
+        <div class="topbar-actions">
+            <a class="ghost-btn" th:href="@{/project}">Back</a>
+            <button class="ghost-btn" type="button" data-open-share>Share</button>
+            <button class="ghost-btn" type="button" data-open-settings>설정</button>
+        </div>
+    </header>
+
+    <main class="detail-shell">
+        <section class="detail-hero card">
+            <div>
+                <p class="eyebrow">Project Dashboard</p>
+                <h1 id="projectName" data-project-name>Project</h1>
+                <p class="lead">다이어그램, DB 모델링, API 명세서, WIKI를 하나의 프로젝트로 묶은 상세 화면입니다.</p>
+            </div>
+            <div class="detail-actions">
+                <button class="primary-btn" type="button" data-continue-work>최근 작업 이어가기</button>
+            </div>
+        </section>
+
+        <section class="stats-grid" data-section-tabs>
+                    <button class="card stat-card active" type="button" data-section-tab="diagram">
+                <div class="stat-top">
+                    <span class="icon sky">⟲</span>
+                    <span class="arrow">→</span>
+                </div>
+                <strong>다이어그램</strong>
+                <p>0개 항목</p>
+            </button>
+            <button class="card stat-card" type="button" data-section-tab="database">
+                <div class="stat-top">
+                    <span class="icon emerald">⌂</span>
+                    <span class="arrow">→</span>
+                </div>
+                <strong>DB 모델링</strong>
+                <p>0개 테이블</p>
+            </button>
+            <button class="card stat-card" type="button" data-section-tab="api-docs">
+                <div class="stat-top">
+                    <span class="icon amber">⌘</span>
+                    <span class="arrow">→</span>
+                </div>
+                <strong>API 명세서</strong>
+                <p>0개 엔드포인트</p>
+            </button>
+            <button class="card stat-card" type="button" data-section-tab="wiki">
+                <div class="stat-top">
+                    <span class="icon violet">✦</span>
+                    <span class="arrow">→</span>
+                </div>
+                <strong>WIKI</strong>
+                <p>0개 페이지</p>
+            </button>
+        </section>
+
+        <section class="section-frame card">
+            <div class="section-toolbar">
+                <div class="section-toolbar-left">
+                    <span class="toolbar-dot red"></span>
+                    <span class="toolbar-dot amber"></span>
+                    <span class="toolbar-dot green"></span>
+                </div>
+                <div class="section-toolbar-title" data-section-title>다이어그램</div>
+                <div class="section-toolbar-right" data-section-toolbar></div>
+            </div>
+
+            <div class="section-stack">
+                <section th:replace="~{fragments/diagram-panel :: diagramPanel}"></section>
+
+                <section class="section-panel" data-section-panel="database">
+                    <div class="db-layout">
+                        <div class="db-sidebar">
+                            <div class="db-head">
+                                <strong>Table Canvas</strong>
+                                <button class="ghost-btn" type="button" data-db-add-table>+ Table</button>
+                                <button class="ghost-btn" type="button" data-save-section="database">Save DB</button>
+                            </div>
+                            <div class="db-legend" data-db-table-list>
+                            </div>
+                        </div>
+                        <div class="db-canvas" data-db-canvas>
+                        </div>
+                        <div class="db-detail">
+                            <section class="inspector-section">
+                                <strong>Table</strong>
+                                <div class="inspector-form">
+                                    <label>Name <input class="text-input" type="text" data-db-table-name></label>
+                                    <label>Description <input class="text-input" type="text" data-db-table-description></label>
+                                    <label>Color <input class="text-input" type="text" data-db-table-color></label>
+                                    <button class="ghost-btn" type="button" data-db-table-save>Apply Table</button>
+                                    <button class="danger-btn" type="button" data-db-table-delete>Delete Table</button>
+                                </div>
+                            </section>
+                            <section class="inspector-section">
+                                <strong>Columns</strong>
+                                <div class="node-list" data-db-column-list></div>
+                                <div class="inspector-form">
+                                    <label>Column name <input class="text-input" type="text" data-db-column-name></label>
+                                    <label>Type <input class="text-input" type="text" data-db-column-type placeholder="VARCHAR"></label>
+                                    <label>Length <input class="text-input" type="number" min="1" data-db-column-length></label>
+                                    <label>Default <input class="text-input" type="text" data-db-column-default></label>
+                                    <div class="form-actions">
+                                        <button class="ghost-btn" type="button" data-db-column-add>Add Column</button>
+                                        <button class="ghost-btn" type="button" data-db-column-save>Apply Column</button>
+                                        <button class="danger-btn" type="button" data-db-column-delete>Delete Column</button>
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="inspector-section">
+                                <strong>Relation</strong>
+                                <div class="inspector-form">
+                                    <label>From Column <select class="select" data-db-rel-source></select></label>
+                                    <label>To Table <select class="select" data-db-rel-target-table></select></label>
+                                    <label>To Column <select class="select" data-db-rel-target-column></select></label>
+                                    <button class="ghost-btn" type="button" data-db-rel-save>Connect</button>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section-panel" data-section-panel="api-docs">
+                    <div class="api-layout">
+                        <aside class="api-left">
+                            <div class="api-head">
+                                <strong>API Docs</strong>
+                                <button class="ghost-btn" type="button" data-api-group-add>+ Group</button>
+                                <button class="ghost-btn" type="button" data-save-section="api-docs">Save API</button>
+                            </div>
+                            <div class="api-group-list" data-api-group-list></div>
+                        </aside>
+                        <div class="api-main">
+                            <div class="api-topbar">
+                                <span class="badge get" data-api-method>GET</span>
+                                <span class="api-path" data-api-path>/api/auth/me</span>
+                                <div class="api-actions">
+                                    <button class="ghost-btn" type="button" data-api-endpoint-add>+ Endpoint</button>
+                                </div>
+                            </div>
+                            <section class="api-card">
+                                <h3>Group</h3>
+                                <div class="inspector-form">
+                                    <label>Name <input class="text-input" type="text" data-api-group-name></label>
+                                    <label>Description <input class="text-input" type="text" data-api-group-description></label>
+                                    <label>Base URL <input class="text-input" type="text" data-api-group-baseurl></label>
+                                    <label>Auth Token <input class="text-input" type="text" data-api-group-token></label>
+                                    <button class="ghost-btn" type="button" data-api-group-save>Apply Group</button>
+                                    <button class="danger-btn" type="button" data-api-group-delete>Delete Group</button>
+                                </div>
+                            </section>
+                            <div class="api-grid">
+                                <section class="api-card">
+                                    <h3>Endpoint</h3>
+                                    <div class="inspector-form">
+                                        <label>Method <input class="text-input" type="text" data-api-endpoint-method></label>
+                                        <label>Path <input class="text-input" type="text" data-api-endpoint-path></label>
+                                        <label>Summary <input class="text-input" type="text" data-api-endpoint-summary></label>
+                                        <label>Description <input class="text-input" type="text" data-api-endpoint-description></label>
+                                        <label>Request Body <textarea class="text-area" rows="4" data-api-endpoint-request></textarea></label>
+                                        <label>Response Example <textarea class="text-area" rows="4" data-api-endpoint-response></textarea></label>
+                                        <button class="ghost-btn" type="button" data-api-endpoint-save>Apply Endpoint</button>
+                                        <button class="danger-btn" type="button" data-api-endpoint-delete>Delete Endpoint</button>
+                                    </div>
+                                </section>
+                                <section class="api-card">
+                                    <h3>Parameters / Status</h3>
+                                    <div class="inspector-form">
+                                        <label>Parameters <textarea class="text-area" rows="4" data-api-endpoint-params></textarea></label>
+                                        <label>Status Codes <textarea class="text-area" rows="4" data-api-endpoint-status></textarea></label>
+                                    </div>
+                                </section>
+                            </div>
+                            <section class="api-card full">
+                                <h3>End points</h3>
+                                <div class="api-list" data-api-endpoint-list>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section-panel" data-section-panel="wiki">
+                    <div class="wiki-layout">
+                        <aside class="wiki-sidebar">
+                            <div class="wiki-head">
+                                <strong>WIKI</strong>
+                                <button class="ghost-btn" type="button" data-wiki-page-add>+ Page</button>
+                                <button class="ghost-btn" type="button" data-save-section="wiki">Save WIKI</button>
+                            </div>
+                            <div class="wiki-tree" data-wiki-tree>
+                            </div>
+                        </aside>
+                        <div class="wiki-editor">
+                            <div class="wiki-editor-head">
+                                <div>
+                                    <h3 data-wiki-title>시작 가이드</h3>
+                                    <p>좌측 사이드바에서 페이지를 선택하거나 새 페이지를 만드세요.</p>
+                                </div>
+                                <div class="wiki-actions">
+                                    <button class="ghost-btn" type="button" data-wiki-page-delete>Delete Page</button>
+                                </div>
+                            </div>
+                            <div class="wiki-content">
+                                <label class="wiki-block title">Title</label>
+                                <input class="text-input" type="text" data-wiki-page-title>
+                                <label class="wiki-block title">Content</label>
+                                <textarea class="text-area" rows="14" data-wiki-page-content></textarea>
+                                <div class="wiki-block">Ctrl+S 대신 저장 버튼으로 로컬 스토리지에 반영됩니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <section class="recent-wrap">
+            <div class="section-head">
+                <h2>최근 활동</h2>
+            </div>
+            <div class="card recent-card">
+                <div class="recent-empty" data-recent-empty>
+                    <p>아직 활동 내역이 없습니다.</p>
+                    <span>메뉴를 선택하여 작업을 시작해보세요.</span>
+                </div>
+                <div class="recent-list" data-recent-list hidden>
+                    <a class="recent-item" href="javascript:void(0)" data-section="diagram"><span>Diagram</span><small>08/05 14:20</small></a>
+                    <a class="recent-item" href="javascript:void(0)" data-section="database"><span>Database</span><small>08/05 13:44</small></a>
+                    <a class="recent-item" href="javascript:void(0)" data-section="api-docs"><span>API Docs</span><small>08/05 13:10</small></a>
+                    <a class="recent-item" href="javascript:void(0)" data-section="wiki"><span>Wiki</span><small>08/05 12:58</small></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="dialog-backdrop" data-settings-dialog hidden>
+        <section class="dialog card">
+            <div class="dialog-head">
+                <div>
+                    <h3>프로젝트 설정</h3>
+                    <p>프로젝트 이름 변경 또는 삭제를 진행할 수 있습니다.</p>
+                </div>
+                <button class="icon-btn" type="button" data-close-settings aria-label="Close">×</button>
+            </div>
+            <div class="dialog-body">
+                <form class="project-form">
+                    <label>
+                        <span>프로젝트 이름 변경</span>
+                        <input id="renameInput" class="text-input" type="text" value="Project">
+                    </label>
+                    <div class="form-actions">
+                        <button class="secondary-btn" type="button" data-save-rename>이름 저장</button>
+                    </div>
+                </form>
+                <div class="danger-box">
+                    <strong>프로젝트 삭제</strong>
+                    <p>삭제 시 복구할 수 없습니다.</p>
+                    <button class="danger-btn" type="button" data-delete-project>프로젝트 삭제</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="dialog-backdrop share" data-share-dialog hidden>
+        <section class="dialog card">
+            <div class="dialog-head">
+                <div>
+                    <h3>공유 링크</h3>
+                    <p>읽기 전용 링크가 생성됩니다.</p>
+                </div>
+                <button class="icon-btn" type="button" data-close-share aria-label="Close">×</button>
+            </div>
+            <div class="share-box">
+                <input class="text-input" value="https://example.com/share" readonly>
+                <button class="primary-btn" type="button" data-copy-share>링크 복사</button>
+            </div>
+        </section>
+    </div>
+</div>
+<script th:src="@{/js/diagram-editor.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Entry</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<div class="project-entry">
+    <header class="topbar compact">
+        <a class="brand" th:href="@{/}">
+            <span class="brand-mark">✦</span>
+            <span>Project Studio</span>
+        </a>
+        <div class="topbar-actions">
+            <a class="ghost-btn" th:href="@{/project/new}">+ Create</a>
+            <a class="ghost-btn" th:href="@{/}">Home</a>
+        </div>
+    </header>
+
+    <div class="entry-shell">
+        <aside class="entry-sidebar">
+            <div class="entry-sidebar-head">
+                <div class="entry-sidebar-title">
+                    <span class="eyebrow tiny">Project</span>
+                    <strong>Project</strong>
+                </div>
+                <button class="icon-btn" type="button" data-collapse-sidebar aria-label="Toggle sidebar">☰</button>
+            </div>
+
+            <div class="entry-sidebar-body">
+                <p class="sidebar-note">Select or create a project.</p>
+                <div class="entry-stats">
+                    <div class="entry-stat">
+                        <span>Projects</span>
+                    <strong data-project-count>0</strong>
+                </div>
+                <div class="entry-stat">
+                    <span>Last Updated</span>
+                        <strong data-project-last-updated>-</strong>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="entry-nav">
+                <a class="entry-nav-item active" href="javascript:void(0)">Dashboard</a>
+                <a class="entry-nav-item" href="javascript:void(0)">다이어그램</a>
+                <a class="entry-nav-item" href="javascript:void(0)">DB Modeling</a>
+                <a class="entry-nav-item" href="javascript:void(0)">API Docs</a>
+                <a class="entry-nav-item" href="javascript:void(0)">WIKI</a>
+            </nav>
+        </aside>
+
+        <main class="entry-main">
+            <section class="entry-main-stack">
+                <section class="empty-state card" data-project-empty>
+                    <h1>등록된 프로젝트가 없습니다</h1>
+                    <p>오른쪽 상단의 Create 버튼으로 새 프로젝트를 만들 수 있습니다.</p>
+                    <div class="empty-actions">
+                        <a class="primary-btn" th:href="@{/project/new}">Create Project</a>
+                    </div>
+                </section>
+                <section class="project-grid" data-project-grid hidden></section>
+            </section>
+        </main>
+    </div>
+</div>
+<script th:src="@{/js/repository.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

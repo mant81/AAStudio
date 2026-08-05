@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<section class="section-panel active" data-section-panel="diagram" th:fragment="diagramPanel">
+    <div class="diagram-frame">
+        <div class="diagram-topbar">
+            <div class="diagram-topbar-left">
+                <button class="ghost-btn" type="button" data-diagram-create>+ 다이어그램</button>
+                <div class="diagram-switcher" data-diagram-switcher></div>
+            </div>
+            <div class="diagram-topbar-right">
+                <button class="ghost-btn" type="button" data-diagram-add-node>노드</button>
+                <button class="ghost-btn" type="button" data-diagram-add-edge>연결선</button>
+                <button class="ghost-btn" type="button" data-diagram-zoom-out>−</button>
+                <button class="ghost-btn" type="button" data-diagram-zoom-reset>100%</button>
+                <button class="ghost-btn" type="button" data-diagram-zoom-in>+</button>
+                <button class="ghost-btn" type="button" data-save-section="diagram">저장</button>
+                <button class="ghost-btn" type="button" data-open-share>공유</button>
+            </div>
+        </div>
+
+        <div class="diagram-workspace">
+            <aside class="diagram-toolbar">
+                <div class="diagram-toolbar-group">
+                    <div class="diagram-toolbar-title">노드 팔레트</div>
+                    <div class="diagram-category-list">
+                        <button class="diagram-category-item active" type="button">기본</button>
+                        <button class="diagram-category-item" type="button">AWS</button>
+                        <button class="diagram-category-item" type="button">GCP</button>
+                        <button class="diagram-category-item" type="button">Azure</button>
+                        <button class="diagram-category-item" type="button">인프라</button>
+                        <button class="diagram-category-item" type="button">모델링</button>
+                    </div>
+                </div>
+
+                <div class="diagram-toolbar-group">
+                    <div class="diagram-node-grid" data-node-palette>
+                        <button class="palette-item" type="button" data-node-type="server">
+                            <span class="palette-icon">◫</span>
+                            <span>
+                                <strong>서버</strong>
+                                <small>API / backend</small>
+                            </span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="api">
+                            <span class="palette-icon">⌘</span>
+                            <span>
+                                <strong>API</strong>
+                                <small>endpoint / service</small>
+                            </span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="database">
+                            <span class="palette-icon">▦</span>
+                            <span>
+                                <strong>데이터베이스</strong>
+                                <small>table / storage</small>
+                            </span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="external">
+                            <span class="palette-icon">☁</span>
+                            <span>
+                                <strong>외부 서비스</strong>
+                                <small>third-party</small>
+                            </span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="client">
+                            <span class="palette-icon">▣</span>
+                            <span>
+                                <strong>클라이언트</strong>
+                                <small>web / app</small>
+                            </span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="queue">
+                            <span class="palette-icon">≣</span>
+                            <span>
+                                <strong>메시지 큐</strong>
+                                <small>async / buffer</small>
+                            </span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="user">
+                            <span class="palette-icon">◉</span>
+                            <span>
+                                <strong>사용자</strong>
+                                <small>actor / person</small>
+                            </span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="mobile">
+                            <span class="palette-icon">▤</span>
+                            <span>
+                                <strong>모바일</strong>
+                                <small>mobile app</small>
+                            </span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="page">
+                            <span class="palette-icon">▣</span>
+                            <span>
+                                <strong>페이지</strong>
+                                <small>screen / route</small>
+                            </span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="note">
+                            <span class="palette-icon">✎</span>
+                            <span>
+                                <strong>메모</strong>
+                                <small>annotation</small>
+                            </span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="aws-ec2">
+                            <span class="palette-icon">⟐</span>
+                            <span><strong>EC2</strong><small>AWS compute</small></span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="aws-lambda">
+                            <span class="palette-icon">λ</span>
+                            <span><strong>Lambda</strong><small>serverless</small></span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="aws-s3">
+                            <span class="palette-icon">⬒</span>
+                            <span><strong>S3</strong><small>object storage</small></span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="aws-rds">
+                            <span class="palette-icon">▦</span>
+                            <span><strong>RDS</strong><small>relational db</small></span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="aws-dynamodb">
+                            <span class="palette-icon">▦</span>
+                            <span><strong>DynamoDB</strong><small>nosql db</small></span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="aws-sqs">
+                            <span class="palette-icon">≣</span>
+                            <span><strong>SQS</strong><small>queue</small></span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="aws-sns">
+                            <span class="palette-icon">◔</span>
+                            <span><strong>SNS</strong><small>pub/sub</small></span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="aws-cloudfront">
+                            <span class="palette-icon">☍</span>
+                            <span><strong>CloudFront</strong><small>cdn</small></span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="aws-api-gateway">
+                            <span class="palette-icon">⌘</span>
+                            <span><strong>API Gateway</strong><small>gateway</small></span>
+                        </button>
+                        <button class="palette-item" type="button" data-node-type="aws-elb">
+                            <span class="palette-icon">⇄</span>
+                            <span><strong>ELB</strong><small>load balancer</small></span>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="diagram-canvas-area">
+                <div class="diagram-canvas-head">
+                    <div>
+                        <strong data-diagram-name>다이어그램</strong>
+                        <p data-diagram-meta>0 nodes / 0 edges</p>
+                    </div>
+                    <div class="diagram-canvas-tools">
+                        <button class="ghost-btn" type="button" data-diagram-pan-toggle>Pan Mode</button>
+                        <button class="ghost-btn" type="button" data-diagram-fit-view>Fit View</button>
+                        <span class="small-note" data-diagram-viewport>100% / drag to move</span>
+                    </div>
+                </div>
+
+                <div class="diagram-editor-body">
+                    <div class="diagram-canvas-wrap">
+                        <div class="mock-canvas large" data-diagram-canvas></div>
+                        <div class="diagram-float panel-one">Zoom 100%</div>
+                        <div class="diagram-float panel-two" data-diagram-stats>0 nodes</div>
+                        <div class="diagram-bottom-panel">
+                            <span data-diagram-bottom-summary>선택 항목 없음</span>
+                            <span class="diagram-bottom-divider"></span>
+                            <button class="ghost-btn" type="button" data-diagram-pan-toggle>Pan Mode</button>
+                        </div>
+                    </div>
+
+                    <aside class="diagram-inspector">
+                        <div class="inspector-section">
+                            <strong>선택 노드</strong>
+                            <div class="inspector-form">
+                                <label>Label <input class="text-input" type="text" data-node-label></label>
+                                <label>Type <input class="text-input" type="text" data-node-type-input></label>
+                                <label>Color <input class="text-input" type="text" data-node-color></label>
+                                <label>Description <input class="text-input" type="text" data-node-description></label>
+                                <button class="ghost-btn" type="button" data-node-save>적용</button>
+                                <button class="danger-btn" type="button" data-node-delete>노드 삭제</button>
+                            </div>
+                        </div>
+
+                        <div class="inspector-section">
+                            <strong>선택 연결선</strong>
+                            <div class="inspector-form">
+                                <label>Label <input class="text-input" type="text" data-edge-edit-label></label>
+                                <label>Arrow
+                                    <select class="select" data-edge-arrow>
+                                        <option value="none">None</option>
+                                        <option value="start">Start</option>
+                                        <option value="end" selected>End</option>
+                                        <option value="both">Both</option>
+                                    </select>
+                                </label>
+                                <label>Curve <input class="text-input" type="range" min="0" max="1" step="0.05" data-edge-curve></label>
+                                <label>Stroke Width <input class="text-input" type="number" min="1" max="8" data-edge-stroke></label>
+                                <label>Color <input class="text-input" type="text" data-edge-color></label>
+                                <button class="ghost-btn" type="button" data-edge-save>적용</button>
+                                <button class="danger-btn" type="button" data-edge-delete-selected>연결선 삭제</button>
+                            </div>
+                        </div>
+
+                        <div class="inspector-section">
+                            <strong>Connections</strong>
+                            <div class="inspector-form">
+                                <label>From <select class="select" data-edge-source></select></label>
+                                <label>To <select class="select" data-edge-target></select></label>
+                                <label>Label <input class="text-input" type="text" data-edge-label></label>
+                                <button class="ghost-btn" type="button" data-edge-create>Connect</button>
+                            </div>
+                        </div>
+
+                        <div class="inspector-section">
+                            <strong>Edges</strong>
+                            <div class="node-list" data-edge-list></div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<div class="simple-page">
+    <div class="card simple-card share-card">
+        <p class="eyebrow">Share</p>
+        <h1>공유 다이어그램</h1>
+        <p class="muted">읽기 전용 링크입니다. 토큰이 없으면 invalid 상태, 토큰이 있으면 mock 뷰어를 보여줍니다.</p>
+        <div class="share-status" data-share-status>loading</div>
+        <a class="primary-btn" th:href="@{/}">Home</a>
+    </div>
+</div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>
