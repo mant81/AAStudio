@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diagram Palette Builder</title>
+  <style>
+    :root{--bg:#f8fafc;--panel:#fff;--panel-soft:#f9fafb;--line:#e5e7eb;--line-strong:#cbd5e1;--text:#0f172a;--muted:#64748b;--accent:#2563eb;--accent-soft:rgba(37,99,235,.12);--shadow:0 10px 24px rgba(15,23,42,.08);--canvas-grid:rgba(37,99,235,.05);--edge:#64748b}
+    body.dark{--bg:#0b1020;--panel:#111827;--panel-soft:#0f172a;--line:#263244;--line-strong:#3b4a62;--text:#e5e7eb;--muted:#94a3b8;--accent:#60a5fa;--accent-soft:rgba(96,165,250,.14);--shadow:0 14px 28px rgba(0,0,0,.35);--canvas-grid:rgba(148,163,184,.08);--edge:#93c5fd}
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .app{height:100%;display:grid;grid-template-rows:58px 1fr}
+    .header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+    .picker-wrap{position:relative;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .picker-chip{height:32px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+    .picker-chip.active{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent-soft)}
+    .brand-icon{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;flex:none}
+    .brand-icon svg{width:18px;height:18px;display:block;stroke:currentColor;fill:none}
+    .brand-basic{color:#64748b}.brand-aws{color:#f59e0b}.brand-azure{color:#0078D4}.brand-gcp{color:#4285F4}.brand-infra{color:#475569}.brand-model{color:#8b5cf6}
+    .picker-menu{position:absolute;top:calc(100% + 8px);left:0;z-index:40;width:min(820px,calc(100vw - 24px));border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);padding:10px}
+    .menu-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px;padding:0 2px}
+    .menu-title{font-size:15px;font-weight:800;letter-spacing:-.02em}
+    .menu-subtitle{font-size:12px;color:var(--muted)}
+    .menu-search{width:100%;height:34px;border:1px solid var(--line);border-radius:10px;background:var(--panel-soft);color:var(--text);padding:0 10px;font-size:12px;outline:none;margin:0 0 8px}
+    .menu-section-title{display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;font-size:12px;font-weight:800;letter-spacing:-.01em;color:var(--text)}
+    .menu-section-title small{color:var(--muted);font-size:11px;font-weight:600}
+    .menu-list{display:flex;flex-direction:column;gap:5px;max-height:420px;overflow:auto;padding-right:1px}
+    .menu-item{border:1px solid var(--line);border-radius:12px;background:var(--panel-soft);padding:7px 8px;cursor:pointer;display:flex;align-items:center;gap:7px;min-height:42px}
+    .menu-item:hover{border-color:var(--line-strong);background:var(--panel)}
+    .menu-item .meta{min-width:0;flex:1;margin-left:2px}
+    .menu-item .label{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.05}
+    .menu-item .desc{font-size:10px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.05}
+    .menu-kind{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);flex:none}
+    .menu-kind .dot{width:8px;height:8px;border-radius:999px;flex:none;background:currentColor}
+    .svc-icon{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;background:color-mix(in srgb, currentColor 12%, transparent);border:1px solid color-mix(in srgb, currentColor 24%, transparent);color:currentColor}
+    .svc-icon svg{width:16px;height:16px;display:block;stroke:currentColor;fill:none}
+    .icon-basic{color:#64748b}.icon-aws{color:#f59e0b}.icon-azure{color:#0ea5e9}.icon-gcp{color:#4285F4}.icon-infra{color:#475569}.icon-model{color:#8b5cf6}
+    .empty-state{padding:10px 2px 6px;color:var(--muted);font-size:12px}
+    .actions{display:flex;align-items:center;gap:8px}.actions button{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:10px;height:34px;padding:0 11px;cursor:pointer}
+    .body{position:relative;min-height:0}
+    .react-flow__pane{position:absolute;inset:0;overflow:hidden}
+    .react-flow__viewport{position:absolute;inset:0;transform-origin:0 0;background:linear-gradient(var(--canvas-grid) 1px,transparent 1px),linear-gradient(90deg,var(--canvas-grid) 1px,transparent 1px);background-size:24px 24px}
+    .react-flow__edges,.react-flow__nodes,.react-flow__edgelabel-renderer,.react-flow__viewport-portal{position:absolute;inset:0}
+    svg{width:100%;height:100%;pointer-events:none}
+    .node{position:absolute;width:170px;border-radius:12px;border:2px solid var(--line-strong);background:var(--panel);box-shadow:var(--shadow);overflow:visible;pointer-events:all;user-select:none}
+    .node-inner{padding:12px 14px;display:flex;align-items:center;gap:12px;min-width:0}
+    .node-icon{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;flex:none;color:#fff;font-size:11px;font-weight:700}
+    .node-icon.aws{background:linear-gradient(135deg,#f59e0b,#d97706)}.node-icon.azure{background:linear-gradient(135deg,#0ea5e9,#2563eb)}.node-icon.infra{background:linear-gradient(135deg,#64748b,#334155)}.node-icon.model{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
+    .node-icon svg{width:22px;height:22px;display:block;stroke:currentColor;fill:none}
+    .node-label{min-width:0;flex:1}.node-label p{margin:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.node-label small{display:block;margin-top:2px;color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .handle{position:absolute;width:6px;height:6px;border-radius:999px;background:var(--accent);border:1px solid var(--panel);box-shadow:0 0 0 1px rgba(0,0,0,.06)}.handle.top{top:-3px;left:50%;transform:translateX(-50%)}.handle.right{right:-3px;top:50%;transform:translateY(-50%)}.handle.bottom{bottom:-3px;left:50%;transform:translateX(-50%)}.handle.left{left:-3px;top:50%;transform:translateY(-50%)}
+    .hint{position:absolute;right:12px;bottom:12px;z-index:15;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--panel) 94%,transparent);color:var(--muted);font-size:12px}
+    .menu{position:absolute;z-index:30;min-width:170px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--shadow);padding:6px}.menu button{width:100%;border:0;background:transparent;color:var(--text);text-align:left;padding:9px 10px;border-radius:8px;cursor:pointer}.menu button:hover{background:var(--panel-soft)}.hidden{display:none !important}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="picker-wrap">
+        <button class="picker-chip active" data-tab="basic" type="button"><span class="brand-icon brand-basic">◫</span><span>기본</span></button>
+        <button class="picker-chip" data-tab="aws" type="button"><span class="brand-icon brand-aws"><svg viewBox="0 0 24 24"><path d="M7 16c4-5 8-7 14-8"/><path d="M18 5l3 3-3 3"/><path d="M8 17c3 1 6 1 9 0"/></svg></span><span>AWS</span></button>
+        <button class="picker-chip" data-tab="azure" type="button"><span class="brand-icon brand-azure"><svg viewBox="0 0 24 24"><path d="M5.5 20.5H20L14.4 8.2 12 14.6l3.8 5.9H5.5Z"/><path d="M13.3 4.2 7.2 9.5 4 18.3h4.4l5.9-14.1z"/></svg></span><span>Azure</span></button>
+        <button class="picker-chip" data-tab="gcp" type="button"><span class="brand-icon brand-gcp"><svg viewBox="0 0 24 24"><path d="M12.19 2.38a9.344 9.344 0 0 0-9.234 6.893c.053-.02-.055.013 0 0-3.875 2.551-3.922 8.11-.247 10.941l.006-.007-.007.03a6.717 6.717 0 0 0 4.077 1.356h5.173l.03.03h5.192c6.687.053 9.376-8.605 3.835-12.35a9.365 9.365 0 0 0-8.825-6.893z"/></svg></span><span>GCP</span></button>
+        <button class="picker-chip" data-tab="infra" type="button"><span class="brand-icon brand-infra"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg></span><span>인프라</span></button>
+        <button class="picker-chip" data-tab="model" type="button"><span class="brand-icon brand-model"><svg viewBox="0 0 24 24"><path d="M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="3.5"/></svg></span><span>일반 모델링</span></button>
+        <div class="picker-menu hidden" id="paletteMenu" role="menu"></div>
+      </div>
+      <div class="actions"><button id="toggleTheme">Dark</button></div>
+    </header>
+    <main class="body">
+      <div class="react-flow__pane draggable" id="pane">
+        <div class="react-flow__viewport xyflow__viewport react-flow__container" id="viewport">
+          <div class="react-flow__edges" id="edges"><svg id="edgeSvg"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--edge)"></path></marker></defs></svg></div>
+          <div class="react-flow__edgelabel-renderer"></div>
+          <div class="react-flow__nodes" id="nodes"></div>
+          <div class="react-flow__viewport-portal"></div>
+        </div>
+      </div>
+      <div class="hint">Drag nodes, right click for menu, click dot to connect</div>
+      <div id="menu" class="menu hidden"></div>
+    </main>
+  </div>
+  <script>
+    const pane=document.getElementById('pane'),nodesEl=document.getElementById('nodes'),edgeSvg=document.getElementById('edgeSvg'),menu=document.getElementById('menu'),toggleThemeBtn=document.getElementById('toggleTheme'),paletteMenu=document.getElementById('paletteMenu'),pickerChips=[...document.querySelectorAll('.picker-chip')],STORAGE_KEY='reactflow-style-theme';
+    let nodes=[],edges=[],nextId=1,zCounter=1,dragging=null,dragOffset={x:0,y:0},connectingFrom=null,selectedId=null;
+    const PALETTE_GROUPS={
+      basic:{name:'기본',nodes:[
+        {type:'server',icon:'server',label:'서버',color:'text-blue-500'},
+        {type:'database',icon:'database',label:'데이터베이스',color:'text-emerald-500'},
+        {type:'api',icon:'globe',label:'API',color:'text-orange-500'},
+        {type:'external',icon:'cloud',label:'외부 서비스',color:'text-purple-500'},
+        {type:'client',icon:'monitor',label:'클라이언트',color:'text-pink-500'},
+        {type:'queue',icon:'layers',label:'메시지 큐',color:'text-yellow-500'},
+        {type:'user',icon:'users',label:'사용자',color:'text-slate-500'},
+        {type:'mobile',icon:'smartphone',label:'모바일',color:'text-teal-500'},
+      ]},
+      aws:{name:'AWS',nodes:[
+        {type:'aws-ec2',icon:'server',label:'EC2',color:'text-[#FF9900]'},
+        {type:'aws-lambda',icon:'zap',label:'Lambda',color:'text-[#FF9900]'},
+        {type:'aws-s3',icon:'bucket',label:'S3',color:'text-[#569A31]'},
+        {type:'aws-rds',icon:'database',label:'RDS',color:'text-[#3B48CC]'},
+        {type:'aws-dynamodb',icon:'database',label:'DynamoDB',color:'text-[#4053D6]'},
+        {type:'aws-sqs',icon:'queue',label:'SQS',color:'text-[#FF4F8B]'},
+        {type:'aws-sns',icon:'radio',label:'SNS',color:'text-[#FF4F8B]'},
+        {type:'aws-cloudfront',icon:'globe',label:'CloudFront',color:'text-[#8C4FFF]'},
+        {type:'aws-api-gateway',icon:'api',label:'API Gateway',color:'text-[#FF4F8B]'},
+        {type:'aws-elb',icon:'workflow',label:'ELB',color:'text-[#8C4FFF]'},
+      ]},
+      gcp:{name:'GCP',nodes:[
+        {type:'gcp-compute',icon:'server',label:'Compute Engine',color:'text-[#4285F4]'},
+        {type:'gcp-functions',icon:'zap',label:'Cloud Functions',color:'text-[#4285F4]'},
+        {type:'gcp-storage',icon:'bucket',label:'Cloud Storage',color:'text-[#4285F4]'},
+        {type:'gcp-sql',icon:'database',label:'Cloud SQL',color:'text-[#4285F4]'},
+        {type:'gcp-pubsub',icon:'radio',label:'Pub/Sub',color:'text-[#4285F4]'},
+      ]},
+      azure:{name:'Azure',nodes:[
+        {type:'azure-vm',icon:'server',label:'Virtual Machines',color:'text-[#0078D4]'},
+        {type:'azure-functions',icon:'zap',label:'Functions',color:'text-[#0078D4]'},
+        {type:'azure-blob',icon:'bucket',label:'Blob Storage',color:'text-[#0078D4]'},
+        {type:'azure-sql',icon:'database',label:'SQL Database',color:'text-[#0078D4]'},
+      ]},
+      infra:{name:'인프라',nodes:[
+        {type:'docker',icon:'docker',label:'Docker',color:'text-[#2496ED]'},
+        {type:'kubernetes',icon:'kubernetes',label:'Kubernetes',color:'text-[#326CE5]'},
+        {type:'redis',icon:'redis',label:'Redis',color:'text-[#DC382D]'},
+        {type:'elasticsearch',icon:'search',label:'Elasticsearch',color:'text-[#005571]'},
+        {type:'kafka',icon:'kafka',label:'Kafka',color:'text-slate-700'},
+        {type:'nginx',icon:'server',label:'Nginx',color:'text-[#009639]'},
+        {type:'cdn',icon:'globe',label:'CDN',color:'text-cyan-500'},
+        {type:'loadbalancer',icon:'workflow',label:'Load Balancer',color:'text-indigo-500'},
+        {type:'firewall',icon:'shield',label:'Firewall',color:'text-red-500'},
+      ]},
+      model:{name:'일반 모델링',nodes:[
+        {type:'model-process',icon:'process',label:'프로세스',color:'text-slate-700'},
+        {type:'model-decision',icon:'decision',label:'의사결정',color:'text-amber-600'},
+        {type:'model-start-end',icon:'start-end',label:'시작/종료',color:'text-emerald-600'},
+        {type:'model-document',icon:'document',label:'문서',color:'text-blue-600'},
+        {type:'model-input-output',icon:'input-output',label:'입출력',color:'text-cyan-600'},
+        {type:'model-subprocess',icon:'subprocess',label:'서브프로세스',color:'text-violet-600'},
+        {type:'model-data-store',icon:'database',label:'데이터 저장소',color:'text-indigo-600'},
+        {type:'model-text',icon:'text',label:'텍스트',color:'text-rose-600'},
+      ]},
+    };
+    function parseFields(raw){return String(raw).split(',').map(pair=>{const[name,type]=pair.split(':').map(s=>(s||'').trim());return{name:name||'field',type:type||'text'}})}
+    function createNode(kind,title,fields,x,y){const node={id:nextId++,kind,title,fields,x,y,z:zCounter++};nodes.push(node);render();return node}
+    function nodeAnchor(node){return{x:node.x+170,y:node.y+30}}
+    function canConnect(a,b){if(!a||!b||a.id===b.id)return false;if(a.kind==='security'||b.kind==='security')return a.kind!==b.kind;if((a.kind==='db'&&b.kind==='storage')||(a.kind==='storage'&&b.kind==='db'))return true;if((a.kind==='server'&&b.kind==='db')||(a.kind==='db'&&b.kind==='server'))return true;if((a.kind==='server'&&b.kind==='storage')||(a.kind==='storage'&&b.kind==='server'))return true;if((a.kind==='network'&&b.kind!=='storage')||(b.kind==='network'&&a.kind!=='storage'))return true;return a.kind===b.kind||a.kind==='server'||b.kind==='server'}
+    function ruleText(a,b){if(a.kind==='security'||b.kind==='security')return'security -> non-security';if((a.kind==='db'&&b.kind==='storage')||(a.kind==='storage'&&b.kind==='db'))return'db <-> storage';if((a.kind==='server'&&b.kind==='db')||(a.kind==='db'&&b.kind==='server'))return'server <-> db';if((a.kind==='server'&&b.kind==='storage')||(a.kind==='storage'&&b.kind==='server'))return'server <-> storage';if((a.kind==='network'&&b.kind!=='storage')||(b.kind==='network'&&a.kind!=='storage'))return'network <-> server/db';return'any'}
+    function iconSvg(kind){const s=(d)=>`<svg viewBox="0 0 24 24">${d}</svg>`;switch(kind){case'server':return s('<rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><circle cx="7" cy="7" r="1"/><circle cx="7" cy="17" r="1"/>');case'database':case'db':return s('<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/>');case'bucket':return s('<path d="M5 8h14l-1 10H6L5 8Z"/><path d="M8 8c0-2 1.8-4 4-4s4 2 4 4"/>');case'globe':return s('<circle cx="12" cy="12" r="8"/><path d="M2 12h20"/><path d="M12 4a14 14 0 0 1 0 16"/><path d="M12 4a14 14 0 0 0 0 16"/>');case'cloud':return s('<path d="M7 18h10a4 4 0 0 0 0-8 6 6 0 0 0-11.3-1.8A4.5 4.5 0 0 0 7 18Z"/>');case'monitor':return s('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8"/><path d="M12 16v4"/>');case'layers':return s('<path d="m12 4 8 4-8 4-8-4 8-4Z"/><path d="m4 12 8 4 8-4"/><path d="m4 16 8 4 8-4"/>');case'users':return s('<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2"/><path d="M14 20a4 4 0 0 1 7 0"/>');case'smartphone':return s('<rect x="7" y="2" width="10" height="20" rx="2"/><circle cx="12" cy="18" r="1"/>');case'zap':return s('<path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/>');case'radio':return s('<path d="M4 20h16"/><path d="M8 20V8l12-4v12"/><circle cx="8" cy="20" r="1"/><circle cx="20" cy="16" r="1"/>');case'workflow':return s('<rect x="3" y="4" width="6" height="6" rx="1"/><rect x="15" y="14" width="6" height="6" rx="1"/><path d="M9 7h3a3 3 0 0 1 3 3v4"/><path d="M12 14H9a3 3 0 0 1-3-3V7"/>');case'network':return s('<circle cx="12" cy="12" r="8"/><path d="M4 12h16"/><path d="M12 4c3 3 3 13 0 16"/>');case'shield':return s('<path d="M12 2 20 6v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z"/>');case'search':return s('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>');case'docker':return s('<path d="M4 14c1 0 2-1 2-2s-1-2-2-2"/><path d="M6 12h12c0 4-2 8-7 8-3 0-5-2-5-5"/><path d="M8 10V8"/><path d="M11 10V8"/><path d="M14 10V8"/>');case'kubernetes':return s('<path d="M12 2 19 6v8l-7 4-7-4V6l7-4Z"/><path d="M12 2v16"/><path d="M5 6l7 4 7-4"/>');case'redis':return s('<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>');case'kafka':return s('<path d="M4 4h4l4 8-4 8H4l4-8-4-8Z"/><path d="M16 4h4v16h-4z"/>');case'process':return s('<rect x="5" y="5" width="14" height="14" rx="2"/>');case'decision':return s('<path d="M12 3 21 12 12 21 3 12 12 3Z"/>');case'start-end':return s('<rect x="4" y="6" width="16" height="12" rx="6"/>');case'document':return s('<path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/>');case'input-output':return s('<path d="M7 4h12l-4 16H3z"/>');case'subprocess':return s('<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/>');case'text':return s('<path d="M4 5h16"/><path d="M9 5v14"/><path d="M15 5v14"/>');case'api':return s('<circle cx="12" cy="12" r="8"/><path d="M4 12h16"/>');default:return s('<circle cx="12" cy="12" r="8"/>')}}
+    function showToast(text){const el=document.createElement('div');el.style.position='absolute';el.style.left='50%';el.style.top='12px';el.style.transform='translateX(-50%)';el.style.zIndex='50';el.style.padding='8px 12px';el.style.border='1px solid var(--line)';el.style.borderRadius='10px';el.style.background='var(--panel)';el.style.boxShadow='var(--shadow)';el.textContent=text;pane.appendChild(el);setTimeout(()=>el.remove(),1400)}
+    function updatePicker(tab){pickerChips.forEach(chip=>chip.classList.toggle('active',chip.dataset.tab===tab))}
+    function categoryColor(tab){return tab==='aws'?'#f59e0b':tab==='azure'?'#0078D4':tab==='gcp'?'#4285F4':tab==='infra'?'#475569':tab==='model'?'#8b5cf6':'#64748b'}
+    function nodeColor(color){if(!color)return'#64748b';if(color.includes('#'))return color;const map={'text-slate-500':'#64748b','text-blue-500':'#3b82f6','text-emerald-500':'#10b981','text-orange-500':'#f97316','text-purple-500':'#a855f7','text-pink-500':'#ec4899','text-yellow-500':'#eab308','text-teal-500':'#14b8a6','text-[#FF9900]':'#FF9900','text-[#569A31]':'#569A31','text-[#3B48CC]':'#3B48CC','text-[#4053D6]':'#4053D6','text-[#FF4F8B]':'#FF4F8B','text-[#8C4FFF]':'#8C4FFF','text-[#4285F4]':'#4285F4','text-[#0078D4]':'#0078D4','text-[#2496ED]':'#2496ED','text-[#326CE5]':'#326CE5','text-[#DC382D]':'#DC382D','text-[#005571]':'#005571','text-slate-700':'#334155','text-[#009639]':'#009639','text-cyan-500':'#06b6d4','text-indigo-500':'#6366f1','text-red-500':'#ef4444','text-slate-600':'#475569','text-amber-600':'#d97706','text-emerald-600':'#059669','text-blue-600':'#2563eb','text-cyan-600':'#0891b2','text-violet-600':'#7c3aed','text-indigo-600':'#4f46e5','text-rose-600':'#e11d48'};return map[color]||'#64748b'}
+    function serviceClass(tab){return tab==='aws'?'icon-aws':tab==='azure'?'icon-azure':tab==='gcp'?'icon-gcp':tab==='infra'?'icon-infra':tab==='model'?'icon-model':'icon-basic'}
+    function renderPaletteMenu(tab){
+      const group=PALETTE_GROUPS[tab]||{name:tab,nodes:[]};
+      paletteMenu.innerHTML=[
+        `<div class="menu-header"><div><div class="menu-title">${escapeHtml(group.name)}</div><div class="menu-subtitle">${group.nodes.length} items available</div></div><div class="menu-kind"><span class="dot" style="color:${categoryColor(tab)}"></span></div></div>`,
+        `<input class="menu-search" id="menuSearch" type="text" placeholder="Search items..." aria-label="Search items" />`,
+        `<div class="menu-section-title">${escapeHtml(group.name)} <small>${tab==='basic'?'서버 / DB / API 중심':'아이템을 클릭해 캔버스에 추가'}</small></div>`,
+        `<div class="menu-list">`,
+        ...group.nodes.map(node=>`<button type="button" class="menu-item" data-kind="${escapeAttr(node.type)}" data-title="${escapeAttr(node.label)}"><span class="svc-icon ${serviceClass(tab)}" style="color:${nodeColor(node.color)}">${iconSvg(node.icon)}</span><span class="meta"><span class="label">${escapeHtml(node.label)}</span><span class="desc">${escapeHtml(node.type)}</span></span><span class="menu-kind"><span class="dot" style="color:${nodeColor(node.color)}"></span></span></button>`),
+        `</div>`
+      ].join('');
+      paletteMenu.querySelectorAll('button[data-kind]').forEach(btn=>btn.addEventListener('click',()=>{
+        const rect=pane.getBoundingClientRect();
+        const x=Math.max(80, rect.width*0.48 + (Math.random()*90 - 45));
+        const y=Math.max(80, rect.height*0.25 + (Math.random()*70 - 35));
+        createNode(btn.dataset.kind,btn.dataset.title,parseFields('name:string,type:string'),x,y);
+        paletteMenu.classList.add('hidden');
+      }));
+      const search=paletteMenu.querySelector('#menuSearch');
+      if(search){
+        search.addEventListener('input',()=>{
+          const q=search.value.trim().toLowerCase();
+          const items=[...paletteMenu.querySelectorAll('.menu-item')];
+          let visibleCount=0;
+          items.forEach(item=>{const visible=q.length===0||item.innerText.toLowerCase().includes(q);item.classList.toggle('hidden',!visible);if(visible)visibleCount+=1});
+          let empty=paletteMenu.querySelector('.empty-state');
+          if(visibleCount===0){if(!empty){empty=document.createElement('div');empty.className='empty-state';empty.textContent='검색 결과가 없습니다.';paletteMenu.appendChild(empty)}}else if(empty){empty.remove()}
+        });
+        setTimeout(()=>search.focus(),0);
+      }
+    }
+    function applyTab(tab){updatePicker(tab);renderPaletteMenu(tab)}
+    function updateMenu(x,y,nodeId){menu.dataset.nodeId=String(nodeId);menu.innerHTML=`<button data-action="rename">Rename</button><button data-action="change">Change type</button><button data-action="front">Bring to front</button><button data-action="copy">Duplicate</button><button data-action="delete">Delete</button>`;menu.style.left=x+'px';menu.style.top=y+'px';menu.classList.remove('hidden')}
+    function hideMenu(){menu.classList.add('hidden')}
+    function renderEdges(){edgeSvg.querySelectorAll('path.edge').forEach(p=>p.remove());for(const edge of edges){const a=nodes.find(n=>n.id===edge.from),b=nodes.find(n=>n.id===edge.to);if(!a||!b)continue;const p1=nodeAnchor(a),p2=nodeAnchor(b),dx=Math.max(50,Math.min(120,Math.abs(p2.x-p1.x)*.35));const d=`M ${p1.x} ${p1.y} C ${p1.x+dx} ${p1.y}, ${p2.x-dx} ${p2.y}, ${p2.x} ${p2.y}`;const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',d);path.setAttribute('fill','none');path.setAttribute('stroke','var(--edge)');path.setAttribute('stroke-width','2');path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');path.setAttribute('marker-end','url(#arrow)');path.classList.add('edge');edgeSvg.appendChild(path)}}
+    function renderNodes(){nodesEl.innerHTML='';[...nodes].sort((a,b)=>a.z-b.z).forEach(node=>{const el=document.createElement('div');el.className='node';el.style.transform=`translate(${node.x}px, ${node.y}px)`;el.style.zIndex=String(node.z);el.dataset.id=node.id;const iconClass=node.kind==='server'?'azure':node.kind==='database'||node.kind==='db'?'model':'infra';el.innerHTML=`<div class="handle top"></div><div class="handle right"></div><div class="handle bottom"></div><div class="handle left"></div><div class="node-inner"><div class="node-icon ${iconClass}" style="color:${nodeColor(node.kind==='server'?'text-blue-500':node.kind.includes('aws')?'text-[#FF9900]':node.kind.includes('gcp')?'text-[#4285F4]':node.kind.includes('azure')?'text-[#0078D4]':node.kind.includes('model')?'text-[#8b5cf6]':'text-slate-600')}">${iconSvg(node.kind)}</div><div class="node-label"><p contenteditable="true" spellcheck="false">${escapeHtml(node.title)}</p><small>${escapeHtml(node.kind)} · ${node.fields.length} fields</small></div></div>`;const title=el.querySelector('.node-label p');title.addEventListener('input',()=>{node.title=title.innerText.trim()||node.title});el.addEventListener('pointerdown',e=>{if(e.target.classList.contains('handle')||e.target.isContentEditable)return;dragging=node;const rect=el.getBoundingClientRect();const paneRect=pane.getBoundingClientRect();dragOffset.x=e.clientX-(rect.left-paneRect.left);dragOffset.y=e.clientY-(rect.top-paneRect.top);el.setPointerCapture(e.pointerId)});el.addEventListener('click',()=>{selectedId=node.id;render()});el.addEventListener('contextmenu',e=>{e.preventDefault();selectedId=node.id;updateMenu(e.clientX,e.clientY,node.id);render()});el.querySelectorAll('.handle').forEach(h=>h.addEventListener('click',e=>{e.stopPropagation();if(connectingFrom===null){connectingFrom=node.id;showToast('start connection')}else if(connectingFrom!==node.id){const a=nodes.find(n=>n.id===connectingFrom);if(!canConnect(a,node)){showToast('invalid connection')}else{edges.push({from:connectingFrom,to:node.id,rule:ruleText(a,node)});showToast(ruleText(a,node))}connectingFrom=null;render()}else{connectingFrom=null}}));nodesEl.appendChild(el)})}
+    function render(){renderEdges();renderNodes()}
+    function escapeHtml(str){return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#39;")}
+    function escapeAttr(str){return escapeHtml(str).replaceAll('\n',' ')}
+    function duplicateNode(id){const n=nodes.find(x=>x.id===id);if(!n)return;createNode(n.kind,n.title,n.fields.map(f=>({...f})),n.x+20,n.y+20)}
+    function deleteNode(id){nodes=nodes.filter(n=>n.id!==id);edges=edges.filter(e=>e.from!==id&&e.to!==id);selectedId=null;connectingFrom=null;hideMenu();render()}
+    function bringToFront(id){const n=nodes.find(x=>x.id===id);if(n)n.z=++zCounter;render()}
+    function changeType(id){const n=nodes.find(x=>x.id===id);if(!n)return;const next=prompt('type',n.kind);if(!next)return;n.kind=next.trim();render()}
+    function renameNode(id){const n=nodes.find(x=>x.id===id);if(!n)return;const next=prompt('name',n.title);if(!next)return;n.title=next.trim();render()}
+    document.addEventListener('pointermove',e=>{if(!dragging)return;const rect=pane.getBoundingClientRect();dragging.x=e.clientX-rect.left-dragOffset.x;dragging.y=e.clientY-rect.top-dragOffset.y;render()});document.addEventListener('pointerup',()=>{dragging=null});
+    menu.addEventListener('click',e=>{const action=e.target.dataset.action,id=Number(menu.dataset.nodeId);if(!action||!id)return;if(action==='rename')renameNode(id);if(action==='change')changeType(id);if(action==='front')bringToFront(id);if(action==='copy')duplicateNode(id);if(action==='delete')deleteNode(id);hideMenu()});
+    window.addEventListener('click',e=>{if(!menu.contains(e.target)&&!e.target.closest('.picker-chip')&&!paletteMenu.contains(e.target))hideMenu()});
+    toggleThemeBtn.addEventListener('click',()=>{document.body.classList.toggle('dark');localStorage.setItem(STORAGE_KEY,document.body.classList.contains('dark')?'dark':'light');toggleThemeBtn.textContent=document.body.classList.contains('dark')?'Light':'Dark'});
+    pickerChips.forEach(chip=>chip.addEventListener('click',()=>{applyTab(chip.dataset.tab);paletteMenu.classList.remove('hidden')})); 
+    paletteMenu.addEventListener('click',e=>{const btn=e.target.closest('button[data-kind]');if(!btn)return;const rect=pane.getBoundingClientRect();const x=Math.max(80, rect.width*0.48 + (Math.random()*90 - 45));const y=Math.max(80, rect.height*0.25 + (Math.random()*70 - 35));createNode(btn.dataset.kind,btn.dataset.title,parseFields('name:string,type:string'),x,y);paletteMenu.classList.add('hidden')});
+    pane.addEventListener('click',e=>{if(e.target===pane||e.target===viewport){selectedId=null;connectingFrom=null;hideMenu();render()}});
+    const savedTheme=localStorage.getItem(STORAGE_KEY)||'light';if(savedTheme==='dark')document.body.classList.add('dark');toggleThemeBtn.textContent=document.body.classList.contains('dark')?'Light':'Dark';applyTab('basic');
+    createNode('server','EC2',parseFields('id:int,instance_type:string,state:string'),220,120);createNode('storage','S3',parseFields('bucket:string,region:string,versioning:boolean'),460,250);createNode('db','RDS',parseFields('engine:string,host:string,port:int'),740,140);edges.push({from:1,to:2,rule:'server <-> storage'},{from:1,to:3,rule:'server <-> db'});render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diagram Builder</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --panel-soft: #f9fafb;
+      --line: #e5e7eb;
+      --line-strong: #cbd5e1;
+      --text: #111827;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.12);
+      --danger: #dc2626;
+      --shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      --canvas-grid: rgba(37, 99, 235, 0.03);
+      --node-bg: #ffffff;
+      --node-head: #f8fafc;
+      --node-row: #ffffff;
+      --node-row-alt: #fbfdff;
+      --node-key: #0f172a;
+      --node-type: #64748b;
+      --node-border: #dbe3ee;
+      --edge: #334155;
+    }
+
+    body.dark {
+      --bg: #0b1020;
+      --panel: #111827;
+      --panel-soft: #0f172a;
+      --line: #263244;
+      --line-strong: #3b4a62;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #60a5fa;
+      --accent-soft: rgba(96, 165, 250, 0.14);
+      --danger: #f87171;
+      --shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+      --canvas-grid: rgba(148, 163, 184, 0.08);
+      --node-bg: #111827;
+      --node-head: #0f172a;
+      --node-row: #111827;
+      --node-row-alt: #0f172a;
+      --node-key: #f8fafc;
+      --node-type: #94a3b8;
+      --node-border: #334155;
+      --edge: #93c5fd;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .app {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      box-shadow: var(--shadow);
+      flex: none;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .quick-form {
+      display: grid;
+      grid-template-columns: 1.1fr 1.3fr 86px 86px auto;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    button, input, textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 11px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: var(--line-strong);
+      background: var(--panel-soft);
+    }
+
+    .primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: white;
+    }
+
+    .primary:hover {
+      background: var(--accent);
+      filter: brightness(1.02);
+    }
+
+    .ghost {
+      background: transparent;
+    }
+
+    .workspace {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(var(--canvas-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .canvas {
+      position: absolute;
+      inset: 0;
+      touch-action: none;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .nodes {
+      position: absolute;
+      inset: 0;
+    }
+
+    .node {
+      position: absolute;
+      min-width: 240px;
+      max-width: 320px;
+      background: var(--node-bg);
+      border: 1px solid var(--node-border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      user-select: none;
+      overflow: hidden;
+    }
+
+    .node.selected {
+      outline: 2px solid var(--accent-soft);
+      outline-offset: 2px;
+    }
+
+    .node-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      background: var(--node-head);
+      border-bottom: 1px solid var(--line);
+      cursor: grab;
+    }
+
+    .node-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .node-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      flex: none;
+      cursor: crosshair;
+    }
+
+    .node-table {
+      width: 100%;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 92px;
+      gap: 10px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--node-row);
+      align-items: center;
+    }
+
+    .field-row:nth-child(even) {
+      background: var(--node-row-alt);
+    }
+
+    .field-name {
+      font-size: 13px;
+      color: var(--node-key);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      outline: none;
+    }
+
+    .field-type {
+      font-size: 12px;
+      color: var(--node-type);
+      text-align: right;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      outline: none;
+    }
+
+    .empty-row {
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 9px 10px;
+      outline: none;
+    }
+
+    textarea { min-height: 70px; resize: vertical; }
+
+    .hint {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      z-index: 10;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--panel) 92%, transparent);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-badge"></div>
+        <div>
+          <div class="brand-title">Diagram Builder</div>
+          <div class="brand-subtitle">dbdiagram-style HTML canvas</div>
+        </div>
+      </div>
+      <div class="quick-form">
+        <input id="tableName" value="users" placeholder="table name" />
+        <input id="tableFields" value="id:int,name:varchar,email:varchar" placeholder="field:type,field:type" />
+        <input id="tableX" type="number" value="96" placeholder="x" />
+        <input id="tableY" type="number" value="96" placeholder="y" />
+        <button class="primary" id="addQuickTable">Add</button>
+      </div>
+      <div class="toolbar">
+        <button class="primary" id="addNode">+ Table</button>
+        <button id="toggleTheme">Dark</button>
+        <button id="exportJson">Export</button>
+        <button id="resetCanvas">Reset</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <div class="canvas" id="canvas">
+        <svg id="svgLayer">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--edge)"></path>
+            </marker>
+          </defs>
+        </svg>
+        <div class="nodes" id="nodes"></div>
+      </div>
+
+      <div class="hint">Drag: move · Dot: connect · Double-click title: rename</div>
+    </main>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const nodesEl = document.getElementById('nodes');
+    const svg = document.getElementById('svgLayer');
+    const addNodeBtn = document.getElementById('addNode');
+    const addQuickTableBtn = document.getElementById('addQuickTable');
+    const toggleThemeBtn = document.getElementById('toggleTheme');
+    const exportBtn = document.getElementById('exportJson');
+    const resetBtn = document.getElementById('resetCanvas');
+    const tableNameInput = document.getElementById('tableName');
+    const tableFieldsInput = document.getElementById('tableFields');
+    const tableXInput = document.getElementById('tableX');
+    const tableYInput = document.getElementById('tableY');
+
+    let nodes = [];
+    let edges = [];
+    let nextId = 1;
+    let selectedNodeId = null;
+    let connectingFrom = null;
+    let dragging = null;
+    let dragOffset = { x: 0, y: 0 };
+
+    const STORAGE_KEY = 'diagram-builder-theme';
+
+    function parseFields(raw) {
+      const parts = String(raw || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      return parts.length ? parts : ['id:int', 'name:varchar', 'created_at:timestamp'];
+    }
+
+    function makeNode(title, fields, x, y) {
+      const node = {
+        id: nextId++,
+        title,
+        fields: fields.map((f) => {
+          const [name, type] = f.split(':').map((v) => (v || '').trim());
+          return {
+            name: name || 'field',
+            type: type || 'text',
+          };
+        }),
+        x,
+        y,
+      };
+      nodes.push(node);
+      render();
+      return node;
+    }
+
+    function nodeCenter(node) {
+      return { x: node.x + nodeWidth(node) / 2, y: node.y + nodeHeight(node) / 2 };
+    }
+
+    function nodeWidth(node) {
+      return 280;
+    }
+
+    function nodeHeight(node) {
+      return 42 + Math.max(1, node.fields.length) * 34;
+    }
+
+    function anchor(node) {
+      return { x: node.x + nodeWidth(node), y: node.y + 58 };
+    }
+
+    function renderEdges() {
+      svg.querySelectorAll('path.edge').forEach((p) => p.remove());
+
+      for (const edge of edges) {
+        const from = nodes.find((n) => n.id === edge.from);
+        const to = nodes.find((n) => n.id === edge.to);
+        if (!from || !to) continue;
+
+        const a = anchor(from);
+        const b = anchor(to);
+        const midX = Math.round((a.x + b.x) / 2);
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const straight = Math.abs(a.y - b.y) < 28 || Math.abs(a.x - b.x) < 120;
+        const d = straight
+          ? `M ${a.x} ${a.y} L ${b.x} ${b.y}`
+          : `M ${a.x} ${a.y} L ${midX} ${a.y} L ${midX} ${b.y} L ${b.x} ${b.y}`;
+        path.setAttribute('d', d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', 'var(--edge)');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('marker-end', 'url(#arrow)');
+        path.classList.add('edge');
+        svg.appendChild(path);
+      }
+    }
+
+    function renderNodes() {
+      nodesEl.innerHTML = '';
+      for (const node of nodes) {
+        const el = document.createElement('div');
+        el.className = 'node' + (selectedNodeId === node.id ? ' selected' : '');
+        el.style.left = node.x + 'px';
+        el.style.top = node.y + 'px';
+        el.style.width = nodeWidth(node) + 'px';
+        el.dataset.id = node.id;
+
+        const rows = node.fields.map((field, index) => `
+          <div class="field-row">
+            <div class="field-name" contenteditable="true" spellcheck="false" data-role="name" data-index="${index}">${escapeHtml(field.name)}</div>
+            <div class="field-type" contenteditable="true" spellcheck="false" data-role="type" data-index="${index}">${escapeHtml(field.type)}</div>
+          </div>
+        `).join('');
+
+        el.innerHTML = `
+          <div class="node-head">
+            <div class="node-title" contenteditable="true" spellcheck="false">${escapeHtml(node.title)}</div>
+            <div class="node-badge" title="connect">+</div>
+          </div>
+          <div class="node-table">
+            ${rows || '<div class="empty-row">No fields</div>'}
+          </div>
+        `;
+
+        const head = el.querySelector('.node-head');
+        const badge = el.querySelector('.node-badge');
+        const title = el.querySelector('.node-title');
+
+        head.addEventListener('pointerdown', onDragStart);
+        badge.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (connectingFrom === null) {
+            connectingFrom = node.id;
+            selectedNodeId = node.id;
+          } else if (connectingFrom !== node.id) {
+            edges.push({ from: connectingFrom, to: node.id });
+            connectingFrom = null;
+          } else {
+            connectingFrom = null;
+          }
+          render();
+        });
+
+        title.addEventListener('input', () => {
+          node.title = title.innerText.trim() || 'table';
+        });
+
+        el.querySelectorAll('[contenteditable="true"]').forEach((editable) => {
+          editable.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') {
+              ev.preventDefault();
+              editable.blur();
+            }
+          });
+        });
+
+        el.querySelectorAll('.field-name, .field-type').forEach((editable) => {
+          editable.addEventListener('input', () => {
+            const idx = Number(editable.dataset.index);
+            const role = editable.dataset.role;
+            if (!node.fields[idx]) return;
+            node.fields[idx][role] = editable.innerText.trim() || (role === 'name' ? 'field' : 'text');
+          });
+        });
+
+        el.addEventListener('click', () => {
+          selectedNodeId = node.id;
+          render();
+        });
+
+        el.addEventListener('dblclick', () => {
+          const next = prompt('테이블 이름을 입력하세요.', node.title);
+          if (next !== null && next.trim()) {
+            node.title = next.trim();
+            render();
+          }
+        });
+
+        nodesEl.appendChild(el);
+      }
+    }
+
+    function render() {
+      renderEdges();
+      renderNodes();
+    }
+
+    function onDragStart(e) {
+      const nodeEl = e.currentTarget.closest('.node');
+      const id = Number(nodeEl.dataset.id);
+      const node = nodes.find((n) => n.id === id);
+      dragging = node;
+      const rect = nodeEl.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+      dragOffset.x = e.clientX - (rect.left - canvasRect.left);
+      dragOffset.y = e.clientY - (rect.top - canvasRect.top);
+      nodeEl.setPointerCapture(e.pointerId);
+      e.preventDefault();
+
+      const onMove = (ev) => {
+        if (!dragging) return;
+        dragging.x = ev.clientX - canvasRect.left - dragOffset.x;
+        dragging.y = ev.clientY - canvasRect.top - dragOffset.y;
+        render();
+      };
+
+      const onUp = () => {
+        dragging = null;
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+      };
+
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function exportJson() {
+      const payload = { nodes, edges, theme: document.body.classList.contains('dark') ? 'dark' : 'light' };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'diagram.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function applyTheme(theme) {
+      document.body.classList.toggle('dark', theme === 'dark');
+      localStorage.setItem(STORAGE_KEY, theme);
+      toggleThemeBtn.textContent = theme === 'dark' ? 'Light' : 'Dark';
+    }
+
+    addNodeBtn.addEventListener('click', () => {
+      makeNode('table', ['id:int', 'name:varchar', 'created_at:timestamp'], 100 + Math.random() * 180, 100 + Math.random() * 140);
+    });
+
+    addQuickTableBtn.addEventListener('click', () => {
+      const title = tableNameInput.value.trim() || 'table';
+      const fields = parseFields(tableFieldsInput.value);
+      const x = Number(tableXInput.value) || 96;
+      const y = Number(tableYInput.value) || 96;
+      makeNode(title, fields, x, y);
+    });
+
+    toggleThemeBtn.addEventListener('click', () => {
+      applyTheme(document.body.classList.contains('dark') ? 'light' : 'dark');
+    });
+
+    exportBtn.addEventListener('click', exportJson);
+
+    resetBtn.addEventListener('click', () => {
+      if (!confirm('모든 노드를 초기화할까요?')) return;
+      nodes = [];
+      edges = [];
+      nextId = 1;
+      selectedNodeId = null;
+      connectingFrom = null;
+      render();
+    });
+
+    canvas.addEventListener('click', (e) => {
+      if (e.target === canvas || e.target === svg) {
+        selectedNodeId = null;
+        connectingFrom = null;
+        render();
+      }
+    });
+
+    window.addEventListener('resize', render);
+
+    const savedTheme = localStorage.getItem(STORAGE_KEY) || 'light';
+    applyTheme(savedTheme);
+
+    makeNode('users', ['id:int', 'name:varchar', 'email:varchar'], 130, 120);
+    makeNode('orders', ['id:int', 'user_id:int', 'total:decimal'], 520, 220);
+    makeNode('products', ['id:int', 'name:varchar', 'price:decimal'], 860, 120);
+    edges.push({ from: 1, to: 2 }, { from: 2, to: 3 });
+    render();
+  </script>
+</body>
+</html>
