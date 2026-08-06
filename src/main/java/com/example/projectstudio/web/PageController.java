@@ -10,7 +10,7 @@ public class PageController {
 
     @GetMapping("/")
     public String home() {
-        return "home";
+        return "redirect:/project";
     }
 
     @GetMapping("/demo")

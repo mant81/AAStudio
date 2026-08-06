@@ -1,0 +1,69 @@
+<section class="section-panel" data-section-panel="api-docs" th:fragment="apiPanel">
+    <div class="editor-shell" data-api-shell>
+        <div class="editor-toolbar">
+            <div>
+                <p class="eyebrow tiny">API Docs</p>
+                <h2>API 정의 편집</h2>
+                <p>그룹과 엔드포인트를 한 화면에서 관리합니다.</p>
+            </div>
+            <div class="editor-toolbar-actions">
+                <button class="ghost-btn" type="button" data-api-group-add>그룹 추가</button>
+                <button class="ghost-btn" type="button" data-api-endpoint-add>엔드포인트 추가</button>
+                <button class="primary-btn" type="button" data-save-section="api-docs">저장</button>
+            </div>
+        </div>
+        <div class="api-grid">
+            <aside class="editor-panel">
+                <div class="panel-title-row">
+                    <strong>API 그룹</strong>
+                    <span class="panel-count">Groups</span>
+                </div>
+                <div class="api-group-list" data-api-group-list></div>
+            </aside>
+            <div class="editor-stage api-stage">
+                <div class="api-topbar">
+                    <div>
+                        <p class="eyebrow tiny">Endpoint</p>
+                        <strong><span class="badge get" data-api-method>GET</span> <span data-api-path>/api/new</span></strong>
+                    </div>
+                </div>
+                <div class="api-grid">
+                    <div class="api-card">
+                        <div class="panel-title-row"><strong>그룹 정보</strong></div>
+                        <div class="form-grid">
+                            <label class="field"><span>이름</span><input class="text-input" type="text" data-api-group-name></label>
+                            <label class="field"><span>설명</span><textarea class="text-input" rows="3" data-api-group-description></textarea></label>
+                            <label class="field"><span>Base URL</span><input class="text-input" type="text" data-api-group-baseurl></label>
+                            <label class="field"><span>Token</span><input class="text-input" type="text" data-api-group-token></label>
+                        </div>
+                        <div class="panel-actions">
+                            <button class="ghost-btn" type="button" data-api-group-save>그룹 저장</button>
+                            <button class="danger-btn" type="button" data-api-group-delete>삭제</button>
+                        </div>
+                    </div>
+                    <div class="api-card full">
+                        <div class="panel-title-row"><strong>엔드포인트 편집</strong></div>
+                        <div class="form-grid api-form-grid">
+                            <label class="field"><span>Method</span><input class="text-input" type="text" data-api-endpoint-method value="GET"></label>
+                            <label class="field"><span>Path</span><input class="text-input" type="text" data-api-endpoint-path></label>
+                            <label class="field"><span>Summary</span><input class="text-input" type="text" data-api-endpoint-summary></label>
+                            <label class="field"><span>Description</span><textarea class="text-input" rows="3" data-api-endpoint-description></textarea></label>
+                            <label class="field"><span>Request JSON</span><textarea class="text-input code-input" rows="5" data-api-endpoint-request></textarea></label>
+                            <label class="field"><span>Response Example</span><textarea class="text-input code-input" rows="5" data-api-endpoint-response></textarea></label>
+                            <label class="field"><span>Parameters JSON</span><textarea class="text-input code-input" rows="5" data-api-endpoint-params></textarea></label>
+                            <label class="field"><span>Status JSON</span><textarea class="text-input code-input" rows="5" data-api-endpoint-status></textarea></label>
+                        </div>
+                        <div class="panel-actions">
+                            <button class="ghost-btn" type="button" data-api-endpoint-save>엔드포인트 저장</button>
+                            <button class="danger-btn" type="button" data-api-endpoint-delete>삭제</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="api-card">
+                    <div class="panel-title-row"><strong>엔드포인트 목록</strong></div>
+                    <div class="api-list" data-api-endpoint-list></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
