@@ -1,0 +1,6 @@
+history/
+.history/
+.tmp-edge-wrap-match/
+.tmp-edge-empty-frame-name/
+.tmp-edge-cdp-profile*/
+/aastudio-*/
