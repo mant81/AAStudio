@@ -32,3 +32,5 @@
 - 프로젝트 저장·불러오기는 기능 모듈과 모든 하위 탭의 계층 및 상태를 함께 보존해야 한다.
 - DB 모델링과 API 정의서도 다이어그램과 동일한 하위 탭 모델을 공유할 수 있도록 설계한다.
 - 다크 모드는 제공하지 않는다.
+- No fallback unless explicitly requested.
+- Korean replies: 10 chars max.

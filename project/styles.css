@@ -1981,6 +1981,7 @@ body{
   background:#fff;
   color:#6b7280;
   box-shadow:none;
+  text-decoration:none;
 }
 
 .rail-item i{
@@ -2002,6 +2003,10 @@ body{
 
 .rail-item--utility{
   color:#71717a;
+}
+
+.rail-item--settings{
+  margin-top:auto;
 }
 
 .rail-item--utility:hover{

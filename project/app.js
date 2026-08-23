@@ -44,10 +44,11 @@ const railItems = [
   { id: "dashboard", icon: "ri-dashboard-3-line", label: "Dashboard", sectionId: "dashboard" },
   { id: "diagram", icon: "ri-node-tree", label: "Diagram", sectionId: "diagram" },
   { id: "db-modeling", icon: "ri-database-2-line", label: "DB Model", sectionId: "db-modeling" },
-  { id: "api-definition", icon: "ri-article-line", label: "Wiki", sectionId: "api-definition" },
-  { id: "wiki", icon: "ri-file-list-3-line", label: "Meeting", sectionId: "wiki" },
-  { id: "utility-idea", icon: "ri-brush-line", label: "Whiteboard" },    
-  { id: "utility-settings", icon: "ri-settings-3-line", label: "Settings" }  
+  { id: "api-definition", icon: "ri-article-line", label: "API", sectionId: "api-definition" },
+  { id: "wiki", icon: "ri-file-list-3-line", label: "Wiki", sectionId: "wiki" },
+  { id: "meeting", icon: "ri-file-list-3-line", label: "Meeting", sectionId: "meeting" },
+  { id: "whiteboard", icon: "ri-brush-line", label: "Whiteboard", sectionId: "whiteboard" },
+  { id: "settings", icon: "ri-settings-3-line", label: "Settings", sectionId: "settings" }
 ];
 
 const editorViews = {
@@ -516,28 +517,35 @@ function renderProjectDropdown(projects, activeProject) {
 }
 
 function renderRail(activeSectionId) {
-  const settingsItem = railItems.find((item) => item.id === "utility-settings");
-  const topRailItems = railItems.filter((item) => item.id !== "utility-settings");
+  const settingsItem = railItems.find((item) => item.id === "settings" || item.id === "utility-settings");
+  const topRailItems = railItems.filter((item) => item.id !== settingsItem?.id);
 
   railMenu.innerHTML = [
     ...topRailItems.map(
-      (item) => `<button class="rail-item ${item.sectionId === activeSectionId ? "is-active" : ""} ${item.sectionId ? "" : "rail-item--utility"}" type="button"${item.sectionId ? ` data-section-id="${item.sectionId}"` : ""} aria-label="${item.label}">
+      (item) =>
+        item.sectionId && item.id !== settingsItem?.id
+          ? `<a class="rail-item ${item.sectionId === activeSectionId ? "is-active" : ""}" href="?section=${encodeURIComponent(item.sectionId)}" data-section-id="${item.sectionId}" aria-label="${item.label}">
+        <i class="${item.icon}" aria-hidden="true"></i>
+        <span class="rail-item__label">${item.label}</span>
+      </a>`
+          : `<button class="rail-item rail-item--utility" type="button" aria-label="${item.label}">
         <i class="${item.icon}" aria-hidden="true"></i>
         <span class="rail-item__label">${item.label}</span>
       </button>`,
     ),
     '<span class="rail-spacer" aria-hidden="true"></span>',
     settingsItem
-      ? `<button class="rail-item rail-item--utility" type="button" aria-label="${settingsItem.label}">
+      ? `<button class="rail-item rail-item--utility rail-item--settings" type="button" aria-label="${settingsItem.label}">
         <i class="${settingsItem.icon}" aria-hidden="true"></i>
         <span class="rail-item__label">${settingsItem.label}</span>
       </button>`
       : "",
   ].join("");
 
-  railMenu.querySelectorAll("[data-section-id]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const sectionId = button.getAttribute("data-section-id");
+  railMenu.querySelectorAll("[data-section-id]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      const sectionId = link.getAttribute("data-section-id");
       if (sectionId) {
         setActiveSection(sectionId);
       }
