@@ -309,31 +309,6 @@ button, input, textarea {
     background: var(--positive);
 }
 
-.diagram-node-selected {
-    outline: 2px solid #006399;
-    outline-offset: 0;
-    box-shadow: 0 12px 32px rgba(0, 99, 153, 0.18);
-}
-
-.diagram-node-grouped-highlight {
-    outline: 2px solid rgba(16, 185, 129, 0.45);
-    outline-offset: 2px;
-    box-shadow: 0 10px 24px rgba(16, 185, 129, 0.12);
-}
-
-.diagram-node-resize-handle {
-    opacity: 0;
-    pointer-events: none;
-    cursor: nwse-resize;
-    transition: opacity 0.15s ease;
-    z-index: 35;
-}
-
-.diagram-node-selected > .diagram-node-resize-handle {
-    opacity: 1;
-    pointer-events: auto;
-}
-
 .page-body {
     padding: calc(var(--header-height) + 32px) 32px 32px;
 }
@@ -578,7 +553,6 @@ button, input, textarea {
 .workspace-frame,
 .workspace-sidebar,
 .property-panel,
-.diagram-canvas,
 .erd-stage,
 .api-page,
 .wiki-page,
@@ -772,21 +746,12 @@ button, input, textarea {
     border-radius: 8px;
 }
 
-.diagram-canvas,
 .erd-stage,
 .api-detail,
 .wiki-content {
     flex: 1;
     min-width: 0;
     padding: 20px;
-}
-
-.diagram-canvas {
-    position: relative;
-    background:
-        radial-gradient(circle at 1px 1px, rgba(118, 119, 125, 0.22) 1px, transparent 0),
-        linear-gradient(180deg, #f6f9fc 0%, #eef3f8 100%);
-    background-size: 24px 24px, auto;
 }
 
 .floating-toolbar {
@@ -820,7 +785,6 @@ button, input, textarea {
     min-height: 720px;
 }
 
-.diagram-node,
 .storage-card {
     position: absolute;
     background: rgba(255, 255, 255, 0.96);
@@ -829,17 +793,6 @@ button, input, textarea {
     padding: 18px;
     min-width: 180px;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-}
-
-.diagram-node strong,
-.diagram-node span {
-    display: block;
-}
-
-.diagram-node span:last-child {
-    margin-top: 6px;
-    color: var(--muted);
-    font-size: 13px;
 }
 
 .node-icon,

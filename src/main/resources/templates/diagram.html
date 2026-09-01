@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: layout(~{::div})}">
-<div class="flex flex-col w-full min-h-[calc(100vh-64px)] font-body-md text-on-background relative overflow-hidden bg-surface-container-lowest" id="diagram-root">
+<div class="flex flex-col w-full h-screen min-h-0 font-body-md text-on-background relative overflow-hidden bg-surface-container-lowest" id="diagram-root">
     <div class="flex items-center justify-between px-gutter py-3 border-b border-outline-variant bg-surface-white shrink-0 z-10 shadow-sm relative">
         <div class="flex items-center gap-4">
             <h1 class="font-title-md text-title-md text-on-surface" th:text="${pageTitle}">Microservices Architecture v2</h1>
@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <div class="flex flex-1 h-[calc(100vh-130px)] overflow-hidden">
+    <div class="flex flex-1 min-h-0 overflow-hidden relative">
         <div class="hidden w-0 opacity-0 pointer-events-none bg-transparent flex-col border-r border-transparent shrink-0 relative z-10 transition-all duration-300 ease-in-out overflow-hidden" id="spaces-panel">
             <div class="p-4 flex items-center justify-between border-b border-outline-variant/50 transition-all duration-300 ease-in-out" data-spaces-header>
                 <div class="flex items-center gap-2" data-spaces-header-title>
@@ -212,8 +212,10 @@
                     </div>
                     <div class="absolute top-[190px] left-[550px] w-[200px] bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-move z-10"
                          data-diagram-node
+                         data-node-badge-position="right"
+                         data-node-badge-text="v1.2"
                          data-node-key="api-gateway">
-                        <div class="absolute -top-3 -right-3 bg-accent-api text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shadow-sm">v1.2</div>
+                        <div data-node-badge>v1.2</div>
                         <div class="w-12 h-12 bg-surface-variant rounded-lg flex items-center justify-center text-on-surface mb-1">
                             <span class="material-symbols-outlined text-[24px]">router</span>
                         </div>
@@ -229,7 +231,7 @@
                         <h3 class="font-title-md text-title-md text-on-surface" data-node-title>Auth Service</h3>
                         <p class="font-label-md text-label-md text-on-surface-variant" data-node-subtitle>OAuth 2.0</p>
                     </div>
-                    <div class="absolute top-[550px] left-[550px] w-[200px] bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 cursor-move z-10 transition-transform relative"
+                    <div class="absolute top-[550px] left-[550px] w-[200px] bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 cursor-move z-10 transition-transform"
                          data-diagram-node
                          data-fill-color="#CDE5FF"
                          data-stroke-width="2"
@@ -291,7 +293,7 @@
             </div>
         </div>
 
-        <div class="w-0 opacity-0 pointer-events-none overflow-hidden bg-surface-white border-l border-outline-variant flex-col shrink-0 relative z-20 shadow-[-4px_0_15px_rgba(0,0,0,0.03)] transition-all duration-300 ease-in-out"
+        <div class="absolute top-0 right-0 bottom-0 w-0 opacity-0 pointer-events-none overflow-hidden bg-surface-white border-l border-outline-variant flex-col z-20 shadow-[-4px_0_15px_rgba(0,0,0,0.03)] transition-all duration-300 ease-in-out"
              id="diagram-properties-panel">
             <div class="p-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
                 <h2 class="font-title-md text-title-md text-on-surface">Properties</h2>
@@ -314,51 +316,182 @@
                             <div class="font-body-md text-body-md font-medium text-on-surface" id="diagram-selected-node-name">Order Service</div>
                         </div>
                     </div>
+                    <div class="diagram-property-tabs">
+                        <button class="diagram-property-tab diagram-property-tab-active"
+                                data-property-tab="text"
+                                type="button">텍스트</button>
+                        <button class="diagram-property-tab"
+                                data-property-tab="shape"
+                                type="button">도형</button>
+                    </div>
                 </div>
-                <div class="p-4 border-b border-outline-variant/50 space-y-4">
-                    <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">Text</h3>
+                <div class="p-4 border-b border-outline-variant/50 space-y-4"
+                     data-property-panel="text">
                     <div class="space-y-2">
-                        <label class="font-label-md text-label-md text-on-surface">Label</label>
+                        <label class="font-label-md text-label-md text-on-surface">제목</label>
                         <input class="w-full px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-body-md text-body-md transition-all" id="diagram-node-label-input" type="text" value="Order Service">
                     </div>
                     <div class="space-y-2">
-                        <label class="font-label-md text-label-md text-on-surface">Sub-label</label>
+                        <label class="font-label-md text-label-md text-on-surface">부제목</label>
                         <input class="w-full px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-code-sm text-code-sm transition-all" id="diagram-node-sub-label-input" type="text" value="Node.js / Express">
                     </div>
-                </div>
-                <div class="p-4 border-b border-outline-variant/50 space-y-4">
-                    <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">Appearance</h3>
                     <div class="space-y-2">
                         <label class="font-label-md text-label-md text-on-surface flex justify-between">
-                            Fill Color <span class="text-on-surface-variant font-code-sm uppercase" id="diagram-fill-color-value">#CDE5FF</span>
+                            텍스트 색상 <span class="text-on-surface-variant font-code-sm uppercase" id="diagram-text-color-value">Default</span>
                         </label>
-                        <div class="flex gap-2 flex-wrap">
-                            <button class="w-8 h-8 rounded-full bg-surface-white border border-outline-variant hover:scale-110 transition-transform"
+                        <div class="diagram-color-row">
+                            <button class="diagram-color-swatch bg-surface-white border-2 border-secondary hover:scale-110 transition-transform relative"
+                                    data-text-color=""
+                                    title="Default text color"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[16px] text-secondary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
+                            </button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-text-color="#191C1E"
+                                    style="background-color: #191C1E;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-text-color="#006399"
+                                    style="background-color: #006399;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-text-color="#10B981"
+                                    style="background-color: #10B981;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-text-color="#8B5CF6"
+                                    style="background-color: #8B5CF6;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-text-color="#F59E0B"
+                                    style="background-color: #F59E0B;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-text-color="#76777D"
+                                    style="background-color: #76777D;"
+                                    type="button"></button>
+                            <label class="diagram-color-picker" title="Custom text color">
+                                <input id="diagram-text-color-picker" type="color" value="#191C1E">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface">배지 제목</label>
+                        <input class="w-full px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-code-sm text-code-sm transition-all" id="diagram-node-badge-input" placeholder="v1.2" type="text">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface">배지 정렬</label>
+                        <div class="flex items-center gap-2">
+                            <button class="diagram-align-button diagram-align-button-active"
+                                    aria-label="배지 왼쪽 정렬"
+                                    data-badge-position="left"
+                                    title="왼쪽"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[18px]">format_align_left</span>
+                            </button>
+                            <button class="diagram-align-button"
+                                    aria-label="배지 가운데 정렬"
+                                    data-badge-position="center"
+                                    title="가운데"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[18px]">format_align_center</span>
+                            </button>
+                            <button class="diagram-align-button"
+                                    aria-label="배지 오른쪽 정렬"
+                                    data-badge-position="right"
+                                    title="오른쪽"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[18px]">format_align_right</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden p-4 border-b border-outline-variant/50 space-y-4"
+                     data-property-panel="shape">
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface flex justify-between">
+                            채우기 <span class="text-on-surface-variant font-code-sm uppercase" id="diagram-fill-color-value">#CDE5FF</span>
+                        </label>
+                        <div class="diagram-color-row">
+                            <button class="diagram-color-swatch bg-surface-white border border-outline-variant hover:scale-110 transition-transform relative"
+                                    data-fill-color="transparent"
+                                    style="background-image: linear-gradient(135deg, transparent 45%, #BA1A1A 46%, #BA1A1A 54%, transparent 55%), linear-gradient(45deg, #F7F9FB 25%, transparent 25%), linear-gradient(-45deg, #F7F9FB 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #F7F9FB 75%), linear-gradient(-45deg, transparent 75%, #F7F9FB 75%); background-color: #FFFFFF; background-position: center, 0 0, 0 4px, 4px -4px, -4px 0; background-size: 100% 100%, 8px 8px, 8px 8px, 8px 8px, 8px 8px;"
+                                    title="Transparent"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[16px] text-secondary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hidden">check</span>
+                            </button>
+                            <button class="diagram-color-swatch bg-surface-white border border-outline-variant hover:scale-110 transition-transform"
                                     data-fill-color="#FFFFFF"
                                     type="button"></button>
-                            <button class="w-8 h-8 rounded-full bg-secondary-fixed border-2 border-secondary hover:scale-110 transition-transform relative"
+                            <button class="diagram-color-swatch bg-secondary-fixed border-2 border-secondary hover:scale-110 transition-transform relative"
                                     data-fill-color="#CDE5FF"
                                     type="button">
                                 <span class="material-symbols-outlined text-[16px] text-secondary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
                             </button>
-                            <button class="w-8 h-8 rounded-full bg-primary-fixed border border-outline-variant hover:scale-110 transition-transform"
+                            <button class="diagram-color-swatch bg-primary-fixed border border-outline-variant hover:scale-110 transition-transform"
                                     data-fill-color="#DAE2FD"
                                     type="button"></button>
-                            <button class="w-8 h-8 rounded-full bg-error-container border border-outline-variant hover:scale-110 transition-transform"
+                            <button class="diagram-color-swatch bg-error-container border border-outline-variant hover:scale-110 transition-transform"
                                     data-fill-color="#FFDAD6"
                                     type="button"></button>
-                            <button class="w-8 h-8 rounded-full bg-tertiary-fixed border border-outline-variant hover:scale-110 transition-transform"
+                            <button class="diagram-color-swatch bg-tertiary-fixed border border-outline-variant hover:scale-110 transition-transform"
                                     data-fill-color="#D3E4FE"
                                     type="button"></button>
-                            <button class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center border border-outline-variant hover:scale-110 transition-transform"
+                            <button class="diagram-color-swatch bg-surface-variant flex items-center justify-center border border-outline-variant hover:scale-110 transition-transform"
                                     data-fill-color="#E0E3E5"
                                     type="button">
                                 <span class="material-symbols-outlined text-[16px] text-on-surface-variant">add</span>
                             </button>
+                            <label class="diagram-color-picker" title="Custom fill color">
+                                <input id="diagram-fill-color-picker" type="color" value="#CDE5FF">
+                            </label>
                         </div>
                     </div>
                     <div class="space-y-2 pt-2">
-                        <label class="font-label-md text-label-md text-on-surface">Stroke Width</label>
+                        <label class="font-label-md text-label-md text-on-surface flex justify-between">
+                            테두리 색상 <span class="text-on-surface-variant font-code-sm uppercase" id="diagram-stroke-color-value">#C6C6CD</span>
+                        </label>
+                        <div class="diagram-color-row">
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform relative"
+                                    data-stroke-color="transparent"
+                                    style="background-image: linear-gradient(135deg, transparent 45%, #BA1A1A 46%, #BA1A1A 54%, transparent 55%), linear-gradient(45deg, #F7F9FB 25%, transparent 25%), linear-gradient(-45deg, #F7F9FB 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #F7F9FB 75%), linear-gradient(-45deg, transparent 75%, #F7F9FB 75%); background-color: #FFFFFF; background-position: center, 0 0, 0 4px, 4px -4px, -4px 0; background-size: 100% 100%, 8px 8px, 8px 8px, 8px 8px, 8px 8px;"
+                                    title="Transparent"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[16px] text-secondary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hidden">check</span>
+                            </button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-stroke-color="#C6C6CD"
+                                    style="background-color: #C6C6CD;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border-2 border-secondary hover:scale-110 transition-transform relative"
+                                    data-stroke-color="#006399"
+                                    style="background-color: #006399;"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[16px] text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
+                            </button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-stroke-color="#10B981"
+                                    style="background-color: #10B981;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-stroke-color="#8B5CF6"
+                                    style="background-color: #8B5CF6;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-stroke-color="#F59E0B"
+                                    style="background-color: #F59E0B;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-stroke-color="#191C1E"
+                                    style="background-color: #191C1E;"
+                                    type="button"></button>
+                            <label class="diagram-color-picker" title="Custom border color">
+                                <input id="diagram-stroke-color-picker" type="color" value="#C6C6CD">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="space-y-2 pt-2">
+                        <label class="font-label-md text-label-md text-on-surface">테두리 두께</label>
                         <div class="flex items-center gap-3">
                             <input class="flex-1 h-1 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-secondary"
                                    id="diagram-stroke-width-input"
@@ -371,7 +504,7 @@
                         </div>
                     </div>
                     <div class="space-y-2 pt-2">
-                        <label class="font-label-md text-label-md text-on-surface">Stroke Style</label>
+                        <label class="font-label-md text-label-md text-on-surface">테두리 스타일</label>
                         <div class="flex bg-surface rounded-lg p-1 border border-outline-variant/50">
                             <button class="flex-1 py-1 bg-surface-white shadow-sm rounded flex justify-center items-center"
                                     data-stroke-style="solid"

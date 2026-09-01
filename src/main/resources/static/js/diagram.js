@@ -4,6 +4,11 @@ function initializeDiagramPage() {
         return;
     }
 
+    const logic = window.DiagramLogic;
+    if (!logic) {
+        console.error("DiagramLogic is required before diagram.js");
+        return;
+    }
     const spacesPanel = document.getElementById("spaces-panel");
     const spacesToggle = document.getElementById("diagram-spaces-toggle");
     const spacesToggleIcon = document.getElementById("diagram-spaces-toggle-icon");
@@ -31,22 +36,35 @@ function initializeDiagramPage() {
     const selectedNodeIconWrap = document.getElementById("diagram-selected-node-icon-wrap");
     const propertiesPanel = document.getElementById("diagram-properties-panel");
     const propertiesCloseButton = document.getElementById("diagram-properties-close");
+    const propertyTabs = Array.from(diagramRoot.querySelectorAll("[data-property-tab]"));
+    const propertyPanels = Array.from(diagramRoot.querySelectorAll("[data-property-panel]"));
     const nodeLabelInput = document.getElementById("diagram-node-label-input");
     const nodeSubLabelInput = document.getElementById("diagram-node-sub-label-input");
+    const nodeBadgeInput = document.getElementById("diagram-node-badge-input");
+    const badgePositionButtons = Array.from(diagramRoot.querySelectorAll("[data-badge-position]"));
     const linePaths = Array.from(diagramRoot.querySelectorAll("[data-line-from][data-line-to]"));
+    const textColorValue = document.getElementById("diagram-text-color-value");
+    const textColorButtons = Array.from(diagramRoot.querySelectorAll("[data-text-color]"));
+    const textColorPicker = document.getElementById("diagram-text-color-picker");
     const fillColorValue = document.getElementById("diagram-fill-color-value");
     const fillColorButtons = Array.from(diagramRoot.querySelectorAll("[data-fill-color]"));
+    const fillColorPicker = document.getElementById("diagram-fill-color-picker");
+    const strokeColorValue = document.getElementById("diagram-stroke-color-value");
+    const strokeColorButtons = Array.from(diagramRoot.querySelectorAll("[data-stroke-color]"));
+    const strokeColorPicker = document.getElementById("diagram-stroke-color-picker");
     const strokeWidthInput = document.getElementById("diagram-stroke-width-input");
     const strokeWidthValue = document.getElementById("diagram-stroke-width-value");
     const strokeStyleButtons = Array.from(diagramRoot.querySelectorAll("[data-stroke-style]"));
 
-    if (!spacesPanel || !spacesToggle || !spacesToggleIcon || !zoomLayer || !diagramStage) {
+    if (!spacesPanel) {
         return;
     }
 
     let currentScale = 1;
     let activeTool = "select";
     let selectedNode = null;
+    let selectedNodes = [];
+    let selectionFrame = null;
     let nodeCounter = diagramRoot.querySelectorAll("[data-diagram-node]").length;
     let diagramCounter = diagramRoot.querySelectorAll("[data-space-diagram]").length + 1;
     let groupCounter = spaceGroups.length + 1;
@@ -106,12 +124,48 @@ function initializeDiagramPage() {
         if (spacesOpenButton instanceof HTMLElement) {
             spacesOpenButton.classList.toggle("hidden", !hidden);
         }
-        spacesToggleIcon.textContent = "chevron_left";
+        if (spacesToggleIcon instanceof HTMLElement) {
+            spacesToggleIcon.textContent = "chevron_left";
+        }
     };
 
     window.openDiagramSpaces = () => {
         setSpacesHidden(false);
     };
+
+    spacesToggle?.addEventListener("click", () => {
+        setSpacesHidden(true);
+    });
+
+    spacesOpenButton?.addEventListener("click", () => {
+        setSpacesHidden(false);
+    });
+
+    document.addEventListener("click", (event) => {
+        if (!(event.target instanceof HTMLElement)) {
+            return;
+        }
+
+        const clickedOpenButton = event.target.closest("#diagram-spaces-open");
+        const clickedSidebarSpaces = event.target.closest("[data-open-diagram-spaces]");
+        if (!clickedOpenButton && !clickedSidebarSpaces) {
+            return;
+        }
+
+        const isDiagramPage = window.location.pathname.replace(/\/$/, "") === "/diagram";
+        if (clickedSidebarSpaces && !isDiagramPage) {
+            return;
+        }
+
+        event.preventDefault();
+        setSpacesHidden(false);
+    });
+
+    setSpacesHidden(true);
+
+    if (!zoomLayer || !diagramStage) {
+        return;
+    }
 
     const setActiveDiagramButton = (button) => {
         const diagramButtons = Array.from(diagramRoot.querySelectorAll("[data-space-diagram]"));
@@ -219,15 +273,60 @@ function initializeDiagramPage() {
         propertiesPanel.classList.toggle("opacity-100", visible);
         propertiesPanel.classList.toggle("pointer-events-auto", visible);
         propertiesPanel.classList.toggle("flex", visible);
+        propertiesPanel.classList.toggle("hidden", !visible);
         propertiesPanel.classList.toggle("w-0", !visible);
         propertiesPanel.classList.toggle("opacity-0", !visible);
         propertiesPanel.classList.toggle("pointer-events-none", !visible);
     };
 
+    const setActivePropertyTab = (tabName) => {
+        propertyTabs.forEach((button) => {
+            const isActive = button.dataset.propertyTab === tabName;
+            button.classList.toggle("diagram-property-tab-active", isActive);
+        });
+        propertyPanels.forEach((panel) => {
+            panel.classList.toggle("hidden", panel.dataset.propertyPanel !== tabName);
+        });
+    };
+
+    const syncNodeBadge = (node) => {
+        const badgeText = (node.dataset.nodeBadgeText ?? "").trim();
+        const badgePosition = node.dataset.nodeBadgePosition ?? "right";
+        let badge = node.querySelector("[data-node-badge]");
+
+        if (!badgeText) {
+            badge?.remove();
+            return;
+        }
+
+        if (!(badge instanceof HTMLElement)) {
+            badge = document.createElement("div");
+            badge.dataset.nodeBadge = "";
+            node.appendChild(badge);
+        }
+
+        badge.textContent = badgeText;
+        badge.className = logic.badgeClassName(badgePosition);
+    };
+
+    const applyNodeTextAppearance = (node) => {
+        const textColor = node.dataset.textColor ?? "";
+        node.querySelectorAll("[data-node-title], [data-node-subtitle]").forEach((element) => {
+            if (!(element instanceof HTMLElement)) {
+                return;
+            }
+            element.style.color = textColor;
+        });
+    };
+
     const updateSelectionPanel = (node) => {
         const title = node.querySelector("[data-node-title]")?.textContent?.trim() ?? "";
         const subtitle = node.querySelector("[data-node-subtitle]")?.textContent?.trim() ?? "";
+        const badgeText = node.dataset.nodeBadgeText ?? "";
+        const badgePosition = node.dataset.nodeBadgePosition ?? "right";
+        const textColor = node.dataset.textColor ?? "";
         const fillColor = node.dataset.fillColor ?? "#CDE5FF";
+        const strokeColor = node.dataset.strokeColor ?? "#C6C6CD";
         const strokeWidth = node.dataset.strokeWidth ?? "2";
         const strokeStyle = node.dataset.strokeStyle ?? "solid";
         const nodeKind = node.dataset.nodeKind ?? "node";
@@ -255,8 +354,40 @@ function initializeDiagramPage() {
         if (nodeSubLabelInput) {
             nodeSubLabelInput.value = subtitle;
         }
+        if (nodeBadgeInput) {
+            nodeBadgeInput.value = badgeText;
+        }
+        badgePositionButtons.forEach((button) => {
+            const isActive = button.dataset.badgePosition === badgePosition;
+            button.classList.toggle("diagram-align-button-active", isActive);
+        });
+        if (textColorValue) {
+            textColorValue.textContent = textColor || "Default";
+        }
+        if (textColorPicker instanceof HTMLInputElement && textColor) {
+            textColorPicker.value = textColor;
+        }
+        textColorButtons.forEach((button) => {
+            const isActive = (button.dataset.textColor ?? "") === textColor;
+            button.classList.toggle("border-2", isActive);
+            button.classList.toggle("border-secondary", isActive);
+            button.classList.toggle("border-outline-variant", !isActive);
+            const icon = button.querySelector(".material-symbols-outlined");
+            if (icon) {
+                icon.classList.toggle("hidden", !isActive);
+            }
+        });
         if (fillColorValue) {
             fillColorValue.textContent = fillColor;
+        }
+        if (fillColorPicker instanceof HTMLInputElement && fillColor !== "transparent") {
+            fillColorPicker.value = fillColor;
+        }
+        if (strokeColorValue) {
+            strokeColorValue.textContent = strokeColor;
+        }
+        if (strokeColorPicker instanceof HTMLInputElement && strokeColor !== "transparent") {
+            strokeColorPicker.value = strokeColor;
         }
         if (strokeWidthInput) {
             strokeWidthInput.value = strokeWidth;
@@ -270,7 +401,17 @@ function initializeDiagramPage() {
             button.classList.toggle("border-secondary", isActive);
             const icon = button.querySelector(".material-symbols-outlined");
             if (icon) {
-                icon.classList.toggle("hidden", !isActive && button.dataset.fillColor !== "#E0E3E5");
+                icon.classList.toggle("hidden", !isActive);
+            }
+        });
+        strokeColorButtons.forEach((button) => {
+            const isActive = button.dataset.strokeColor === strokeColor;
+            button.classList.toggle("border-2", isActive);
+            button.classList.toggle("border-secondary", isActive);
+            button.classList.toggle("border-outline-variant", !isActive);
+            const icon = button.querySelector(".material-symbols-outlined");
+            if (icon) {
+                icon.classList.toggle("hidden", !isActive);
             }
         });
         strokeStyleButtons.forEach((button) => {
@@ -282,60 +423,78 @@ function initializeDiagramPage() {
 
     const syncGroupedNodeHighlights = (node) => {
         getNodes().forEach((item) => item.classList.remove("diagram-node-grouped-highlight"));
-        if (node.dataset.nodeKind !== "group-box") {
+        const groups = selectedNodes.filter((item) => item.dataset.nodeKind === "group-box");
+        if (!groups.length && node.dataset.nodeKind !== "group-box") {
             return;
         }
-        getGroupedChildNodes(node).forEach((item) => {
-            item.classList.add("diagram-node-grouped-highlight");
+
+        const targets = groups.length ? groups : [node];
+        targets.forEach((groupNode) => {
+            getGroupedChildNodes(groupNode).forEach((item) => {
+                item.classList.add("diagram-node-grouped-highlight");
+            });
         });
     };
 
-    const setSelectedNode = (node) => {
-        selectedNode = node;
+    const setSelectedNodes = (nodes) => {
+        const uniqueNodes = nodes.filter((node, index, list) => list.indexOf(node) === index);
+        selectedNodes = uniqueNodes;
+        selectedNode = uniqueNodes.length === 1 ? uniqueNodes[0] : null;
+
         getNodes().forEach((item) => item.classList.remove("diagram-node-selected"));
-        node.classList.add("diagram-node-selected");
+        uniqueNodes.forEach((item) => item.classList.add("diagram-node-selected"));
         getNodes().forEach(applyNodeAppearance);
-        syncGroupedNodeHighlights(node);
-        updateSelectionPanel(node);
-        setPropertiesPanelVisible(true);
+
+        if (uniqueNodes.length === 1) {
+            syncGroupedNodeHighlights(uniqueNodes[0]);
+            updateSelectionPanel(uniqueNodes[0]);
+            setActivePropertyTab(uniqueNodes[0].dataset.nodeKind === "shape" ? "shape" : "text");
+            setPropertiesPanelVisible(true);
+            syncSelectionFrame();
+        } else {
+            getNodes().forEach((item) => item.classList.remove("diagram-node-grouped-highlight"));
+            uniqueNodes
+                .filter((item) => item.dataset.nodeKind === "group-box")
+                .forEach((groupNode) => {
+                    getGroupedChildNodes(groupNode).forEach((child) => {
+                        child.classList.add("diagram-node-grouped-highlight");
+                    });
+                });
+            setPropertiesPanelVisible(false);
+            syncSelectionFrame();
+        }
+    };
+
+    const setSelectedNode = (node) => {
+        setSelectedNodes([node]);
     };
 
     const clearSelectedNode = () => {
+        selectedNodes = [];
         selectedNode = null;
         getNodes().forEach((item) => item.classList.remove("diagram-node-selected"));
         getNodes().forEach((item) => item.classList.remove("diagram-node-grouped-highlight"));
         getNodes().forEach(applyNodeAppearance);
+        syncSelectionFrame();
         setPropertiesPanelVisible(false);
     };
 
     const applyNodeAppearance = (node) => {
         const fillColor = node.dataset.fillColor ?? "#CDE5FF";
+        const strokeColor = node.dataset.strokeColor ?? (node.dataset.nodeKind === "group-box" ? "#8FD5B7" : "#C6C6CD");
         const strokeWidth = node.dataset.strokeWidth ?? "2";
         const strokeStyle = node.dataset.strokeStyle ?? "solid";
-        const nodeKind = node.dataset.nodeKind ?? "node";
-        const isSelectedPrimary = node.classList.contains("diagram-node-selected");
-        const borderColor = nodeKind === "group-box"
-            ? "#8FD5B7"
-            : (isSelectedPrimary ? "#006399" : "#C6C6CD");
+        const hasVisibleStroke = strokeColor !== "transparent" && Number(strokeWidth) > 0;
 
         node.style.backgroundColor = fillColor;
-        node.style.borderWidth = `${strokeWidth}px`;
-        node.style.borderColor = borderColor;
-        node.style.borderStyle = strokeStyle;
+        node.style.borderWidth = hasVisibleStroke ? `${strokeWidth}px` : "0px";
+        node.style.borderColor = strokeColor;
+        node.style.borderStyle = hasVisibleStroke ? strokeStyle : "solid";
+        node.style.boxShadow = hasVisibleStroke ? "" : "none";
     };
 
     const ensureResizeHandle = (node) => {
-        if (node.querySelector("[data-node-resize-handle]")) {
-            return;
-        }
-
-        node.classList.add("relative");
-        const handle = document.createElement("button");
-        handle.type = "button";
-        handle.dataset.nodeResizeHandle = "";
-        handle.className = "diagram-node-resize-handle absolute -bottom-2 -right-2 w-4 h-4 rounded-full border-2 border-surface-white bg-secondary shadow-sm";
-        handle.setAttribute("aria-label", "Resize node");
-        node.appendChild(handle);
+        node.querySelectorAll("[data-node-resize-handle]").forEach((handle) => handle.remove());
     };
 
     const getAnchorPoint = (node, anchor) => {
@@ -403,22 +562,146 @@ function initializeDiagramPage() {
         }
     };
 
-    const moveNodeByDelta = (node, deltaX, deltaY) => {
-        const initialLeft = node.offsetLeft;
-        const initialTop = node.offsetTop;
-        node.style.left = `${initialLeft + deltaX}px`;
-        node.style.top = `${initialTop + deltaY}px`;
+    const getStagePoint = (event) => {
+        const stageRect = diagramStage.getBoundingClientRect();
+        return {
+            x: (event.clientX - stageRect.left) / currentScale,
+            y: (event.clientY - stageRect.top) / currentScale
+        };
+    };
 
-        if (node.dataset.nodeKind === "group-box") {
-            getGroupedChildNodes(node).forEach((child) => {
-                child.style.left = `${child.offsetLeft + deltaX}px`;
-                child.style.top = `${child.offsetTop + deltaY}px`;
-            });
-        } else {
-            syncNodeGroupMembership(node);
-        }
+    const getNodeBox = (node) => ({
+        x: node.offsetLeft,
+        y: node.offsetTop,
+        width: node.offsetWidth,
+        height: node.offsetHeight
+    });
+
+    const normalizeBox = logic.normalizeBox;
+
+    const isNodeInsideBox = (node, area) => {
+        const box = getNodeBox(node);
+        return logic.isBoxInside(box, area);
+    };
+
+    const createSelectionBox = () => {
+        const box = document.createElement("div");
+        box.className = "diagram-selection-box";
+        diagramStage.appendChild(box);
+        return box;
+    };
+
+    const syncSelectionBox = (boxElement, area) => {
+        boxElement.style.left = `${area.x}px`;
+        boxElement.style.top = `${area.y}px`;
+        boxElement.style.width = `${area.width}px`;
+        boxElement.style.height = `${area.height}px`;
+    };
+
+    const moveNodesByDelta = (nodes, deltaX, deltaY) => {
+        const targets = new Map();
+
+        nodes.forEach((node) => {
+            targets.set(node.dataset.nodeKey ?? String(targets.size), node);
+            if (node.dataset.nodeKind === "group-box") {
+                getGroupedChildNodes(node).forEach((child) => {
+                    targets.set(child.dataset.nodeKey ?? String(targets.size), child);
+                });
+            }
+        });
+
+        Array.from(targets.values()).forEach((node) => {
+            node.style.left = `${node.offsetLeft + deltaX}px`;
+            node.style.top = `${node.offsetTop + deltaY}px`;
+        });
+
+        Array.from(targets.values()).forEach((node) => {
+            if (node.dataset.nodeKind !== "group-box") {
+                syncNodeGroupMembership(node);
+            }
+        });
 
         updateLinePaths();
+        syncSelectionFrame();
+    };
+
+    const moveNodeByDelta = (node, deltaX, deltaY) => {
+        moveNodesByDelta([node], deltaX, deltaY);
+    };
+
+    const getNodeMinimumSize = (node) => {
+        return logic.nodeMinimumSize(node.dataset.nodeKind, node.dataset.shapeType);
+    };
+
+    const resizeNodeFromCorner = (node, corner, startBox, currentPoint) => {
+        const min = getNodeMinimumSize(node);
+        const nextBox = logic.resizeBox(startBox, corner, currentPoint, min, {
+            preserveAspect: node.dataset.shapeType === "circle"
+        });
+
+        node.style.left = `${nextBox.left}px`;
+        node.style.top = `${nextBox.top}px`;
+        node.style.width = `${nextBox.width}px`;
+        node.style.height = `${nextBox.height}px`;
+    };
+
+    let isFrameResizing = false;
+    let frameResizeCorner = "se";
+    let frameResizeStartBox = null;
+
+    const getOrCreateSelectionFrame = () => {
+        if (selectionFrame) {
+            return selectionFrame;
+        }
+
+        const frame = document.createElement("div");
+        frame.className = "diagram-node-selection-frame";
+        ["nw", "n", "ne", "e", "se", "s", "sw", "w"].forEach((corner) => {
+            const handle = document.createElement("button");
+            handle.type = "button";
+            handle.dataset.nodeResizeHandle = corner;
+            handle.className = `diagram-node-resize-handle diagram-node-resize-handle--${corner}`;
+            handle.setAttribute("aria-label", `Resize selected node ${corner}`);
+            handle.addEventListener("mousedown", (event) => {
+                if (activeTool !== "select" || !selectedNode) {
+                    return;
+                }
+
+                isFrameResizing = true;
+                frameResizeCorner = corner;
+                frameResizeStartBox = {
+                    left: selectedNode.offsetLeft,
+                    top: selectedNode.offsetTop,
+                    width: selectedNode.offsetWidth,
+                    height: selectedNode.offsetHeight
+                };
+                event.preventDefault();
+                event.stopPropagation();
+                document.body.style.userSelect = "none";
+            });
+            frame.appendChild(handle);
+        });
+
+        diagramStage.appendChild(frame);
+        selectionFrame = frame;
+        return frame;
+    };
+
+    const syncSelectionFrame = () => {
+        if (!selectedNode || selectedNodes.length !== 1) {
+            selectionFrame?.remove();
+            selectionFrame = null;
+            return;
+        }
+
+        const padding = 8;
+        const frame = getOrCreateSelectionFrame();
+        const stageRect = diagramStage.getBoundingClientRect();
+        const nodeRect = selectedNode.getBoundingClientRect();
+        frame.style.left = `${(nodeRect.left - stageRect.left) / currentScale - padding}px`;
+        frame.style.top = `${(nodeRect.top - stageRect.top) / currentScale - padding}px`;
+        frame.style.width = `${nodeRect.width / currentScale + padding * 2}px`;
+        frame.style.height = `${nodeRect.height / currentScale + padding * 2}px`;
     };
 
     const updateLinePaths = () => {
@@ -464,43 +747,36 @@ function initializeDiagramPage() {
         }
         element.dataset.bound = "true";
         ensureResizeHandle(element);
+        element.classList.remove("relative");
         element.style.left = `${element.offsetLeft}px`;
         element.style.top = `${element.offsetTop}px`;
+        element.style.userSelect = "none";
         element.dataset.fillColor = element.dataset.fillColor ?? (element.dataset.nodeKey === "order-service" ? "#CDE5FF" : "#FFFFFF");
+        element.dataset.strokeColor = element.dataset.strokeColor ?? (element.dataset.nodeKind === "group-box" ? "#8FD5B7" : "#C6C6CD");
         element.dataset.strokeWidth = element.dataset.strokeWidth ?? (element.dataset.nodeKey === "order-service" ? "2" : "1");
         element.dataset.strokeStyle = element.dataset.strokeStyle ?? "solid";
+        element.dataset.nodeBadgeText = element.dataset.nodeBadgeText ?? (element.querySelector("[data-node-badge]")?.textContent?.trim() ?? "");
+        element.dataset.nodeBadgePosition = element.dataset.nodeBadgePosition ?? "right";
+        syncNodeBadge(element);
+        applyNodeTextAppearance(element);
         applyNodeAppearance(element);
         syncNodeGroupMembership(element);
 
         element.addEventListener("click", (event) => {
             event.stopPropagation();
+            if (hasDragged) {
+                hasDragged = false;
+                event.preventDefault();
+                return;
+            }
             setSelectedNode(element);
         });
 
         let isDragging = false;
+        let hasDragged = false;
         let startX = 0;
         let startY = 0;
-        let initialLeft = 0;
-        let initialTop = 0;
-        let groupedChildren = [];
-        let isResizing = false;
-        let initialWidth = 0;
-        let initialHeight = 0;
-        const resizeHandle = element.querySelector("[data-node-resize-handle]");
-
-        resizeHandle?.addEventListener("mousedown", (event) => {
-            if (activeTool !== "select") {
-                return;
-            }
-            isResizing = true;
-            startX = event.clientX;
-            startY = event.clientY;
-            initialWidth = element.offsetWidth;
-            initialHeight = element.offsetHeight;
-            setSelectedNode(element);
-            event.preventDefault();
-            event.stopPropagation();
-        });
+        let dragSnapshots = [];
 
         element.addEventListener("mousedown", (event) => {
             if (activeTool !== "select") {
@@ -510,66 +786,123 @@ function initializeDiagramPage() {
                 return;
             }
             isDragging = true;
+            hasDragged = false;
             startX = event.clientX;
             startY = event.clientY;
-            initialLeft = element.offsetLeft;
-            initialTop = element.offsetTop;
-            groupedChildren = element.dataset.nodeKind === "group-box"
-                ? getGroupedChildNodes(element).map((child) => ({
-                    element: child,
-                    initialLeft: child.offsetLeft,
-                    initialTop: child.offsetTop
-                }))
-                : [];
-            setSelectedNode(element);
+
+            if (event.shiftKey || event.ctrlKey || event.metaKey) {
+                if (selectedNodes.includes(element)) {
+                    const nextSelection = selectedNodes.filter((node) => node !== element);
+                    setSelectedNodes(nextSelection.length ? nextSelection : [element]);
+                } else {
+                    setSelectedNodes([...selectedNodes, element]);
+                }
+            } else if (!selectedNodes.includes(element)) {
+                setSelectedNode(element);
+            }
+
+            dragSnapshots = (selectedNodes.includes(element) ? selectedNodes : [element]).map((node) => ({
+                element: node,
+                initialLeft: node.offsetLeft,
+                initialTop: node.offsetTop
+            }));
+
+            selectedNodes
+                .filter((node) => node.dataset.nodeKind === "group-box")
+                .forEach((groupNode) => {
+                    getGroupedChildNodes(groupNode).forEach((child) => {
+                        if (!dragSnapshots.some((item) => item.element === child)) {
+                            dragSnapshots.push({
+                                element: child,
+                                initialLeft: child.offsetLeft,
+                                initialTop: child.offsetTop
+                            });
+                        }
+                    });
+                });
+
+            if (element.dataset.nodeKind === "group-box" && !selectedNodes.includes(element)) {
+                getGroupedChildNodes(element).forEach((child) => {
+                    if (!dragSnapshots.some((item) => item.element === child)) {
+                        dragSnapshots.push({
+                            element: child,
+                            initialLeft: child.offsetLeft,
+                            initialTop: child.offsetTop
+                        });
+                    }
+                });
+            }
+
             event.preventDefault();
             event.stopPropagation();
+            document.body.style.userSelect = "none";
         });
 
         window.addEventListener("mousemove", (event) => {
-            if (isResizing) {
-                const deltaX = (event.clientX - startX) / currentScale;
-                const deltaY = (event.clientY - startY) / currentScale;
-                const minWidth = element.dataset.nodeKind === "group-box" ? 240 : 120;
-                const minHeight = element.dataset.nodeKind === "group-box" ? 120 : 72;
-                element.style.width = `${Math.max(minWidth, initialWidth + deltaX)}px`;
-                element.style.height = `${Math.max(minHeight, initialHeight + deltaY)}px`;
-                if (element.dataset.nodeKind !== "group-box") {
-                    syncNodeGroupMembership(element);
-                } else {
-                    syncGroupedNodeHighlights(element);
-                }
-                updateLinePaths();
-                return;
-            }
             if (!isDragging) {
                 return;
             }
             const deltaX = (event.clientX - startX) / currentScale;
             const deltaY = (event.clientY - startY) / currentScale;
-            element.style.left = `${initialLeft + deltaX}px`;
-            element.style.top = `${initialTop + deltaY}px`;
-            groupedChildren.forEach((child) => {
-                child.element.style.left = `${child.initialLeft + deltaX}px`;
-                child.element.style.top = `${child.initialTop + deltaY}px`;
+            if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) {
+                hasDragged = true;
+            }
+            dragSnapshots.forEach((item) => {
+                item.element.style.left = `${item.initialLeft + deltaX}px`;
+                item.element.style.top = `${item.initialTop + deltaY}px`;
             });
             updateLinePaths();
+            syncSelectionFrame();
         });
 
         window.addEventListener("mouseup", () => {
+            if (isDragging && dragSnapshots.length) {
+                dragSnapshots.forEach((item) => {
+                    if (item.element.dataset.nodeKind !== "group-box") {
+                        syncNodeGroupMembership(item.element);
+                    }
+                });
+            }
             isDragging = false;
-            isResizing = false;
-            if (element.dataset.nodeKind !== "group-box") {
+            document.body.style.userSelect = "";
+            if (!hasDragged && element.dataset.nodeKind !== "group-box") {
                 syncNodeGroupMembership(element);
             }
-            groupedChildren = [];
+            dragSnapshots = [];
+            syncSelectionFrame();
         });
     };
+
+    const shapeTools = ["rectangle", "circle", "diamond"];
+    const isShapeTool = (tool) => shapeTools.includes(tool);
 
     const createNodeMarkup = (tool) => {
         const node = document.createElement("div");
         node.dataset.diagramNode = "";
         node.dataset.nodeKey = `generated-${tool}-${++nodeCounter}`;
+
+        if (tool === "rectangle" || tool === "circle" || tool === "diamond") {
+            const title = tool === "rectangle"
+                ? "Rectangle"
+                : (tool === "circle" ? "Circle" : "Diamond");
+            const shapeClass = tool === "rectangle"
+                ? "diagram-shape-rectangle w-40 h-28"
+                : (tool === "circle" ? "diagram-shape-circle w-32 h-32" : "diagram-shape-diamond w-28 h-28");
+
+            node.dataset.nodeKind = "shape";
+            node.dataset.shapeType = tool;
+            node.dataset.fillColor = "#FFFFFF";
+            node.dataset.strokeColor = "#C6C6CD";
+            node.dataset.strokeWidth = "2";
+            node.dataset.strokeStyle = "solid";
+            node.dataset.textColor = "";
+            node.className = `absolute ${shapeClass} bg-surface-white border border-outline-variant shadow-sm cursor-move z-10`;
+            node.innerHTML = `
+                <span class="hidden" data-node-title>${title}</span>
+                <span class="hidden" data-node-subtitle">Shape</span>
+            `;
+            return node;
+        }
 
         let icon = "rectangle";
         let title = "Service Node";
@@ -578,16 +911,7 @@ function initializeDiagramPage() {
         let widthClass = "w-48";
         let extraClass = "";
 
-        if (tool === "circle") {
-            icon = "circle";
-            title = "Circle Node";
-            subtitle = "Visual Group";
-            shapeClass = "rounded-full";
-        } else if (tool === "diamond") {
-            icon = "category";
-            title = "Decision";
-            subtitle = "Logic";
-        } else if (tool === "text") {
+        if (tool === "text") {
             icon = "text_fields";
             title = "Text Block";
             subtitle = "Editable";
@@ -608,8 +932,10 @@ function initializeDiagramPage() {
         if (tool === "group-box") {
             node.dataset.nodeKind = "group-box";
             node.dataset.fillColor = "rgba(16, 185, 129, 0.05)";
+            node.dataset.strokeColor = "#8FD5B7";
             node.dataset.strokeWidth = "1";
             node.dataset.strokeStyle = "dashed";
+            node.dataset.textColor = "";
             node.className = `absolute ${widthClass} ${shapeClass} ${extraClass} border p-0 cursor-move`;
             node.innerHTML = `
                 <div class="absolute -top-3 left-6 bg-surface-container-low px-2 font-label-md text-label-md text-accent-db flex items-center gap-1">
@@ -632,53 +958,27 @@ function initializeDiagramPage() {
         return node;
     };
 
+    const placeNodeAtPoint = (node, point) => {
+        diagramStage.appendChild(node);
+        const offsetLeft = node.offsetWidth / 2;
+        const offsetTop = node.offsetHeight / 2;
+        node.style.left = `${Math.max(24, point.x - offsetLeft)}px`;
+        node.style.top = `${Math.max(24, point.y - offsetTop)}px`;
+        bindNodeInteractions(node);
+        syncNodeGroupMembership(node);
+        setSelectedNode(node);
+    };
+
     const createNodeAtPointer = (event) => {
         if (activeTool === "select") {
             return;
         }
-        const stageRect = diagramStage.getBoundingClientRect();
-        const left = (event.clientX - stageRect.left) / currentScale;
-        const top = (event.clientY - stageRect.top) / currentScale;
+        const point = getStagePoint(event);
         const node = createNodeMarkup(activeTool);
-        diagramStage.appendChild(node);
-        const offsetLeft = activeTool === "group-box" ? 350 : 96;
-        const offsetTop = activeTool === "group-box" ? 90 : 48;
-        node.style.left = `${Math.max(24, left - offsetLeft)}px`;
-        node.style.top = `${Math.max(24, top - offsetTop)}px`;
-        bindNodeInteractions(node);
-        syncNodeGroupMembership(node);
-        setSelectedNode(node);
+        placeNodeAtPoint(node, point);
         activeTool = "select";
         syncToolButtons();
     };
-
-    spacesToggle.addEventListener("click", () => {
-        setSpacesHidden(true);
-    });
-
-    spacesOpenButton?.addEventListener("click", () => {
-        setSpacesHidden(false);
-    });
-
-    document.addEventListener("click", (event) => {
-        if (!(event.target instanceof HTMLElement)) {
-            return;
-        }
-
-        const clickedOpenButton = event.target.closest("#diagram-spaces-open");
-        const clickedSidebarSpaces = event.target.closest("[data-open-diagram-spaces]");
-        if (!clickedOpenButton && !clickedSidebarSpaces) {
-            return;
-        }
-
-        const isDiagramPage = window.location.pathname.replace(/\/$/, "") === "/diagram";
-        if (clickedSidebarSpaces && !isDiagramPage) {
-            return;
-        }
-
-        event.preventDefault();
-        setSpacesHidden(false);
-    });
 
     zoomInButton?.addEventListener("click", () => {
         currentScale = Math.min(2, Number((currentScale + 0.1).toFixed(2)));
@@ -698,40 +998,167 @@ function initializeDiagramPage() {
     });
 
     let isPanning = false;
+    let isSelecting = false;
+    let selectionStart = null;
+    let selectionBox = null;
+    let selectionMoved = false;
+    let suppressCanvasClick = false;
+    let drawingShape = null;
+    let suppressShapeClick = false;
     let startX = 0;
     let startY = 0;
     let initialScrollLeft = 0;
     let initialScrollTop = 0;
 
+    const syncDrawingShape = (node, start, end) => {
+        const area = normalizeBox(start, end);
+        const width = Math.max(1, area.width);
+        const height = Math.max(1, area.height);
+        node.style.left = `${area.x}px`;
+        node.style.top = `${area.y}px`;
+        node.style.width = `${width}px`;
+        node.style.height = `${height}px`;
+    };
+
     zoomLayer.addEventListener("mousedown", (event) => {
         if (event.target instanceof HTMLElement && event.target.closest("[data-diagram-node]")) {
+            return;
+        }
+        if (isShapeTool(activeTool) && event.button === 0) {
+            const point = getStagePoint(event);
+            const node = createNodeMarkup(activeTool);
+            node.classList.add("diagram-node-drawing");
+            diagramStage.appendChild(node);
+            syncDrawingShape(node, point, point);
+            drawingShape = {
+                node,
+                tool: activeTool,
+                start: point,
+                moved: false
+            };
+            clearSelectedNode();
+            event.preventDefault();
             return;
         }
         if (activeTool !== "select") {
             return;
         }
-        isPanning = true;
+
+        if (event.altKey || event.button === 1) {
+            isPanning = true;
+            startX = event.clientX;
+            startY = event.clientY;
+            initialScrollLeft = zoomLayer.scrollLeft;
+            initialScrollTop = zoomLayer.scrollTop;
+            zoomLayer.style.cursor = "grabbing";
+            event.preventDefault();
+            return;
+        }
+
+        if (event.button !== 0) {
+            return;
+        }
+
+        isSelecting = true;
+        selectionMoved = false;
+        selectionStart = getStagePoint(event);
+        selectionBox = createSelectionBox();
+        syncSelectionBox(selectionBox, normalizeBox(selectionStart, selectionStart));
         startX = event.clientX;
         startY = event.clientY;
-        initialScrollLeft = zoomLayer.scrollLeft;
-        initialScrollTop = zoomLayer.scrollTop;
-        zoomLayer.style.cursor = "grabbing";
+        event.preventDefault();
     });
 
     window.addEventListener("mousemove", (event) => {
-        if (!isPanning) {
+        if (isFrameResizing && selectedNode && frameResizeStartBox) {
+            resizeNodeFromCorner(selectedNode, frameResizeCorner, frameResizeStartBox, getStagePoint(event));
+            if (selectedNode.dataset.nodeKind !== "group-box") {
+                syncNodeGroupMembership(selectedNode);
+            } else {
+                syncGroupedNodeHighlights(selectedNode);
+            }
+            updateLinePaths();
+            syncSelectionFrame();
             return;
         }
-        zoomLayer.scrollLeft = initialScrollLeft - (event.clientX - startX);
-        zoomLayer.scrollTop = initialScrollTop - (event.clientY - startY);
+
+        if (drawingShape) {
+            const currentPoint = getStagePoint(event);
+            const area = normalizeBox(drawingShape.start, currentPoint);
+            drawingShape.moved = area.width > 4 || area.height > 4;
+            syncDrawingShape(drawingShape.node, drawingShape.start, currentPoint);
+            return;
+        }
+
+        if (isSelecting && selectionStart && selectionBox) {
+            const currentPoint = getStagePoint(event);
+            const area = normalizeBox(selectionStart, currentPoint);
+            selectionMoved = area.width > 4 || area.height > 4;
+            syncSelectionBox(selectionBox, area);
+            if (selectionMoved) {
+                const nodes = getNodes().filter((node) => isNodeInsideBox(node, area));
+                setSelectedNodes(nodes);
+            }
+            return;
+        }
+
+        if (isPanning) {
+            zoomLayer.scrollLeft = initialScrollLeft - (event.clientX - startX);
+            zoomLayer.scrollTop = initialScrollTop - (event.clientY - startY);
+        }
     });
 
     window.addEventListener("mouseup", () => {
+        if (isFrameResizing) {
+            isFrameResizing = false;
+            frameResizeStartBox = null;
+            document.body.style.userSelect = "";
+            syncSelectionFrame();
+        }
+
+        if (drawingShape) {
+            const { node, start, moved } = drawingShape;
+            if (!moved) {
+                node.classList.remove("diagram-node-drawing");
+                node.style.width = "";
+                node.style.height = "";
+                placeNodeAtPoint(node, start);
+            } else {
+                node.classList.remove("diagram-node-drawing");
+                bindNodeInteractions(node);
+                syncNodeGroupMembership(node);
+                setSelectedNode(node);
+            }
+            drawingShape = null;
+            suppressShapeClick = true;
+            activeTool = "select";
+            syncToolButtons();
+        }
+
+        if (isSelecting) {
+            if (!selectionMoved) {
+                clearSelectedNode();
+            } else {
+                suppressCanvasClick = true;
+            }
+            selectionBox?.remove();
+            selectionBox = null;
+            selectionStart = null;
+            isSelecting = false;
+        }
         isPanning = false;
         syncToolButtons();
     });
 
     zoomLayer.addEventListener("click", (event) => {
+        if (suppressShapeClick) {
+            suppressShapeClick = false;
+            return;
+        }
+        if (suppressCanvasClick) {
+            suppressCanvasClick = false;
+            return;
+        }
         if (event.target instanceof HTMLElement && event.target.closest("[data-diagram-node]")) {
             return;
         }
@@ -753,7 +1180,8 @@ function initializeDiagramPage() {
     }, { passive: false });
 
     window.addEventListener("keydown", (event) => {
-        if (!selectedNode) {
+        const activeNodes = selectedNodes.length ? selectedNodes : (selectedNode ? [selectedNode] : []);
+        if (!activeNodes.length) {
             return;
         }
         if (event.target instanceof HTMLElement) {
@@ -780,7 +1208,7 @@ function initializeDiagramPage() {
         }
 
         event.preventDefault();
-        moveNodeByDelta(selectedNode, deltaX, deltaY);
+        moveNodesByDelta(activeNodes, deltaX, deltaY);
     });
 
     getNodes().forEach(bindNodeInteractions);
@@ -810,6 +1238,46 @@ function initializeDiagramPage() {
         updateLinePaths();
     });
 
+    textColorButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!selectedNode) {
+                return;
+            }
+            selectedNode.dataset.textColor = button.dataset.textColor ?? "";
+            applyNodeTextAppearance(selectedNode);
+            updateSelectionPanel(selectedNode);
+        });
+    });
+
+    textColorPicker?.addEventListener("input", () => {
+        if (!selectedNode || !(textColorPicker instanceof HTMLInputElement)) {
+            return;
+        }
+        selectedNode.dataset.textColor = textColorPicker.value;
+        applyNodeTextAppearance(selectedNode);
+        updateSelectionPanel(selectedNode);
+    });
+
+    nodeBadgeInput?.addEventListener("input", () => {
+        if (!selectedNode) {
+            return;
+        }
+        selectedNode.dataset.nodeBadgeText = nodeBadgeInput.value.trim();
+        syncNodeBadge(selectedNode);
+        syncSelectionFrame();
+    });
+
+    badgePositionButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!selectedNode || !button.dataset.badgePosition) {
+                return;
+            }
+            selectedNode.dataset.nodeBadgePosition = button.dataset.badgePosition;
+            syncNodeBadge(selectedNode);
+            updateSelectionPanel(selectedNode);
+        });
+    });
+
     fillColorButtons.forEach((button) => {
         button.addEventListener("click", () => {
             if (!selectedNode || !button.dataset.fillColor) {
@@ -819,6 +1287,35 @@ function initializeDiagramPage() {
             applyNodeAppearance(selectedNode);
             updateSelectionPanel(selectedNode);
         });
+    });
+
+    fillColorPicker?.addEventListener("input", () => {
+        if (!selectedNode || !(fillColorPicker instanceof HTMLInputElement)) {
+            return;
+        }
+        selectedNode.dataset.fillColor = fillColorPicker.value;
+        applyNodeAppearance(selectedNode);
+        updateSelectionPanel(selectedNode);
+    });
+
+    strokeColorButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!selectedNode || !button.dataset.strokeColor) {
+                return;
+            }
+            selectedNode.dataset.strokeColor = button.dataset.strokeColor;
+            applyNodeAppearance(selectedNode);
+            updateSelectionPanel(selectedNode);
+        });
+    });
+
+    strokeColorPicker?.addEventListener("input", () => {
+        if (!selectedNode || !(strokeColorPicker instanceof HTMLInputElement)) {
+            return;
+        }
+        selectedNode.dataset.strokeColor = strokeColorPicker.value;
+        applyNodeAppearance(selectedNode);
+        updateSelectionPanel(selectedNode);
     });
 
     strokeWidthInput?.addEventListener("input", () => {
@@ -888,8 +1385,14 @@ function initializeDiagramPage() {
         clearSelectedNode();
     });
 
-    setSpacesHidden(true);
+    propertyTabs.forEach((button) => {
+        button.addEventListener("click", () => {
+            setActivePropertyTab(button.dataset.propertyTab ?? "text");
+        });
+    });
+
     setPropertiesPanelVisible(false);
+    setActivePropertyTab("text");
     applyScale();
     syncToolButtons();
     updateLinePaths();
