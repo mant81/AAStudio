@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::div})}">
+<div class="flex flex-col w-full h-full p-6 space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="font-headline-lg text-headline-lg text-on-background" th:text="${pageTitle}">Studio Dashboard</h1>
+            <p class="font-body-md text-body-md text-on-surface-variant mt-1" th:text="${pageDescription}">Project Alpha Operations</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button class="bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors px-4 py-2 rounded-lg font-label-md text-label-md uppercase tracking-wider flex items-center gap-2" type="button">
+                <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                Last 30 Days
+            </button>
+            <button class="bg-primary hover:bg-primary/90 text-on-primary transition-colors px-4 py-2 rounded-lg font-label-md text-label-md uppercase tracking-wider flex items-center gap-2 shadow-sm" type="button">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                New Workspace
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/30 flex flex-col justify-between hover:-translate-y-1 transition-transform duration-300 shadow-sm relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-accent-api/10 rounded-full blur-xl"></div>
+            <div class="flex items-center justify-between mb-4 relative z-10">
+                <span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest" th:text="${metricCards[0]['title']}">Active APIs</span>
+                <div class="w-8 h-8 rounded-full bg-accent-api/20 flex items-center justify-center text-accent-api">
+                    <span class="material-symbols-outlined text-[16px]" th:text="${metricCards[0]['iconName']}">api</span>
+                </div>
+            </div>
+            <div class="relative z-10">
+                <div class="font-display-lg text-display-lg text-on-background" th:text="${metricCards[0]['metricValue']}">24</div>
+                <div class="flex items-center gap-1 mt-1 text-accent-db font-label-md text-label-md">
+                    <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                    <span th:text="${metricCards[0]['trendText']}">+3 this week</span>
+                </div>
+            </div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/30 flex flex-col justify-between hover:-translate-y-1 transition-transform duration-300 shadow-sm relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-accent-db/10 rounded-full blur-xl"></div>
+            <div class="flex items-center justify-between mb-4 relative z-10">
+                <span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest" th:text="${metricCards[1]['title']}">DB Entities</span>
+                <div class="w-8 h-8 rounded-full bg-accent-db/20 flex items-center justify-center text-accent-db">
+                    <span class="material-symbols-outlined text-[16px]" th:text="${metricCards[1]['iconName']}">database</span>
+                </div>
+            </div>
+            <div class="relative z-10">
+                <div class="font-display-lg text-display-lg text-on-background" th:text="${metricCards[1]['metricValue']}">156</div>
+                <div class="flex items-center gap-1 mt-1 text-on-surface-variant font-label-md text-label-md">
+                    <span class="material-symbols-outlined text-[14px]">horizontal_rule</span>
+                    <span th:text="${metricCards[1]['trendText']}">Unchanged</span>
+                </div>
+            </div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/30 flex flex-col justify-between hover:-translate-y-1 transition-transform duration-300 shadow-sm relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-accent-logic/10 rounded-full blur-xl"></div>
+            <div class="flex items-center justify-between mb-4 relative z-10">
+                <span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest" th:text="${metricCards[2]['title']}">Team Members</span>
+                <div class="w-8 h-8 rounded-full bg-accent-logic/20 flex items-center justify-center text-accent-logic">
+                    <span class="material-symbols-outlined text-[16px]" th:text="${metricCards[2]['iconName']}">group</span>
+                </div>
+            </div>
+            <div class="relative z-10">
+                <div class="flex -space-x-2 overflow-hidden mb-2">
+                    <div class="inline-block h-8 w-8 rounded-full ring-2 ring-surface-container-lowest bg-secondary/20"></div>
+                    <div class="inline-block h-8 w-8 rounded-full ring-2 ring-surface-container-lowest bg-accent-db/20"></div>
+                    <div class="inline-block h-8 w-8 rounded-full ring-2 ring-surface-container-lowest bg-accent-api/20"></div>
+                    <div class="inline-block h-8 w-8 rounded-full ring-2 ring-surface-container-lowest bg-surface-container flex items-center justify-center font-label-md text-label-md text-on-surface">+5</div>
+                </div>
+                <div class="flex items-center gap-1 text-accent-db font-label-md text-label-md">
+                    <span class="material-symbols-outlined text-[14px]">trending_up</span>
+                    <span th:text="${metricCards[2]['trendText']}">+1 this week</span>
+                </div>
+            </div>
+        </div>
+        <div class="bg-primary text-on-primary rounded-2xl p-5 flex flex-col justify-between hover:-translate-y-1 transition-transform duration-300 shadow-sm relative overflow-hidden">
+            <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 100% 0%, currentColor 0%, transparent 50%);"></div>
+            <div class="flex items-center justify-between mb-4 relative z-10">
+                <span class="font-label-md text-label-md text-on-primary/70 uppercase tracking-widest" th:text="${metricCards[3]['title']}">System Health</span>
+                <div class="w-8 h-8 rounded-full bg-surface-white/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[16px] text-accent-db" th:text="${metricCards[3]['iconName']}">health_and_safety</span>
+                </div>
+            </div>
+            <div class="relative z-10">
+                <div class="font-display-lg text-display-lg" th:text="${metricCards[3]['metricValue']}">99.9%</div>
+                <div class="h-8 mt-2 w-full flex items-end gap-1">
+                    <div class="w-1/6 bg-accent-db/50 rounded-t-sm" style="height: 60%"></div>
+                    <div class="w-1/6 bg-accent-db/60 rounded-t-sm" style="height: 70%"></div>
+                    <div class="w-1/6 bg-accent-db/80 rounded-t-sm" style="height: 90%"></div>
+                    <div class="w-1/6 bg-accent-db/70 rounded-t-sm" style="height: 85%"></div>
+                    <div class="w-1/6 bg-accent-db/90 rounded-t-sm" style="height: 95%"></div>
+                    <div class="w-1/6 bg-accent-db rounded-t-sm" style="height: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 flex flex-col gap-6">
+            <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
+                <div class="p-5 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-lowest">
+                    <h2 class="font-title-md text-title-md text-on-background">Recent Architecture Changes</h2>
+                    <button class="text-on-surface-variant hover:text-primary transition-colors font-label-md text-label-md uppercase tracking-wider flex items-center gap-1" type="button">
+                        View All
+                        <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                        <tr class="border-b border-outline-variant/30 bg-surface-container-lowest">
+                            <th class="p-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-medium">Resource</th>
+                            <th class="p-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-medium">Action</th>
+                            <th class="p-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-medium">User</th>
+                            <th class="p-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-medium text-right">Time</th>
+                        </tr>
+                        </thead>
+                        <tbody class="font-body-md text-body-md text-on-background">
+                        <tr th:each="log : ${activityLogs}" class="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors group">
+                            <td class="p-4 flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                                     th:classappend="${log['resourceType'] == 'api' ? ' bg-accent-api/10 text-accent-api' : (log['resourceType'] == 'database' ? ' bg-accent-db/10 text-accent-db' : ' bg-surface-container-highest text-on-surface')}">
+                                    <span class="material-symbols-outlined text-[16px]"
+                                          th:text="${log['resourceType'] == 'api' ? 'api' : (log['resourceType'] == 'database' ? 'database' : 'share')}">api</span>
+                                </div>
+                                <span class="font-code-sm text-code-sm text-on-background" th:text="${log['resourceName']}">/api/v1/users</span>
+                            </td>
+                            <td class="p-4">
+                                <span class="inline-flex items-center px-2 py-1 rounded-md font-label-md text-[10px] uppercase tracking-wider"
+                                      th:classappend="${log['actionTone'] == 'positive' ? ' bg-accent-db/10 text-accent-db' : (log['actionTone'] == 'warning' ? ' bg-accent-logic/10 text-accent-logic' : ' bg-surface-container-highest text-on-surface')}"
+                                      th:text="${log['actionName']}">Updated</span>
+                            </td>
+                            <td class="p-4" th:text="${log['userName']}">Sarah J.</td>
+                            <td class="p-4 text-right text-on-surface-variant" th:text="${log['relativeTime']}">10m ago</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm p-6 relative overflow-hidden flex flex-col items-center justify-center min-h-[300px]">
+                <div class="absolute inset-0 pointer-events-none" style="background-image: radial-gradient(circle at center, rgba(139, 92, 246, 0.05) 0%, transparent 70%);"></div>
+                <div class="text-center z-10 mb-6">
+                    <h3 class="font-title-md text-title-md text-on-background mb-2">Architecture Topology</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Live view of active nodes and connections.</p>
+                </div>
+                <div class="relative w-full max-w-md h-48 z-10">
+                    <svg class="w-full h-full text-outline-variant/50" fill="none" stroke="currentColor" stroke-dasharray="4 4" stroke-width="1.5" viewBox="0 0 400 200">
+                        <path class="animate-[dash_20s_linear_infinite]" d="M50 100 Q 150 20 200 100 T 350 100"></path>
+                        <path d="M100 150 L 200 100 L 300 150"></path>
+                        <path d="M200 50 L 200 100 L 200 150"></path>
+                        <circle class="text-accent-api/20" cx="50" cy="100" fill="currentColor" r="12" stroke="currentColor" stroke-dasharray="none"></circle>
+                        <circle class="text-accent-api" cx="50" cy="100" fill="currentColor" r="4" stroke="none"></circle>
+                        <circle class="text-primary/10" cx="200" cy="100" fill="currentColor" r="16" stroke="currentColor" stroke-dasharray="none"></circle>
+                        <circle class="text-primary" cx="200" cy="100" fill="currentColor" r="6" stroke="none"></circle>
+                        <circle class="text-accent-db/20" cx="350" cy="100" fill="currentColor" r="12" stroke="currentColor" stroke-dasharray="none"></circle>
+                        <circle class="text-accent-db" cx="350" cy="100" fill="currentColor" r="4" stroke="none"></circle>
+                        <circle class="text-surface-container-highest" cx="100" cy="150" fill="currentColor" r="8" stroke="currentColor" stroke-dasharray="none"></circle>
+                        <circle class="text-surface-container-highest" cx="300" cy="150" fill="currentColor" r="8" stroke="currentColor" stroke-dasharray="none"></circle>
+                        <circle class="text-surface-container-highest" cx="200" cy="50" fill="currentColor" r="8" stroke="currentColor" stroke-dasharray="none"></circle>
+                        <circle class="text-surface-container-highest" cx="200" cy="150" fill="currentColor" r="8" stroke="currentColor" stroke-dasharray="none"></circle>
+                    </svg>
+                    <style>
+                        @keyframes dash {
+                            to {
+                                stroke-dashoffset: -100;
+                            }
+                        }
+                    </style>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-6">
+            <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm p-5">
+                <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-4">Quick Actions</h3>
+                <div class="flex flex-col gap-2">
+                    <button type="button" th:each="action : ${quickActions}" class="w-full flex items-center justify-between p-3 rounded-xl hover:bg-surface-container transition-colors group text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                                 th:classappend="${action['accentTone'] == 'api' ? ' bg-accent-api/10 text-accent-api group-hover:bg-accent-api group-hover:text-on-primary' : (action['accentTone'] == 'db' ? ' bg-accent-db/10 text-accent-db group-hover:bg-accent-db group-hover:text-on-primary' : ' bg-surface-container-highest text-on-surface group-hover:bg-on-surface group-hover:text-surface-container-lowest')}">
+                                <span class="material-symbols-outlined text-[18px]" th:text="${action['iconName']}">add_box</span>
+                            </div>
+                            <span class="font-body-md text-body-md text-on-background font-medium" th:text="${action['title']}">New API Endpoint</span>
+                        </div>
+                        <span class="material-symbols-outlined text-outline-variant group-hover:text-on-surface transition-colors">chevron_right</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col flex-1">
+                <div class="p-5 border-b border-outline-variant/30 bg-surface-container-lowest">
+                    <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Workspace Status</h3>
+                </div>
+                <div class="p-5 flex-1 flex flex-col gap-4">
+                    <div th:each="item : ${statusItems}" class="flex items-center justify-between">
+                        <span class="font-body-md text-body-md text-on-background" th:text="${item['label']}">Build Pipeline</span>
+                        <strong class="font-label-md text-label-md"
+                                th:classappend="${item['tone'] == 'positive' ? ' text-accent-db' : (item['tone'] == 'warning' ? ' text-accent-logic' : ' text-on-surface-variant')}"
+                                th:text="${item['valueText']}">Healthy</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>

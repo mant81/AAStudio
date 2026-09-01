@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::div})}">
+<div class="flex flex-col w-full h-full">
+    <div class="h-14 bg-surface-white border-b border-surface-container flex items-center justify-between px-6 shrink-0 shadow-sm z-10 relative">
+        <div class="flex items-center gap-4">
+            <h1 class="font-title-md text-title-md text-on-surface" th:text="${pageTitle}">E-Commerce Schema</h1>
+            <span class="px-2 py-1 bg-surface-container text-on-surface-variant rounded-md font-code-sm text-code-sm">v2.1.0</span>
+            <div class="h-4 w-[1px] bg-outline-variant mx-2"></div>
+            <div class="flex items-center gap-2">
+                <button class="p-2 text-on-surface-variant hover:bg-surface hover:text-primary rounded-lg transition-colors flex items-center justify-center group relative" type="button">
+                    <span class="material-symbols-outlined text-[20px]">pan_tool</span>
+                </button>
+                <button class="p-2 bg-secondary/10 text-secondary rounded-lg transition-colors flex items-center justify-center group relative" type="button">
+                    <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">arrow_selector_tool</span>
+                </button>
+                <div class="h-4 w-[1px] bg-outline-variant mx-1"></div>
+                <button class="p-2 text-on-surface-variant hover:bg-surface hover:text-primary rounded-lg transition-colors flex items-center justify-center group relative" type="button">
+                    <span class="material-symbols-outlined text-[20px]">grid_on</span>
+                </button>
+                <div class="flex items-center bg-surface-container rounded-lg overflow-hidden ml-2">
+                    <button class="p-1.5 text-on-surface-variant hover:bg-surface-variant hover:text-primary transition-colors flex items-center justify-center" type="button">
+                        <span class="material-symbols-outlined text-[18px]">remove</span>
+                    </button>
+                    <span class="font-code-sm text-code-sm px-2 text-on-surface w-12 text-center">100%</span>
+                    <button class="p-1.5 text-on-surface-variant hover:bg-surface-variant hover:text-primary transition-colors flex items-center justify-center" type="button">
+                        <span class="material-symbols-outlined text-[18px]">add</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="flex -space-x-2 mr-4 relative z-0">
+                <div class="w-8 h-8 rounded-full border-2 border-surface-white z-20 bg-secondary/20"></div>
+                <div class="w-8 h-8 rounded-full border-2 border-surface-white z-10 bg-accent-db/20"></div>
+                <div class="w-8 h-8 rounded-full border-2 border-surface-white bg-surface-container-high flex items-center justify-center z-0">
+                    <span class="font-label-md text-label-md text-on-surface-variant">+2</span>
+                </div>
+            </div>
+            <button class="px-4 py-2 bg-surface text-on-surface hover:bg-surface-container border border-outline-variant rounded-xl font-label-md text-label-md transition-colors flex items-center gap-2 shadow-sm" type="button">
+                <span class="material-symbols-outlined text-[18px]">share</span>
+                Share
+            </button>
+            <button class="px-4 py-2 bg-primary text-on-primary hover:bg-primary/90 rounded-xl font-label-md text-label-md transition-colors flex items-center gap-2 shadow-sm" type="button">
+                <span class="material-symbols-outlined text-[18px]">data_object</span>
+                Export SQL
+            </button>
+        </div>
+    </div>
+    <div class="flex flex-1 overflow-hidden">
+        <div class="w-64 bg-surface-white border-r border-surface-container flex flex-col shrink-0 relative z-10 shadow-[2px_0_12px_rgba(0,0,0,0.02)] sidebar-transition group/secondary-sidebar" id="secondary-sidebar">
+            <div class="p-4 group-[.collapsed]/secondary-sidebar:px-2">
+                <div class="flex items-center justify-end mb-2">
+                    <button class="p-1 hover:bg-secondary/10 text-on-surface-variant hover:text-secondary rounded transition-colors" id="secondary-sidebar-toggle" type="button">
+                        <span class="material-symbols-outlined text-[20px] transition-transform duration-300">chevron_left</span>
+                    </button>
+                </div>
+                <button class="w-full py-2 px-4 bg-secondary/10 hover:bg-secondary/20 text-secondary rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 transition-colors border border-secondary/20" type="button">
+                    <span class="material-symbols-outlined text-[18px]">add</span>
+                    New Table
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-2 pb-4 custom-scrollbar group-[.collapsed]/secondary-sidebar:px-2">
+                <div class="px-2 mb-4">
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
+                        <input class="w-full bg-surface pl-9 pr-3 py-1.5 rounded-lg font-body-md text-body-md text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/50 border border-transparent focus:border-secondary/30 transition-all group-[.collapsed]/secondary-sidebar:hidden" placeholder="Search objects..." type="text">
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <div class="group">
+                        <div class="flex items-center gap-1 px-2 py-1.5 hover:bg-surface rounded-lg cursor-pointer text-on-surface">
+                            <span class="material-symbols-outlined text-[16px] text-on-surface-variant transition-transform rotate-90">chevron_right</span>
+                            <span class="material-symbols-outlined text-[16px] text-accent-logic">table_chart</span>
+                            <span class="font-label-md text-label-md uppercase tracking-wider flex-1 group-[.collapsed]/secondary-sidebar:hidden">Tables</span>
+                            <span class="font-code-sm text-[10px] text-on-surface-variant group-[.collapsed]/secondary-sidebar:hidden">3</span>
+                        </div>
+                        <div class="pl-6 pr-2 py-1 space-y-0.5">
+                            <div class="flex items-center justify-between px-2 py-1.5 bg-secondary/5 text-secondary rounded-lg cursor-pointer border-l-2 border-secondary relative group/item">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[16px]">table</span>
+                                    <span class="font-code-sm text-code-sm font-medium group-[.collapsed]/secondary-sidebar:hidden">users</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between px-2 py-1.5 hover:bg-surface text-on-surface-variant hover:text-on-surface rounded-lg cursor-pointer border-l-2 border-transparent relative group/item">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[16px]">table</span>
+                                    <span class="font-code-sm text-code-sm group-[.collapsed]/secondary-sidebar:hidden">orders</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between px-2 py-1.5 hover:bg-surface text-on-surface-variant hover:text-on-surface rounded-lg cursor-pointer border-l-2 border-transparent relative group/item">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[16px]">table</span>
+                                    <span class="font-code-sm text-code-sm group-[.collapsed]/secondary-sidebar:hidden">products</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="group mt-2">
+                        <div class="flex items-center gap-1 px-2 py-1.5 hover:bg-surface rounded-lg cursor-pointer text-on-surface-variant">
+                            <span class="material-symbols-outlined text-[16px] transition-transform">chevron_right</span>
+                            <span class="material-symbols-outlined text-[16px] text-accent-api">visibility</span>
+                            <span class="font-label-md text-label-md uppercase tracking-wider flex-1 group-[.collapsed]/secondary-sidebar:hidden">Views</span>
+                            <span class="font-code-sm text-[10px] group-[.collapsed]/secondary-sidebar:hidden">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex-1 bg-surface-container-low relative overflow-hidden ERD-canvas" id="erd-canvas">
+            <div class="absolute inset-0 z-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 1px 1px, var(--tw-colors-outline-variant) 1px, transparent 0); background-size: 24px 24px;"></div>
+            <svg class="absolute inset-0 w-full h-full z-0 pointer-events-none" id="erd-lines">
+                <path class="text-outline-variant" d="M 280,180 L 330,180 C 350,180 350,260 380,260 L 420,260" fill="none" stroke="currentColor" stroke-dasharray="4 4" stroke-width="2"></path>
+                <circle class="text-outline-variant" cx="280" cy="180" fill="currentColor" r="4"></circle>
+                <path class="text-outline-variant" d="M 410,255 L 420,260 L 410,265" fill="none" stroke="currentColor" stroke-width="2"></path>
+                <path class="text-outline-variant" d="M 680,280 L 730,280 C 750,280 750,180 780,180 L 820,180" fill="none" stroke="currentColor" stroke-dasharray="4 4" stroke-width="2"></path>
+                <circle class="text-outline-variant" cx="820" cy="180" fill="currentColor" r="4"></circle>
+                <path class="text-outline-variant" d="M 690,275 L 680,280 L 690,285" fill="none" stroke="currentColor" stroke-width="2"></path>
+            </svg>
+            <div class="relative w-full h-full p-8 z-10" id="canvas-pan-area">
+                <div class="absolute top-[100px] left-[40px] w-60 bg-surface-white rounded-xl shadow-xl border border-secondary flex flex-col overflow-hidden transition-shadow hover:shadow-2xl cursor-grab table-node">
+                    <div class="bg-secondary text-on-secondary px-4 py-2.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px]">table</span>
+                            <span class="font-code-sm text-code-sm font-semibold">users</span>
+                        </div>
+                        <span class="material-symbols-outlined text-[16px] cursor-pointer opacity-70 hover:opacity-100">settings</span>
+                    </div>
+                    <div class="flex flex-col bg-surface-white">
+                        <div class="flex items-center justify-between px-4 py-2 border-b border-surface-container bg-surface-container-low/50">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[14px] text-accent-logic" style="font-variation-settings: 'FILL' 1;">key</span>
+                                <span class="font-code-sm text-code-sm text-on-surface font-semibold">id</span>
+                            </div>
+                            <span class="font-code-sm text-[11px] text-on-surface-variant">uuid</span>
+                        </div>
+                        <div class="flex items-center justify-between px-4 py-2 border-b border-surface-container hover:bg-surface-container-low transition-colors">
+                            <div class="flex items-center gap-2"><div class="w-[14px]"></div><span class="font-code-sm text-code-sm text-on-surface">email</span></div>
+                            <span class="font-code-sm text-[11px] text-on-surface-variant">varchar(255)</span>
+                        </div>
+                        <div class="flex items-center justify-between px-4 py-2 border-b border-surface-container hover:bg-surface-container-low transition-colors">
+                            <div class="flex items-center gap-2"><div class="w-[14px]"></div><span class="font-code-sm text-code-sm text-on-surface">password_hash</span></div>
+                            <span class="font-code-sm text-[11px] text-on-surface-variant">varchar</span>
+                        </div>
+                        <div class="flex items-center justify-between px-4 py-2 hover:bg-surface-container-low transition-colors">
+                            <div class="flex items-center gap-2"><div class="w-[14px]"></div><span class="font-code-sm text-code-sm text-on-surface">created_at</span></div>
+                            <span class="font-code-sm text-[11px] text-on-surface-variant">timestamp</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="absolute top-[180px] left-[420px] w-64 bg-surface-white rounded-xl shadow-md border border-outline-variant flex flex-col overflow-hidden transition-shadow hover:shadow-xl cursor-grab table-node">
+                    <div class="bg-surface-container text-on-surface px-4 py-2.5 flex items-center justify-between border-b border-outline-variant">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px]">table</span>
+                            <span class="font-code-sm text-code-sm font-semibold">orders</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col bg-surface-white">
+                        <div class="flex items-center justify-between px-4 py-2 border-b border-surface-container bg-surface-container-low/50">
+                            <div class="flex items-center gap-2"><span class="material-symbols-outlined text-[14px] text-accent-logic" style="font-variation-settings: 'FILL' 1;">key</span><span class="font-code-sm text-code-sm text-on-surface font-semibold">id</span></div>
+                            <span class="font-code-sm text-[11px] text-on-surface-variant">bigint</span>
+                        </div>
+                        <div class="flex items-center justify-between px-4 py-2 border-b border-surface-container bg-accent-logic/5">
+                            <div class="flex items-center gap-2"><span class="material-symbols-outlined text-[14px] text-accent-logic/70">link</span><span class="font-code-sm text-code-sm text-on-surface font-medium">user_id</span></div>
+                            <span class="font-code-sm text-[11px] text-on-surface-variant">uuid</span>
+                        </div>
+                        <div class="flex items-center justify-between px-4 py-2 border-b border-surface-container hover:bg-surface-container-low transition-colors">
+                            <div class="flex items-center gap-2"><div class="w-[14px]"></div><span class="font-code-sm text-code-sm text-on-surface">status</span></div>
+                            <span class="font-code-sm text-[11px] text-on-surface-variant">enum</span>
+                        </div>
+                        <div class="flex items-center justify-between px-4 py-2 hover:bg-surface-container-low transition-colors">
+                            <div class="flex items-center gap-2"><div class="w-[14px]"></div><span class="font-code-sm text-code-sm text-on-surface">total_amount</span></div>
+                            <span class="font-code-sm text-[11px] text-on-surface-variant">decimal(10,2)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="absolute top-[80px] left-[820px] w-60 bg-surface-white rounded-xl shadow-md border border-outline-variant flex flex-col overflow-hidden transition-shadow hover:shadow-xl cursor-grab table-node">
+                    <div class="bg-surface-container text-on-surface px-4 py-2.5 flex items-center justify-between border-b border-outline-variant">
+                        <div class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">table</span><span class="font-code-sm text-code-sm font-semibold">products</span></div>
+                    </div>
+                    <div class="flex flex-col bg-surface-white">
+                        <div class="flex items-center justify-between px-4 py-2 border-b border-surface-container bg-surface-container-low/50">
+                            <div class="flex items-center gap-2"><span class="material-symbols-outlined text-[14px] text-accent-logic" style="font-variation-settings: 'FILL' 1;">key</span><span class="font-code-sm text-code-sm text-on-surface font-semibold">id</span></div>
+                            <span class="font-code-sm text-[11px] text-on-surface-variant">int</span>
+                        </div>
+                        <div class="flex items-center justify-between px-4 py-2 border-b border-surface-container hover:bg-surface-container-low transition-colors">
+                            <div class="flex items-center gap-2"><div class="w-[14px]"></div><span class="font-code-sm text-code-sm text-on-surface">sku</span></div>
+                            <span class="font-code-sm text-[11px] text-on-surface-variant">varchar(50)</span>
+                        </div>
+                        <div class="flex items-center justify-between px-4 py-2 border-b border-surface-container hover:bg-surface-container-low transition-colors">
+                            <div class="flex items-center gap-2"><div class="w-[14px]"></div><span class="font-code-sm text-code-sm text-on-surface">name</span></div>
+                            <span class="font-code-sm text-[11px] text-on-surface-variant">varchar(200)</span>
+                        </div>
+                        <div class="flex items-center justify-between px-4 py-2 hover:bg-surface-container-low transition-colors">
+                            <div class="flex items-center gap-2"><div class="w-[14px]"></div><span class="font-code-sm text-code-sm text-on-surface">price</span></div>
+                            <span class="font-code-sm text-[11px] text-on-surface-variant">decimal(10,2)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>

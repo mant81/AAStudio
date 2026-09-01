@@ -1,0 +1,266 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}.sidebar-transition{transition:width 0.3s cubic-bezier(0.4, 0, 0.2, 1);}.content-transition{transition:padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={theme:{extend:{"colors":{"on-primary-container":"#7c839b","secondary-fixed":"#cde5ff","surface-white":"#FFFFFF","on-tertiary":"#ffffff","on-tertiary-container":"#75859d","on-secondary-container":"#004f7b","secondary-fixed-dim":"#94ccff","on-secondary-fixed":"#001d32","secondary":"#006399","surface-container-lowest":"#ffffff","tertiary":"#000000","on-background":"#191c1e","surface-container-highest":"#e0e3e5","inverse-primary":"#bec6e0","on-error":"#ffffff","error-container":"#ffdad6","tertiary-fixed-dim":"#b7c8e1","inverse-on-surface":"#eff1f3","on-tertiary-fixed":"#0b1c30","outline-variant":"#c6c6cd","surface-container":"#eceef0","outline":"#76777d","surface-variant":"#e0e3e5","tertiary-container":"#0b1c30","on-primary":"#ffffff","tertiary-fixed":"#d3e4fe","surface":"#f7f9fb","accent-api":"#8B5CF6","surface-tint":"#565e74","on-primary-fixed":"#131b2e","on-surface":"#191c1e","on-surface-variant":"#45464d","secondary-container":"#7bc2ff","background":"#f7f9fb","on-secondary":"#ffffff","on-tertiary-fixed-variant":"#38485d","surface-container-low":"#f2f4f6","primary-fixed":"#dae2fd","surface-container-high":"#e6e8ea","accent-logic":"#F59E0B","on-secondary-fixed-variant":"#004b74","primary-container":"#131b2e","surface-dim":"#d8dadc","primary-fixed-dim":"#bec6e0","inverse-surface":"#2d3133","accent-db":"#10B981","on-error-container":"#93000a","error":"#ba1a1a","on-primary-fixed-variant":"#3f465c","primary":"#000000","surface-bright":"#f7f9fb"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"sidebar-width":"260px","header-height":"64px","gutter":"16px","margin-mobile":"16px","margin-desktop":"32px","unit":"4px"},"fontFamily":{"code-sm":["JetBrains Mono"],"headline-lg":["Geist"],"body-lg":["Inter"],"headline-lg-mobile":["Geist"],"title-md":["Geist"],"display-lg":["Geist"],"body-md":["Inter"],"label-md":["Inter"]},"fontSize":{"code-sm":["12px",{"lineHeight":"18px","fontWeight":"400"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-lg-mobile":["24px",{"lineHeight":"32px","fontWeight":"600"}],"title-md":["20px",{"lineHeight":"28px","fontWeight":"600"}],"display-lg":["48px",{"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.01em","fontWeight":"500"}]}}}}</script><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"></head><body class="bg-background font-body-md text-on-background"><aside class="sidebar-transition fixed left-0 top-0 h-full w-sidebar-width bg-primary-container z-50 flex flex-col shadow-lg overflow-hidden group/sidebar" id="main-sidebar"><div class="h-header-height flex items-center px-6 gap-3 border-b border-on-primary-fixed-variant/20 shrink-0"><img alt="Logo" class="h-8 w-8 shrink-0 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNqyrlYsgVdORcKzUWr3pNrtyIkrS6c8212W8FqKHeLzxLtFxRLelCEIFXx4VPxdBUr0Ept-vJtFa66fyAj6lNGifE6Qy9Kb5a7w4pan5i8wJlHvCJs5kbgSH7FcOkkouh2GhGJmY3OS_0M9Y_10Q2XGyj4mq_rrUz4g4H1BIFLgSW_yGy60YS6yIZdrBwQgqvJH_c375Ikmphp4Lpq_FOLT7Wca5Bk5U9py0QbeeCRiB6Vm8UT-nY"><span class="text-surface-white font-title-md text-title-md tracking-tight whitespace-nowrap opacity-100 group-[.collapsed]/sidebar:opacity-0 transition-opacity">AAStudio</span></div><div class="px-4 py-4 shrink-0 overflow-hidden"><button class="w-full flex items-center justify-between px-4 py-2 bg-on-primary-fixed-variant/10 rounded-xl hover:bg-on-primary-fixed-variant/20 transition-colors group/switcher"><div class="flex flex-col items-start overflow-hidden"><span class="text-on-primary-container font-label-md text-label-md uppercase tracking-wider whitespace-nowrap">Project</span><span class="text-surface-white font-body-md text-body-md whitespace-nowrap">Alpha</span></div><span class="material-symbols-outlined text-on-primary-container group-hover/switcher:text-surface-white group-[.collapsed]/sidebar:hidden">unfold_more</span></button></div><nav class="flex-1 px-3 space-y-1 overflow-y-auto mt-2" data-active-classes="bg-secondary text-on-secondary rounded-xl" id="sidebar-nav"><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md group" data-path="dashboard" href="#" title="Dashboard"><span class="material-symbols-outlined mr-3">dashboard</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">Dashboard</span></a><div class="pt-2 pb-1 group/section"><div class="flex items-center justify-between px-4 py-2 text-on-primary-fixed-variant/60 font-label-md text-label-md uppercase tracking-widest group-[.collapsed]/sidebar:hidden"><span class="">Spaces</span><span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-surface-white transition-colors">expand_more</span></div><div class="space-y-1"><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md group" data-path="diagram" href="#" title="Diagram"><span class="material-symbols-outlined mr-3">share</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">Diagram</span></a><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md group" data-path="db-modeling" href="#" title="DB Modeling"><span class="material-symbols-outlined mr-3">database</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">DB Modeling</span></a><a aria-current="page" class="flex items-center px-4 py-3 transition-all font-body-md group bg-secondary text-on-secondary rounded-xl" data-path="api-specification" href="#" title="API Specification"><span class="material-symbols-outlined mr-3">code</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">API Spec</span></a></div></div><div class="pt-2 pb-1 group/section"><div class="flex items-center justify-between px-4 py-2 text-on-primary-fixed-variant/60 font-label-md text-label-md uppercase tracking-widest group-[.collapsed]/sidebar:hidden"><span class="">Resources</span><span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-surface-white transition-colors">expand_more</span></div><div class="space-y-1"><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md group" data-path="wiki" href="#" title="WIKI"><span class="material-symbols-outlined mr-3">library_books</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">WIKI</span></a><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md group" data-path="note" href="#" title="NOTE"><span class="material-symbols-outlined mr-3">sticky_note</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">NOTE</span></a></div></div><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md group" data-path="settings" href="#" title="Settings"><span class="material-symbols-outlined mr-3">settings</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">Settings</span></a></nav><div class="p-4 border-t border-on-primary-fixed-variant/20 shrink-0"><button class="w-full flex items-center justify-center py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl" id="sidebar-toggle"><span class="material-symbols-outlined transition-transform duration-300 group-[.collapsed]/sidebar:rotate-180">chevron_left</span></button></div></aside><div class="content-transition pl-sidebar-width group-[.collapsed]/sidebar:pl-20" id="content-wrapper"><header class="sidebar-transition fixed top-0 left-sidebar-width right-0 h-header-height bg-surface-white/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-end px-margin-desktop gap-6 group-[.collapsed]/sidebar:left-20"><div class="flex items-center gap-4 border-r border-outline-variant pr-6"><button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">search</span></button><button class="text-on-surface-variant hover:text-primary transition-colors relative"><span class="material-symbols-outlined">notifications</span><span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span></button></div><div class="flex items-center gap-3 pl-2"><div class="flex flex-col items-end"><span class="font-label-md text-label-md text-on-surface leading-none">Alex Architect</span><span class="font-label-md text-[10px] text-accent-db uppercase font-bold">Online</span></div><div class="relative"><img alt="Profile" class="w-9 h-9 rounded-full object-cover border-2 border-surface-container-high" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5vh9NvhhiOcBZGOLNP-kN4RTbtWU_UBGz2kSI0bLnG9d3TQQXIuX4jfJipmGCILQDUUj9W5u0k6UtLYIyiaLZjqAiThHifBsx763Ahd1htyoHtgU9bpIxkUFVmLUCM6QdB_mco9R2JV9dvcIzPHPXrdTSW7tM-TdWonTs7cvqVISFjmLAkL2-p3J3mf9_wIi-3DZiHb3xbODQ_zUsNsEy8zKMQ3WXANQM0MSSk-T9JrmTldpJCFay"><span class="absolute bottom-0 right-0 w-3 h-3 bg-accent-db border-2 border-surface-white rounded-full"></span></div></div></header><main class="relative pt-header-height bg-surface min-h-screen"><div class="flex flex-col w-full h-full relative">
+<div class="flex-1 flex overflow-hidden">
+<!-- Left Panel: API Endpoints (Scrollable) -->
+<div class="w-[320px] shrink-0 border-r border-outline-variant/30 flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-surface-container-lowest relative z-10 transition-all duration-300 ease-in-out">
+<div class="px-6 py-5 border-b border-outline-variant/30 sticky top-0 bg-surface-container-lowest/90 backdrop-blur z-10">
+<h1 class="font-title-md text-title-md text-on-surface">API Specification</h1><button id="secondary-sidebar-toggle" class="absolute right-4 top-6 text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">chevron_left</span></button>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Core Services v2.1.0</p>
+<div class="mt-4 relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 text-[18px]">search</span>
+<input class="w-full bg-surface-container rounded-lg py-2 pl-9 pr-3 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-accent-api/50 transition-shadow" placeholder="Search endpoints..." type="text">
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+<!-- Group: Users -->
+<div>
+<div class="flex items-center gap-2 mb-2 px-2 cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-on-surface transition-colors">folder</span>
+<h3 class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant group-hover:text-on-surface transition-colors">Users</h3>
+</div>
+<div class="space-y-1">
+<div class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-container cursor-pointer transition-colors group">
+<span class="font-code-sm text-[10px] text-accent-db font-bold pt-1 w-10 shrink-0">GET</span>
+<div class="min-w-0">
+<p class="font-code-sm text-code-sm text-on-surface truncate">/api/v2/users</p>
+<p class="font-body-md text-[12px] text-on-surface-variant truncate">List all users</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-2 rounded-lg bg-surface-container border-l-2 border-accent-api cursor-pointer transition-colors group">
+<span class="font-code-sm text-[10px] text-accent-api font-bold pt-1 w-10 shrink-0">POST</span>
+<div class="min-w-0">
+<p class="font-code-sm text-code-sm text-on-surface truncate">/api/v2/users</p>
+<p class="font-body-md text-[12px] text-on-surface-variant truncate">Create a new user</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-container cursor-pointer transition-colors group">
+<span class="font-code-sm text-[10px] text-accent-db font-bold pt-1 w-10 shrink-0">GET</span>
+<div class="min-w-0">
+<p class="font-code-sm text-code-sm text-on-surface truncate">/api/v2/users/{id}</p>
+<p class="font-body-md text-[12px] text-on-surface-variant truncate">Get user details</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-container cursor-pointer transition-colors group">
+<span class="font-code-sm text-[10px] text-accent-logic font-bold pt-1 w-10 shrink-0">PUT</span>
+<div class="min-w-0">
+<p class="font-code-sm text-code-sm text-on-surface truncate">/api/v2/users/{id}</p>
+<p class="font-body-md text-[12px] text-on-surface-variant truncate">Update user</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-container cursor-pointer transition-colors group">
+<span class="font-code-sm text-[10px] text-error font-bold pt-1 w-10 shrink-0">DEL</span>
+<div class="min-w-0">
+<p class="font-code-sm text-code-sm text-on-surface truncate">/api/v2/users/{id}</p>
+<p class="font-body-md text-[12px] text-on-surface-variant truncate">Delete user</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Group: Projects -->
+<div>
+<div class="flex items-center gap-2 mb-2 px-2 cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-on-surface transition-colors">folder</span>
+<h3 class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant group-hover:text-on-surface transition-colors">Projects</h3>
+</div>
+<div class="space-y-1">
+<div class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-container cursor-pointer transition-colors group">
+<span class="font-code-sm text-[10px] text-accent-db font-bold pt-1 w-10 shrink-0">GET</span>
+<div class="min-w-0">
+<p class="font-code-sm text-code-sm text-on-surface truncate">/api/v2/projects</p>
+<p class="font-body-md text-[12px] text-on-surface-variant truncate">List projects</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-container cursor-pointer transition-colors group">
+<span class="font-code-sm text-[10px] text-accent-api font-bold pt-1 w-10 shrink-0">POST</span>
+<div class="min-w-0">
+<p class="font-code-sm text-code-sm text-on-surface truncate">/api/v2/projects</p>
+<p class="font-body-md text-[12px] text-on-surface-variant truncate">Create project</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Group: Auth -->
+<div>
+<div class="flex items-center gap-2 mb-2 px-2 cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-on-surface transition-colors">folder_open</span>
+<h3 class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant group-hover:text-on-surface transition-colors">Auth</h3>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Panel: Endpoint Detail -->
+<div class="flex-1 flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-surface relative">
+<!-- Detail Header -->
+<div class="px-8 py-6 border-b border-outline-variant/30 bg-surface shrink-0 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<span class="px-3 py-1 bg-accent-api/10 text-accent-api font-code-sm text-code-sm font-bold rounded">POST</span>
+<h2 class="font-code-sm text-[20px] font-bold text-on-surface">/api/v2/users</h2>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md rounded-lg transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                        Test Endpoint
+                    </button>
+<button class="w-9 h-9 flex items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface rounded-lg transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Detail Content (Scrollable) -->
+<div class="flex-1 overflow-y-auto p-8 relative">
+<!-- Background Decoration -->
+<div class="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-accent-api/5 via-transparent to-transparent pointer-events-none"></div>
+<div class="max-w-4xl space-y-12 pb-24 relative z-10">
+<!-- Description -->
+<section>
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-2">Create a new user</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Creates a new user profile in the system. Requires valid authentication token with administrative privileges. The newly created user will receive an invitation email if `send_invite` is set to true.</p>
+<div class="flex gap-2 mt-4">
+<span class="px-2 py-1 bg-surface-container text-on-surface-variant font-label-md text-[11px] uppercase tracking-wider rounded border border-outline-variant/20">Authentication Required</span>
+<span class="px-2 py-1 bg-surface-container text-on-surface-variant font-label-md text-[11px] uppercase tracking-wider rounded border border-outline-variant/20">Admin Scope</span>
+</div>
+</section>
+<!-- Parameters -->
+<section>
+<h4 class="font-title-md text-title-md text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-accent-api">input</span>
+                            Request Body
+                        </h4>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden">
+<div class="grid grid-cols-12 gap-4 px-6 py-3 bg-surface-container/50 border-b border-outline-variant/30 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
+<div class="col-span-4">Name</div>
+<div class="col-span-3">Type</div>
+<div class="col-span-5">Description</div>
+</div>
+<div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-outline-variant/10 hover:bg-surface-container/20 transition-colors">
+<div class="col-span-4 flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-on-surface font-medium">email</span>
+<span class="text-[10px] text-error font-bold">*</span>
+</div>
+<div class="col-span-3">
+<span class="font-code-sm text-[12px] text-accent-logic">string (email)</span>
+</div>
+<div class="col-span-5 font-body-md text-body-md text-on-surface-variant">
+                                    User's primary email address. Must be unique across the organization.
+                                </div>
+</div>
+<div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-outline-variant/10 hover:bg-surface-container/20 transition-colors">
+<div class="col-span-4 flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-on-surface font-medium">first_name</span>
+<span class="text-[10px] text-error font-bold">*</span>
+</div>
+<div class="col-span-3">
+<span class="font-code-sm text-[12px] text-accent-logic">string</span>
+</div>
+<div class="col-span-5 font-body-md text-body-md text-on-surface-variant">
+                                    Given name of the user. Max length: 50 chars.
+                                </div>
+</div>
+<div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-outline-variant/10 hover:bg-surface-container/20 transition-colors">
+<div class="col-span-4 flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-on-surface font-medium">role_id</span>
+</div>
+<div class="col-span-3">
+<span class="font-code-sm text-[12px] text-accent-logic">string (uuid)</span>
+</div>
+<div class="col-span-5 font-body-md text-body-md text-on-surface-variant">
+                                    UUID of the role to assign. Defaults to standard user if omitted.
+                                </div>
+</div>
+<div class="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-surface-container/20 transition-colors">
+<div class="col-span-4 flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-on-surface font-medium">metadata</span>
+</div>
+<div class="col-span-3">
+<span class="font-code-sm text-[12px] text-accent-api">object</span>
+</div>
+<div class="col-span-5 font-body-md text-body-md text-on-surface-variant">
+                                    Arbitrary JSON key-value pairs for custom attributes. Max 4KB.
+                                </div>
+</div>
+</div>
+</section>
+<!-- Code Snippets & Responses -->
+<section class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+<!-- Example Request -->
+<div class="flex flex-col">
+<h4 class="font-title-md text-title-md text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant">code</span>
+                                Example Request
+                            </h4>
+<div class="flex-1 bg-tertiary-container rounded-xl overflow-hidden flex flex-col shadow-lg border border-outline-variant/20">
+<div class="px-4 py-2 bg-on-tertiary-fixed border-b border-white/10 flex items-center justify-between">
+<div class="flex gap-2">
+<button class="px-2 py-1 bg-white/10 text-on-tertiary font-code-sm text-[11px] rounded">cURL</button>
+<button class="px-2 py-1 text-on-tertiary/60 hover:text-on-tertiary font-code-sm text-[11px] rounded transition-colors">Node.js</button>
+<button class="px-2 py-1 text-on-tertiary/60 hover:text-on-tertiary font-code-sm text-[11px] rounded transition-colors">Python</button>
+</div>
+<button class="text-on-tertiary/60 hover:text-on-tertiary transition-colors"><span class="material-symbols-outlined text-[16px]">content_copy</span></button>
+</div>
+<div class="p-4 font-code-sm text-code-sm text-on-tertiary/90 overflow-x-auto">
+<pre class="!m-0"><code>curl -X POST "https://api.aastudio.dev/v2/users" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alex.architect@example.com",
+    "first_name": "Alex",
+    "last_name": "Architect",
+    "role_id": "role_8f92a1b",
+    "send_invite": true,
+    "metadata": {
+      "department": "Design",
+      "level": "Senior"
+    }
+  }'</token></code></pre>
+</div>
+</div>
+</div>
+<!-- Responses -->
+<div class="flex flex-col">
+<h4 class="font-title-md text-title-md text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-accent-db">check_circle</span>
+                                Responses
+                            </h4>
+<div class="flex-1 bg-surface-container-lowest rounded-xl border border-outline-variant/30 flex flex-col shadow-sm">
+<div class="px-4 py-2 bg-surface-container/50 border-b border-outline-variant/30 flex items-center justify-between">
+<div class="flex gap-2">
+<button class="px-3 py-1 bg-surface text-on-surface font-code-sm text-[12px] font-bold rounded shadow-sm border border-outline-variant/20 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-accent-db"></span> 201 Created</button>
+<button class="px-3 py-1 text-on-surface-variant hover:text-on-surface font-code-sm text-[12px] rounded transition-colors flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-accent-logic"></span> 400</button>
+<button class="px-3 py-1 text-on-surface-variant hover:text-on-surface font-code-sm text-[12px] rounded transition-colors flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-error"></span> 401</button>
+</div>
+</div>
+<div class="p-4 font-code-sm text-code-sm text-on-surface bg-surface-container-lowest overflow-x-auto rounded-b-xl">
+<pre class="!m-0 text-on-surface-variant"><code>{
+  <span class="text-accent-api">"id"</span>: "usr_94b2c1f8",
+  <span class="text-accent-api">"email"</span>: "alex.architect@example.com",
+  <span class="text-accent-api">"first_name"</span>: "Alex",
+  <span class="text-accent-api">"last_name"</span>: "Architect",
+  <span class="text-accent-api">"status"</span>: "invited",
+  <span class="text-accent-api">"role"</span>: {
+    <span class="text-accent-api">"id"</span>: "role_8f92a1b",
+    <span class="text-accent-api">"name"</span>: "Editor"
+  },
+  <span class="text-accent-api">"created_at"</span>: "2023-10-27T14:32:01Z",
+  <span class="text-accent-api">"metadata"</span>: {
+    <span class="text-accent-api">"department"</span>: "Design",
+    <span class="text-accent-api">"level"</span>: "Senior"
+  }
+}</code></pre>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</div>
+</div></main></div><script>const toggle = document.getElementById('sidebar-toggle');const sidebar = document.getElementById('main-sidebar');const content = document.getElementById('content-wrapper');const header = document.querySelector('header');toggle.addEventListener('click', () => {sidebar.classList.toggle('collapsed');sidebar.classList.toggle('w-sidebar-width');sidebar.classList.toggle('w-20');content.classList.toggle('pl-sidebar-width');content.classList.toggle('pl-20');header.classList.toggle('left-sidebar-width');header.classList.toggle('left-20');});</script>
+
+
+
+<script>const secToggle = document.getElementById('secondary-sidebar-toggle'); const secSidebar = document.querySelector('div.w-\\[320px\\]'); const secSidebarContent = secSidebar.querySelectorAll('.px-6, .px-4'); const secSidebarTitle = secSidebar.querySelector('h1'); const secSidebarSub = secSidebar.querySelector('p'); const secSearch = secSidebar.querySelector('.mt-4'); secToggle.addEventListener('click', () => { const isCollapsed = secSidebar.classList.contains('w-\\[320px\\]'); if (isCollapsed) { secSidebar.classList.replace('w-\\[320px\\]', 'w-16'); secSidebarContent.forEach(el => el.classList.add('opacity-0', 'pointer-events-none')); secToggle.querySelector('span').textContent = 'chevron_right'; secToggle.classList.replace('right-4', 'right-1/2'); secToggle.classList.add('translate-x-1/2'); } else { secSidebar.classList.replace('w-16', 'w-\\[320px\\]'); secSidebarContent.forEach(el => el.classList.remove('opacity-0', 'pointer-events-none')); secToggle.querySelector('span').textContent = 'chevron_left'; secToggle.classList.replace('right-1/2', 'right-4'); secToggle.classList.remove('translate-x-1/2'); } });</script>
+
+
+
+</body></html>

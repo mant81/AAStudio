@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::div})}">
+<div class="flex flex-col w-full h-full max-w-[1200px] mx-auto p-margin-desktop">
+    <div class="mb-12">
+        <h1 class="font-display-lg text-display-lg text-on-background mb-2" th:text="${pageTitle}">Settings</h1>
+        <p class="font-body-lg text-body-lg text-on-surface-variant" th:text="${pageDescription}">Manage your account, preferences, and studio integrations.</p>
+    </div>
+    <div class="grid grid-cols-12 gap-8">
+        <div class="col-span-12 md:col-span-3">
+            <nav class="flex flex-row md:flex-col gap-2 overflow-x-auto pb-4 md:pb-0" id="settings-nav">
+                <button class="flex items-center gap-3 px-4 py-3 bg-secondary/10 text-secondary rounded-xl font-title-md text-body-lg text-left whitespace-nowrap transition-colors" data-settings-tab="profile" type="button">
+                    <span class="material-symbols-outlined">person</span>
+                    Profile
+                </button>
+                <button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl font-title-md text-body-lg text-left whitespace-nowrap transition-colors" data-settings-tab="preferences" type="button">
+                    <span class="material-symbols-outlined">tune</span>
+                    Preferences
+                </button>
+                <button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl font-title-md text-body-lg text-left whitespace-nowrap transition-colors" data-settings-tab="team" type="button">
+                    <span class="material-symbols-outlined">group</span>
+                    Team
+                </button>
+            </nav>
+        </div>
+        <div class="col-span-12 md:col-span-9 relative min-h-[600px]">
+            <div class="settings-panel absolute inset-0 opacity-100 translate-y-0 transition-all duration-300 is-active" data-settings-panel="profile">
+                <div class="bg-surface-container-lowest rounded-2xl shadow-sm p-8 mb-8">
+                    <h2 class="font-headline-lg text-headline-lg text-on-background mb-6">Profile Information</h2>
+                    <div class="flex flex-col md:flex-row gap-8 items-start mb-8">
+                        <div class="relative group cursor-pointer">
+                            <div class="w-32 h-32 rounded-full bg-surface-container-high shadow-md transition-transform group-hover:scale-105"></div>
+                            <div class="absolute inset-0 bg-tertiary/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <span class="material-symbols-outlined text-surface-white">photo_camera</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 w-full space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div><label class="block font-label-md text-label-md text-on-surface-variant mb-2">First Name</label><input class="w-full bg-surface-container-low text-on-background font-body-lg text-body-lg px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-shadow" th:value="${profile['firstName']}" type="text"></div>
+                                <div><label class="block font-label-md text-label-md text-on-surface-variant mb-2">Last Name</label><input class="w-full bg-surface-container-low text-on-background font-body-lg text-body-lg px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-shadow" th:value="${profile['lastName']}" type="text"></div>
+                            </div>
+                            <div><label class="block font-label-md text-label-md text-on-surface-variant mb-2">Email Address</label><input class="w-full bg-surface-container-low text-on-background font-body-lg text-body-lg px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-shadow" th:value="${profile['email']}" type="email"></div>
+                            <div><label class="block font-label-md text-label-md text-on-surface-variant mb-2">Bio</label><textarea class="w-full bg-surface-container-low text-on-background font-body-lg text-body-lg px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-shadow resize-none" rows="3" th:text="${profile['bio']}">Bio</textarea></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end pt-4 border-t border-outline-variant/30">
+                        <button class="bg-secondary text-on-secondary px-6 py-2.5 rounded-full font-label-md text-label-md hover:bg-secondary/90 transition-colors shadow-sm" type="button">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-panel absolute inset-0 opacity-0 pointer-events-none translate-y-4 transition-all duration-300" data-settings-panel="preferences">
+                <div class="bg-surface-container-lowest rounded-2xl shadow-sm p-8 mb-8">
+                    <h2 class="font-headline-lg text-headline-lg text-on-background mb-6">App Preferences</h2>
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="font-title-md text-title-md text-on-background mb-4">Appearance</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <button class="relative flex flex-col items-center p-4 bg-surface-container-low rounded-xl ring-2 ring-secondary/50 transition-all" type="button"><div class="w-full h-20 bg-surface-white rounded-lg shadow-sm mb-3 relative overflow-hidden"><div class="absolute top-0 left-0 w-4 h-full bg-surface-container-highest"></div><div class="absolute top-2 left-6 right-2 h-2 bg-surface-container-highest rounded"></div><div class="absolute top-6 left-6 right-8 h-8 bg-surface-container rounded"></div></div><span class="font-label-md text-label-md text-on-surface">Light</span></button>
+                                <button class="relative flex flex-col items-center p-4 bg-surface-container-low hover:bg-surface-container rounded-xl transition-all" type="button"><div class="w-full h-20 bg-tertiary-container rounded-lg shadow-sm mb-3 relative overflow-hidden"><div class="absolute top-0 left-0 w-4 h-full bg-on-tertiary-fixed-variant"></div><div class="absolute top-2 left-6 right-2 h-2 bg-on-tertiary-fixed-variant rounded"></div><div class="absolute top-6 left-6 right-8 h-8 bg-on-tertiary-fixed rounded"></div></div><span class="font-label-md text-label-md text-on-surface">Dark</span></button>
+                                <button class="relative flex flex-col items-center p-4 bg-surface-container-low hover:bg-surface-container rounded-xl transition-all" type="button"><div class="w-full h-20 bg-gradient-to-r from-surface-white to-tertiary-container rounded-lg shadow-sm mb-3 relative overflow-hidden"><div class="absolute top-0 left-0 w-4 h-full bg-surface-container-highest"></div></div><span class="font-label-md text-label-md text-on-surface">System</span></button>
+                            </div>
+                        </div>
+                        <div class="pt-6 border-t border-outline-variant/30">
+                            <h3 class="font-title-md text-title-md text-on-background mb-4">Notifications</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between"><div><div class="font-body-lg text-body-lg text-on-background">Email Notifications</div><div class="font-body-md text-body-md text-on-surface-variant">Receive daily digests and mention alerts.</div></div><label class="relative inline-flex items-center cursor-pointer"><input checked class="sr-only peer" type="checkbox"><div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-white after:border-outline after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div></label></div>
+                                <div class="flex items-center justify-between"><div><div class="font-body-lg text-body-lg text-on-background">Desktop Push</div><div class="font-body-md text-body-md text-on-surface-variant">Get notified immediately when changes occur.</div></div><label class="relative inline-flex items-center cursor-pointer"><input class="sr-only peer" type="checkbox"><div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-white after:border-outline after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div></label></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-panel absolute inset-0 opacity-0 pointer-events-none translate-y-4 transition-all duration-300" data-settings-panel="team">
+                <div class="bg-surface-container-lowest rounded-2xl shadow-sm p-8 mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="font-headline-lg text-headline-lg text-on-background">Team Members</h2>
+                        <button class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg font-label-md text-label-md flex items-center gap-2 hover:bg-primary-container/80 transition-colors" type="button">
+                            <span class="material-symbols-outlined text-[18px]">person_add</span>
+                            Invite
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <div th:each="member : ${teamMembers}" class="flex items-center justify-between p-4 bg-surface-container-low rounded-xl">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-surface-container-high"></div>
+                                <div>
+                                    <div class="font-title-md text-[16px] text-on-background leading-tight" th:text="${member['name']}">Sarah Chen</div>
+                                    <div class="font-body-md text-body-md text-on-surface-variant" th:text="${member['email']}">sarah@aastudio.com</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="px-3 py-1 bg-secondary-fixed/50 text-on-secondary-fixed rounded-full font-label-md text-[11px] uppercase tracking-wider" th:text="${member['role']}">Owner</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>

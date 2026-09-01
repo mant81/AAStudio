@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::div})}">
+<div class="flex flex-col w-full h-full relative">
+    <div class="flex flex-1 overflow-hidden">
+        <div class="w-[320px] shrink-0 border-r border-outline-variant/30 flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-surface-container-lowest relative z-10 transition-all duration-300 ease-in-out">
+            <div class="px-6 py-5 border-b border-outline-variant/30 sticky top-0 bg-surface-container-lowest/90 backdrop-blur z-10">
+                <h1 class="font-title-md text-title-md text-on-surface" th:text="${pageTitle}">API Specification</h1>
+                <button class="absolute right-4 top-6 text-on-surface-variant hover:text-primary transition-colors" id="secondary-sidebar-toggle" type="button">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <p class="font-body-md text-body-md text-on-surface-variant mt-1" th:text="${pageDescription}">Core Services v2.1.0</p>
+                <div class="mt-4 relative">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 text-[18px]">search</span>
+                    <input class="w-full bg-surface-container rounded-lg py-2 pl-9 pr-3 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-accent-api/50 transition-shadow" placeholder="Search endpoints..." type="text">
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+                <div>
+                    <div class="flex items-center gap-2 mb-2 px-2 cursor-pointer group">
+                        <span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-on-surface transition-colors">folder</span>
+                        <h3 class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant group-hover:text-on-surface transition-colors">Users</h3>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-container cursor-pointer transition-colors group">
+                            <span class="font-code-sm text-[10px] text-accent-db font-bold pt-1 w-10 shrink-0">GET</span>
+                            <div class="min-w-0"><p class="font-code-sm text-code-sm text-on-surface truncate">/api/v2/users</p><p class="font-body-md text-[12px] text-on-surface-variant truncate">List all users</p></div>
+                        </div>
+                        <div class="flex items-start gap-3 p-2 rounded-lg bg-surface-container border-l-2 border-accent-api cursor-pointer transition-colors group">
+                            <span class="font-code-sm text-[10px] text-accent-api font-bold pt-1 w-10 shrink-0">POST</span>
+                            <div class="min-w-0"><p class="font-code-sm text-code-sm text-on-surface truncate">/api/v2/users</p><p class="font-body-md text-[12px] text-on-surface-variant truncate">Create a new user</p></div>
+                        </div>
+                        <div class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-container cursor-pointer transition-colors group">
+                            <span class="font-code-sm text-[10px] text-accent-db font-bold pt-1 w-10 shrink-0">GET</span>
+                            <div class="min-w-0"><p class="font-code-sm text-code-sm text-on-surface truncate">/api/v2/users/{id}</p><p class="font-body-md text-[12px] text-on-surface-variant truncate">Get user details</p></div>
+                        </div>
+                        <div class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-container cursor-pointer transition-colors group">
+                            <span class="font-code-sm text-[10px] text-accent-logic font-bold pt-1 w-10 shrink-0">PUT</span>
+                            <div class="min-w-0"><p class="font-code-sm text-code-sm text-on-surface truncate">/api/v2/users/{id}</p><p class="font-body-md text-[12px] text-on-surface-variant truncate">Update user</p></div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 mb-2 px-2 cursor-pointer group">
+                        <span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-on-surface transition-colors">folder</span>
+                        <h3 class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant group-hover:text-on-surface transition-colors">Projects</h3>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-container cursor-pointer transition-colors group">
+                            <span class="font-code-sm text-[10px] text-accent-db font-bold pt-1 w-10 shrink-0">GET</span>
+                            <div class="min-w-0"><p class="font-code-sm text-code-sm text-on-surface truncate">/api/v2/projects</p><p class="font-body-md text-[12px] text-on-surface-variant truncate">List projects</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex-1 flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-surface relative">
+            <div class="px-8 py-6 border-b border-outline-variant/30 bg-surface shrink-0 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <span class="px-3 py-1 bg-accent-api/10 text-accent-api font-code-sm text-code-sm font-bold rounded">POST</span>
+                    <h2 class="font-code-sm text-[20px] font-bold text-on-surface">/api/v2/users</h2>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="px-4 py-2 bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md rounded-lg transition-colors flex items-center gap-2" type="button">
+                        <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                        Test Endpoint
+                    </button>
+                    <button class="w-9 h-9 flex items-center justify-center bg-surface-container hover:bg-surface-container-high text-on-surface rounded-lg transition-colors" type="button">
+                        <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-8 relative">
+                <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-accent-api/5 via-transparent to-transparent pointer-events-none"></div>
+                <div class="max-w-4xl space-y-12 pb-24 relative z-10">
+                    <section>
+                        <h3 class="font-headline-lg text-headline-lg text-on-surface mb-2">Create a new user</h3>
+                        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Creates a new user profile in the system. Requires valid authentication token with administrative privileges. The newly created user will receive an invitation email if `send_invite` is set to true.</p>
+                        <div class="flex gap-2 mt-4">
+                            <span class="px-2 py-1 bg-surface-container text-on-surface-variant font-label-md text-[11px] uppercase tracking-wider rounded border border-outline-variant/20">Authentication Required</span>
+                            <span class="px-2 py-1 bg-surface-container text-on-surface-variant font-label-md text-[11px] uppercase tracking-wider rounded border border-outline-variant/20">Admin Scope</span>
+                        </div>
+                    </section>
+                    <section>
+                        <h4 class="font-title-md text-title-md text-on-surface mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-accent-api">input</span>
+                            Request Body
+                        </h4>
+                        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden">
+                            <div class="grid grid-cols-12 gap-4 px-6 py-3 bg-surface-container/50 border-b border-outline-variant/30 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
+                                <div class="col-span-4">Name</div><div class="col-span-3">Type</div><div class="col-span-5">Description</div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-outline-variant/10 hover:bg-surface-container/20 transition-colors">
+                                <div class="col-span-4 flex items-center gap-2"><span class="font-code-sm text-code-sm text-on-surface font-medium">email</span><span class="text-[10px] text-error font-bold">*</span></div>
+                                <div class="col-span-3"><span class="font-code-sm text-[12px] text-accent-logic">string (email)</span></div>
+                                <div class="col-span-5 font-body-md text-body-md text-on-surface-variant">User's primary email address. Must be unique across the organization.</div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-outline-variant/10 hover:bg-surface-container/20 transition-colors">
+                                <div class="col-span-4 flex items-center gap-2"><span class="font-code-sm text-code-sm text-on-surface font-medium">first_name</span><span class="text-[10px] text-error font-bold">*</span></div>
+                                <div class="col-span-3"><span class="font-code-sm text-[12px] text-accent-logic">string</span></div>
+                                <div class="col-span-5 font-body-md text-body-md text-on-surface-variant">Given name of the user. Max length: 50 chars.</div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-surface-container/20 transition-colors">
+                                <div class="col-span-4 flex items-center gap-2"><span class="font-code-sm text-code-sm text-on-surface font-medium">metadata</span></div>
+                                <div class="col-span-3"><span class="font-code-sm text-[12px] text-accent-api">object</span></div>
+                                <div class="col-span-5 font-body-md text-body-md text-on-surface-variant">Arbitrary JSON key-value pairs for custom attributes. Max 4KB.</div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        <div class="flex flex-col">
+                            <h4 class="font-title-md text-title-md text-on-surface mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant">code</span>Example Request</h4>
+                            <div class="flex-1 bg-tertiary-container rounded-xl overflow-hidden flex flex-col shadow-lg border border-outline-variant/20">
+                                <div class="px-4 py-2 bg-on-tertiary-fixed border-b border-white/10 flex items-center justify-between">
+                                    <div class="flex gap-2"><button class="px-2 py-1 bg-white/10 text-on-tertiary font-code-sm text-[11px] rounded">cURL</button></div>
+                                    <button class="text-on-tertiary/60 hover:text-on-tertiary transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">content_copy</span></button>
+                                </div>
+                                <div class="p-4 font-code-sm text-code-sm text-on-tertiary/90 overflow-x-auto"><pre class="!m-0"><code>curl -X POST "https://api.aastudio.dev/v2/users" \
+  -H "Authorization: Bearer &lt;token&gt;" \
+  -H "Content-Type: application/json"</code></pre></div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col">
+                            <h4 class="font-title-md text-title-md text-on-surface mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-accent-db">check_circle</span>Responses</h4>
+                            <div class="flex-1 bg-surface-container-lowest rounded-xl border border-outline-variant/30 flex flex-col shadow-sm">
+                                <div class="px-4 py-2 bg-surface-container/50 border-b border-outline-variant/30 flex items-center justify-between">
+                                    <div class="flex gap-2"><button class="px-3 py-1 bg-surface text-on-surface font-code-sm text-[12px] font-bold rounded shadow-sm border border-outline-variant/20 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-accent-db"></span> 201 Created</button></div>
+                                </div>
+                                <div class="p-4 font-code-sm text-code-sm text-on-surface bg-surface-container-lowest overflow-x-auto rounded-b-xl"><pre class="!m-0 text-on-surface-variant"><code>{
+  "id": "usr_94b2c1f8",
+  "email": "alex.architect@example.com",
+  "status": "invited"
+}</code></pre></div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>

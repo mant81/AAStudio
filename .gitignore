@@ -4,3 +4,4 @@ history/
 .tmp-edge-empty-frame-name/
 .tmp-edge-cdp-profile*/
 /aastudio-*/
+target/

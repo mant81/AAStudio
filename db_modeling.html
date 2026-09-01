@@ -1,0 +1,501 @@
+<!DOCTYPE html><html lang="en" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}.sidebar-transition{transition:width 0.3s cubic-bezier(0.4, 0, 0.2, 1);}.content-transition{transition:padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={theme:{extend:{"colors":{"on-primary-container":"#7c839b","secondary-fixed":"#cde5ff","surface-white":"#FFFFFF","on-tertiary":"#ffffff","on-tertiary-container":"#75859d","on-secondary-container":"#004f7b","secondary-fixed-dim":"#94ccff","on-secondary-fixed":"#001d32","secondary":"#006399","surface-container-lowest":"#ffffff","tertiary":"#000000","on-background":"#191c1e","surface-container-highest":"#e0e3e5","inverse-primary":"#bec6e0","on-error":"#ffffff","error-container":"#ffdad6","tertiary-fixed-dim":"#b7c8e1","inverse-on-surface":"#eff1f3","on-tertiary-fixed":"#0b1c30","outline-variant":"#c6c6cd","surface-container":"#eceef0","outline":"#76777d","surface-variant":"#e0e3e5","tertiary-container":"#0b1c30","on-primary":"#ffffff","tertiary-fixed":"#d3e4fe","surface":"#f7f9fb","accent-api":"#8B5CF6","surface-tint":"#565e74","on-primary-fixed":"#131b2e","on-surface":"#191c1e","on-surface-variant":"#45464d","secondary-container":"#7bc2ff","background":"#f7f9fb","on-secondary":"#ffffff","on-tertiary-fixed-variant":"#38485d","surface-container-low":"#f2f4f6","primary-fixed":"#dae2fd","surface-container-high":"#e6e8ea","accent-logic":"#F59E0B","on-secondary-fixed-variant":"#004b74","primary-container":"#131b2e","surface-dim":"#d8dadc","primary-fixed-dim":"#bec6e0","inverse-surface":"#2d3133","accent-db":"#10B981","on-error-container":"#93000a","error":"#ba1a1a","on-primary-fixed-variant":"#3f465c","primary":"#000000","surface-bright":"#f7f9fb"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"sidebar-width":"260px","header-height":"64px","gutter":"16px","margin-mobile":"16px","margin-desktop":"32px","unit":"4px"},"fontFamily":{"code-sm":["JetBrains Mono"],"headline-lg":["Geist"],"body-lg":["Inter"],"headline-lg-mobile":["Geist"],"title-md":["Geist"],"display-lg":["Geist"],"body-md":["Inter"],"label-md":["Inter"]},"fontSize":{"code-sm":["12px",{"lineHeight":"18px","fontWeight":"400"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-lg-mobile":["24px",{"lineHeight":"32px","fontWeight":"600"}],"title-md":["20px",{"lineHeight":"28px","fontWeight":"600"}],"display-lg":["48px",{"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.01em","fontWeight":"500"}]}}}}</script><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"></head><body class="bg-background font-body-md text-on-background"><aside class="sidebar-transition fixed left-0 top-0 h-full w-sidebar-width bg-primary-container z-50 flex flex-col shadow-lg overflow-hidden group/sidebar" id="main-sidebar"><div class="h-header-height flex items-center px-6 gap-3 border-b border-on-primary-fixed-variant/20 shrink-0"><img alt="Logo" class="h-8 w-8 shrink-0 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNqyrlYsgVdORcKzUWr3pNrtyIkrS6c8212W8FqKHeLzxLtFxRLelCEIFXx4VPxdBUr0Ept-vJtFa66fyAj6lNGifE6Qy9Kb5a7w4pan5i8wJlHvCJs5kbgSH7FcOkkouh2GhGJmY3OS_0M9Y_10Q2XGyj4mq_rrUz4g4H1BIFLgSW_yGy60YS6yIZdrBwQgqvJH_c375Ikmphp4Lpq_FOLT7Wca5Bk5U9py0QbeeCRiB6Vm8UT-nY"><span class="text-surface-white font-title-md text-title-md tracking-tight whitespace-nowrap opacity-100 group-[.collapsed]/sidebar:opacity-0 transition-opacity">AAStudio</span></div><div class="px-4 py-4 shrink-0 overflow-hidden"><button class="w-full flex items-center justify-between px-4 py-2 bg-on-primary-fixed-variant/10 rounded-xl hover:bg-on-primary-fixed-variant/20 transition-colors group/switcher"><div class="flex flex-col items-start overflow-hidden"><span class="text-on-primary-container font-label-md text-label-md uppercase tracking-wider whitespace-nowrap">Project</span><span class="text-surface-white font-body-md text-body-md whitespace-nowrap">Alpha</span></div><span class="material-symbols-outlined text-on-primary-container group-hover/switcher:text-surface-white group-[.collapsed]/sidebar:hidden">unfold_more</span></button></div><nav class="flex-1 px-3 space-y-1 overflow-y-auto mt-2" data-active-classes="bg-secondary text-on-secondary rounded-xl" id="sidebar-nav"><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md group" data-path="dashboard" href="#" title="Dashboard"><span class="material-symbols-outlined mr-3">dashboard</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">Dashboard</span></a><div class="pt-2 pb-1 group/section"><div class="flex items-center justify-between px-4 py-2 text-on-primary-fixed-variant/60 font-label-md text-label-md uppercase tracking-widest group-[.collapsed]/sidebar:hidden"><span class="">Spaces</span><span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-surface-white transition-colors">expand_more</span></div><div class="space-y-1"><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md group" data-path="diagram" href="#" title="Diagram"><span class="material-symbols-outlined mr-3">share</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">Diagram</span></a><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md group" data-path="db-modeling" href="#" title="DB Modeling"><span class="material-symbols-outlined mr-3">database</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">DB Modeling</span></a><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md group" data-path="api-specification" href="#" title="API Specification"><span class="material-symbols-outlined mr-3">code</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">API Spec</span></a></div></div><div class="pt-2 pb-1 group/section"><div class="flex items-center justify-between px-4 py-2 text-on-primary-fixed-variant/60 font-label-md text-label-md uppercase tracking-widest group-[.collapsed]/sidebar:hidden"><span class="">Resources</span><span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-surface-white transition-colors">expand_more</span></div><div class="space-y-1"><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md group" data-path="wiki" href="#" title="WIKI"><span class="material-symbols-outlined mr-3">library_books</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">WIKI</span></a><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md group" data-path="note" href="#" title="NOTE"><span class="material-symbols-outlined mr-3">description</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">NOTE</span></a></div></div><a aria-current="page" class="flex items-center px-4 py-3 transition-all font-body-md group bg-secondary text-on-secondary rounded-xl" data-path="settings" href="#" title="Settings"><span class="material-symbols-outlined mr-3">settings</span><span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">Settings</span></a></nav><div class="p-4 border-t border-on-primary-fixed-variant/20 shrink-0"><button class="w-full flex items-center justify-center py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl" id="sidebar-toggle"><span class="material-symbols-outlined transition-transform duration-300 group-[.collapsed]/sidebar:rotate-180">chevron_left</span></button></div></aside><div class="content-transition pl-sidebar-width group-[.collapsed]/sidebar:pl-20" id="content-wrapper"><header class="sidebar-transition fixed top-0 left-sidebar-width right-0 h-header-height bg-surface-white/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-end px-margin-desktop gap-6 group-[.collapsed]/sidebar:left-20 bg-surface-bright/80"><div class="flex items-center gap-4 border-r border-outline-variant pr-6"><button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">search</span></button><button class="text-on-surface-variant hover:text-primary transition-colors relative"><span class="material-symbols-outlined">notifications</span><span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span></button></div><div class="flex items-center gap-3 pl-2"><div class="flex flex-col items-end"><span class="font-label-md text-label-md text-on-surface leading-none">Alex Architect</span><span class="font-label-md text-[10px] text-accent-db uppercase font-bold">Online</span></div><div class="relative"><img alt="Profile" class="w-9 h-9 rounded-full object-cover border-2 border-surface-container-high" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5vh9NvhhiOcBZGOLNP-kN4RTbtWU_UBGz2kSI0bLnG9d3TQQXIuX4jfJipmGCILQDUUj9W5u0k6UtLYIyiaLZjqAiThHifBsx763Ahd1htyoHtgU9bpIxkUFVmLUCM6QdB_mco9R2JV9dvcIzPHPXrdTSW7tM-TdWonTs7cvqVISFjmLAkL2-p3J3mf9_wIi-3DZiHb3xbODQ_zUsNsEy8zKMQ3WXANQM0MSSk-T9JrmTldpJCFay"><span class="absolute bottom-0 right-0 w-3 h-3 bg-accent-db border-2 border-surface-white rounded-full"></span></div></div></header><main class="relative pt-header-height bg-surface min-h-screen"><div class="flex flex-col w-full h-full">
+<!-- Secondary Toolbar -->
+<div class="h-14 bg-surface-white border-b border-surface-container flex items-center justify-between px-6 shrink-0 shadow-sm z-10 relative">
+<div class="flex items-center gap-4">
+<h1 class="font-title-md text-title-md text-on-surface">E-Commerce Schema</h1>
+<span class="px-2 py-1 bg-surface-container text-on-surface-variant rounded-md font-code-sm text-code-sm">v2.1.0</span>
+<div class="h-4 w-[1px] bg-outline-variant mx-2"></div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-on-surface-variant hover:bg-surface hover:text-primary rounded-lg transition-colors flex items-center justify-center group relative">
+<span class="material-symbols-outlined text-[20px]">pan_tool</span>
+<span class="absolute -bottom-8 bg-inverse-surface text-inverse-on-surface text-label-md px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Pan Tool (H)</span>
+</button>
+<button class="p-2 bg-secondary/10 text-secondary rounded-lg transition-colors flex items-center justify-center group relative">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">arrow_selector_tool</span>
+<span class="absolute -bottom-8 bg-inverse-surface text-inverse-on-surface text-label-md px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Select Tool (V)</span>
+</button>
+<div class="h-4 w-[1px] bg-outline-variant mx-1"></div>
+<button class="p-2 text-on-surface-variant hover:bg-surface hover:text-primary rounded-lg transition-colors flex items-center justify-center group relative">
+<span class="material-symbols-outlined text-[20px]">grid_on</span>
+<span class="absolute -bottom-8 bg-inverse-surface text-inverse-on-surface text-label-md px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Toggle Grid</span>
+</button>
+<div class="flex items-center bg-surface-container rounded-lg overflow-hidden ml-2">
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant hover:text-primary transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">remove</span>
+</button>
+<span class="font-code-sm text-code-sm px-2 text-on-surface w-12 text-center">100%</span>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-variant hover:text-primary transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex -space-x-2 mr-4 relative z-0">
+<img class="w-8 h-8 rounded-full border-2 border-surface-white z-20" data-alt="A small circular avatar of a software developer with short dark hair, wearing a navy blue shirt, subtle lighting, professional studio headshot style, matching the Modern Enterprise aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAR8LacESIHgAKt33mGF2QnVzYwzZ5jJrxYrQhPQ6MaZdr9HBh_Q_0ycVConyaJZIwpTDw7TSIX-cIKxOGMjtn-YadRXzLzpyo5oTqFxNjbTQPRtHcEFlREcJPR3I02NtUk2wyL-4cYcG8HmpY8-RSeMZhyM-drckk8sEXUmUgI05r-gjDXAWMR3kNS6RMf-Ss5ZG4sqp7dyh3z_tfHhOlpzw-eo62Bg5SLN4O8h3IVoffy0iUcspzi">
+<img class="w-8 h-8 rounded-full border-2 border-surface-white z-10" data-alt="A small circular avatar of a female database administrator with glasses, looking focused, wearing a light gray blazer, clean white background, professional studio headshot style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRGJjvn71zQp_qh58I05AMG0OGtas6EcL4cAigFd4qmp13NwN5T9yfYaSCo7ngZjv9ruq2GTUz2WYt0K3wMM3Wd-3XiZaxxI1C0yBxppFgdajbAfDafkVgeRU1k52VYfELaGRjdsZc1TVGxVes2xA-iXIpBgFL5cKPHP_97FUf3gIwgaYxqGsDThH0VK6tz7aoTSd6aBJ_5jrwhjl7fxrILuGmZjdeASqVqMyPOsEc1Hv6igfA3fjw">
+<div class="w-8 h-8 rounded-full border-2 border-surface-white bg-surface-container-high flex items-center justify-center z-0">
+<span class="font-label-md text-label-md text-on-surface-variant">+2</span>
+</div>
+</div>
+<button class="px-4 py-2 bg-surface text-on-surface hover:bg-surface-container border border-outline-variant rounded-xl font-label-md text-label-md transition-colors flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">share</span>
+                Share
+            </button>
+<button class="px-4 py-2 bg-primary text-on-primary hover:bg-primary/90 rounded-xl font-label-md text-label-md transition-colors flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">data_object</span>
+                Export SQL
+            </button>
+</div>
+</div>
+<div class="flex flex-1 overflow-hidden">
+<!-- Left Sidebar: Spaces Area (Tree View) -->
+<div class="w-64 bg-surface-white border-r border-surface-container flex flex-col shrink-0 relative z-10 shadow-[2px_0_12px_rgba(0,0,0,0.02)] sidebar-transition group/secondary-sidebar" id="secondary-sidebar">
+<div class="p-4 group-[.collapsed]/secondary-sidebar:px-2"><div class="flex items-center justify-end mb-2"><button id="secondary-sidebar-toggle" class="p-1 hover:bg-secondary/10 text-on-surface-variant hover:text-secondary rounded transition-colors"><span class="material-symbols-outlined text-[20px] transition-transform duration-300">chevron_left</span></button></div>
+<button class="w-full py-2 px-4 bg-secondary/10 hover:bg-secondary/20 text-secondary rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 transition-colors border border-secondary/20">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    New Table
+                </button>
+</div>
+<div class="flex-1 overflow-y-auto px-2 pb-4 custom-scrollbar group-[.collapsed]/secondary-sidebar:px-2">
+<!-- Schema Search -->
+<div class="px-2 mb-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
+<input class="w-full bg-surface pl-9 pr-3 py-1.5 rounded-lg font-body-md text-body-md text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/50 border border-transparent focus:border-secondary/30 transition-all group-[.collapsed]/secondary-sidebar:hidden" placeholder="Search objects..." type="text">
+</div>
+</div>
+<!-- Tree View -->
+<div class="space-y-1">
+<!-- Tables Group -->
+<div class="group">
+<div class="flex items-center gap-1 px-2 py-1.5 hover:bg-surface rounded-lg cursor-pointer text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant transition-transform rotate-90">chevron_right</span>
+<span class="material-symbols-outlined text-[16px] text-accent-logic">table_chart</span>
+<span class="font-label-md text-label-md uppercase tracking-wider flex-1 group-[.collapsed]/secondary-sidebar:hidden">Tables</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant group-[.collapsed]/secondary-sidebar:hidden">3</span>
+</div>
+<div class="pl-6 pr-2 py-1 space-y-0.5">
+<!-- Table Item: Users -->
+<div class="flex items-center justify-between px-2 py-1.5 bg-secondary/5 text-secondary rounded-lg cursor-pointer border-l-2 border-secondary relative group/item">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">table</span>
+<span class="font-code-sm text-code-sm font-medium group-[.collapsed]/secondary-sidebar:hidden">users</span>
+</div>
+<button class="opacity-0 group-hover/item:opacity-100 text-on-surface-variant hover:text-secondary transition-opacity">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+<!-- Table Item: Orders -->
+<div class="flex items-center justify-between px-2 py-1.5 hover:bg-surface text-on-surface-variant hover:text-on-surface rounded-lg cursor-pointer border-l-2 border-transparent relative group/item">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">table</span>
+<span class="font-code-sm text-code-sm group-[.collapsed]/secondary-sidebar:hidden">orders</span>
+</div>
+</div>
+<!-- Table Item: Products -->
+<div class="flex items-center justify-between px-2 py-1.5 hover:bg-surface text-on-surface-variant hover:text-on-surface rounded-lg cursor-pointer border-l-2 border-transparent relative group/item">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">table</span>
+<span class="font-code-sm text-code-sm group-[.collapsed]/secondary-sidebar:hidden">products</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Views Group -->
+<div class="group mt-2">
+<div class="flex items-center gap-1 px-2 py-1.5 hover:bg-surface rounded-lg cursor-pointer text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] transition-transform">chevron_right</span>
+<span class="material-symbols-outlined text-[16px] text-accent-api">visibility</span>
+<span class="font-label-md text-label-md uppercase tracking-wider flex-1 group-[.collapsed]/secondary-sidebar:hidden">Views</span>
+<span class="font-code-sm text-[10px] group-[.collapsed]/secondary-sidebar:hidden">0</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Canvas Area -->
+<div class="flex-1 bg-surface-container-low relative overflow-hidden ERD-canvas" id="erd-canvas">
+<!-- Grid Background Pattern -->
+<div class="absolute inset-0 z-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 1px 1px, var(--tw-colors-outline-variant) 1px, transparent 0); background-size: 24px 24px;"></div>
+<!-- Connection Lines (SVG Layer) -->
+<svg class="absolute inset-0 w-full h-full z-0 pointer-events-none" id="erd-lines">
+<!-- User to Orders (1:N) -->
+<path class="text-outline-variant" d="M 280,180 L 330,180 C 350,180 350,260 380,260 L 420,260" fill="none" stroke="currentColor" stroke-dasharray="4 4" stroke-width="2"></path>
+<circle class="text-outline-variant" cx="280" cy="180" fill="currentColor" r="4"></circle>
+<path class="text-outline-variant" d="M 410,255 L 420,260 L 410,265" fill="none" stroke="currentColor" stroke-width="2"></path>
+<!-- Products to Orders (1:N) -->
+<path class="text-outline-variant" d="M 680,280 L 730,280 C 750,280 750,180 780,180 L 820,180" fill="none" stroke="currentColor" stroke-dasharray="4 4" stroke-width="2"></path>
+<circle class="text-outline-variant" cx="820" cy="180" fill="currentColor" r="4"></circle>
+<path class="text-outline-variant" d="M 690,275 L 680,280 L 690,285" fill="none" stroke="currentColor" stroke-width="2"></path>
+</svg>
+<!-- Draggable Area for Nodes -->
+<div class="relative w-full h-full p-8 z-10" id="canvas-pan-area">
+<!-- Table Node: Users (Selected) -->
+<div class="absolute top-[100px] left-[40px] w-60 bg-surface-white rounded-xl shadow-xl border border-secondary flex flex-col overflow-hidden transition-shadow hover:shadow-2xl cursor-grab table-node">
+<!-- Node Header -->
+<div class="bg-secondary text-on-secondary px-4 py-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">table</span>
+<span class="font-code-sm text-code-sm font-semibold">users</span>
+</div>
+<span class="material-symbols-outlined text-[16px] cursor-pointer opacity-70 hover:opacity-100">settings</span>
+</div>
+<!-- Node Columns -->
+<div class="flex flex-col bg-surface-white">
+<!-- PK Column -->
+<div class="flex items-center justify-between px-4 py-2 border-b border-surface-container bg-surface-container-low/50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-accent-logic" style="font-variation-settings: 'FILL' 1;" title="Primary Key">key</span>
+<span class="font-code-sm text-code-sm text-on-surface font-semibold">id</span>
+</div>
+<span class="font-code-sm text-[11px] text-on-surface-variant">uuid</span>
+</div>
+<!-- Normal Columns -->
+<div class="flex items-center justify-between px-4 py-2 border-b border-surface-container hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-2">
+<div class="w-[14px]"></div>
+<span class="font-code-sm text-code-sm text-on-surface">email</span>
+</div>
+<span class="font-code-sm text-[11px] text-on-surface-variant">varchar(255)</span>
+</div>
+<div class="flex items-center justify-between px-4 py-2 border-b border-surface-container hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-2">
+<div class="w-[14px]"></div>
+<span class="font-code-sm text-code-sm text-on-surface">password_hash</span>
+</div>
+<span class="font-code-sm text-[11px] text-on-surface-variant">varchar</span>
+</div>
+<div class="flex items-center justify-between px-4 py-2 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-2">
+<div class="w-[14px]"></div>
+<span class="font-code-sm text-code-sm text-on-surface">created_at</span>
+</div>
+<span class="font-code-sm text-[11px] text-on-surface-variant">timestamp</span>
+</div>
+</div>
+<!-- Node Footer -->
+<div class="px-4 py-1.5 bg-surface-container-low border-t border-surface-container flex justify-end">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+</div>
+</div>
+<!-- Table Node: Orders -->
+<div class="absolute top-[180px] left-[420px] w-64 bg-surface-white rounded-xl shadow-md border border-outline-variant flex flex-col overflow-hidden transition-shadow hover:shadow-xl cursor-grab table-node">
+<div class="bg-surface-container text-on-surface px-4 py-2.5 flex items-center justify-between border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">table</span>
+<span class="font-code-sm text-code-sm font-semibold">orders</span>
+</div>
+<span class="material-symbols-outlined text-[16px] cursor-pointer opacity-50 hover:opacity-100">settings</span>
+</div>
+<div class="flex flex-col bg-surface-white">
+<div class="flex items-center justify-between px-4 py-2 border-b border-surface-container bg-surface-container-low/50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-accent-logic" style="font-variation-settings: 'FILL' 1;">key</span>
+<span class="font-code-sm text-code-sm text-on-surface font-semibold">id</span>
+</div>
+<span class="font-code-sm text-[11px] text-on-surface-variant">bigint</span>
+</div>
+<!-- FK Column -->
+<div class="flex items-center justify-between px-4 py-2 border-b border-surface-container bg-accent-logic/5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-accent-logic/70" title="Foreign Key">link</span>
+<span class="font-code-sm text-code-sm text-on-surface font-medium">user_id</span>
+</div>
+<span class="font-code-sm text-[11px] text-on-surface-variant">uuid</span>
+</div>
+<div class="flex items-center justify-between px-4 py-2 border-b border-surface-container hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-2">
+<div class="w-[14px]"></div>
+<span class="font-code-sm text-code-sm text-on-surface">status</span>
+</div>
+<span class="font-code-sm text-[11px] text-on-surface-variant">enum</span>
+</div>
+<div class="flex items-center justify-between px-4 py-2 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-2">
+<div class="w-[14px]"></div>
+<span class="font-code-sm text-code-sm text-on-surface">total_amount</span>
+</div>
+<span class="font-code-sm text-[11px] text-on-surface-variant">decimal(10,2)</span>
+</div>
+</div>
+</div>
+<!-- Table Node: Products -->
+<div class="absolute top-[80px] left-[820px] w-60 bg-surface-white rounded-xl shadow-md border border-outline-variant flex flex-col overflow-hidden transition-shadow hover:shadow-xl cursor-grab table-node">
+<div class="bg-surface-container text-on-surface px-4 py-2.5 flex items-center justify-between border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">table</span>
+<span class="font-code-sm text-code-sm font-semibold">products</span>
+</div>
+</div>
+<div class="flex flex-col bg-surface-white">
+<div class="flex items-center justify-between px-4 py-2 border-b border-surface-container bg-surface-container-low/50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-accent-logic" style="font-variation-settings: 'FILL' 1;">key</span>
+<span class="font-code-sm text-code-sm text-on-surface font-semibold">id</span>
+</div>
+<span class="font-code-sm text-[11px] text-on-surface-variant">int</span>
+</div>
+<div class="flex items-center justify-between px-4 py-2 border-b border-surface-container hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-2">
+<div class="w-[14px]"></div>
+<span class="font-code-sm text-code-sm text-on-surface">sku</span>
+</div>
+<span class="font-code-sm text-[11px] text-on-surface-variant">varchar(50)</span>
+</div>
+<div class="flex items-center justify-between px-4 py-2 border-b border-surface-container hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-2">
+<div class="w-[14px]"></div>
+<span class="font-code-sm text-code-sm text-on-surface">name</span>
+</div>
+<span class="font-code-sm text-[11px] text-on-surface-variant">varchar(200)</span>
+</div>
+<div class="flex items-center justify-between px-4 py-2 hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-2">
+<div class="w-[14px]"></div>
+<span class="font-code-sm text-code-sm text-on-surface">price</span>
+</div>
+<span class="font-code-sm text-[11px] text-on-surface-variant">decimal(10,2)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Minimap Overlay -->
+<div class="absolute bottom-6 left-6 w-40 h-32 bg-surface-white border border-outline-variant rounded-xl shadow-lg z-20 overflow-hidden flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
+<div class="relative w-full h-full bg-surface-container-low/50">
+<div class="absolute top-[20%] left-[10%] w-[20%] h-[40%] bg-secondary/40 border border-secondary rounded-sm"></div>
+<div class="absolute top-[40%] left-[45%] w-[22%] h-[45%] bg-outline-variant/40 border border-outline-variant rounded-sm"></div>
+<div class="absolute top-[15%] left-[75%] w-[20%] h-[35%] bg-outline-variant/40 border border-outline-variant rounded-sm"></div>
+<!-- Viewport indicator -->
+<div class="absolute top-0 left-0 w-[80%] h-[90%] border-2 border-primary/50 bg-primary/5 cursor-move"></div>
+</div>
+</div>
+</div>
+<!-- Right Properties Panel -->
+<div class="w-[340px] bg-surface-white border-l border-surface-container flex flex-col shrink-0 relative z-10 shadow-[-2px_0_12px_rgba(0,0,0,0.02)]">
+<!-- Panel Header -->
+<div class="p-4 border-b border-surface-container bg-surface-container-low/30">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-md text-[10px] text-secondary uppercase tracking-widest font-bold">Table Properties</span>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<h2 class="font-title-md text-title-md text-on-surface font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">table</span>
+                    users
+                </h2>
+</div>
+<!-- Panel Content -->
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<!-- General Settings -->
+<div class="p-4 border-b border-surface-container space-y-4">
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant">Table Name</label>
+<input class="w-full bg-surface-white border border-outline-variant rounded-lg px-3 py-2 font-code-sm text-code-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all" type="text" value="users">
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant">Engine</label>
+<select class="w-full bg-surface-white border border-outline-variant rounded-lg px-2 py-2 font-code-sm text-code-sm text-on-surface focus:outline-none focus:border-secondary transition-all appearance-none cursor-pointer">
+<option>InnoDB</option>
+<option>MyISAM</option>
+</select>
+</div>
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant">Collation</label>
+<select class="w-full bg-surface-white border border-outline-variant rounded-lg px-2 py-2 font-code-sm text-code-sm text-on-surface focus:outline-none focus:border-secondary transition-all appearance-none cursor-pointer">
+<option>utf8mb4_unicode_ci</option>
+<option>utf8_general_ci</option>
+</select>
+</div>
+</div>
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant">Description</label>
+<textarea class="w-full bg-surface-white border border-outline-variant rounded-lg px-3 py-2 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:border-secondary transition-all resize-none" placeholder="Add description..." rows="2"></textarea>
+</div>
+</div>
+<!-- Columns Details -->
+<div class="p-4">
+<div class="flex items-center justify-between mb-4">
+<span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Columns Configuration</span>
+<button class="text-secondary hover:bg-secondary/10 px-2 py-1 rounded transition-colors font-label-md text-[11px] flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">add</span> Add
+                        </button>
+</div>
+<!-- Column Edit Form (id) -->
+<div class="bg-surface-container-low border border-outline-variant rounded-xl p-3 mb-3 relative group/col">
+<div class="absolute -left-1.5 top-3 w-1 h-8 bg-secondary rounded-r-sm"></div>
+<div class="flex items-center justify-between mb-3">
+<input class="bg-surface-white border border-outline-variant rounded px-2 py-1 font-code-sm text-code-sm text-on-surface w-[45%] focus:outline-none focus:border-secondary" type="text" value="id">
+<select class="bg-surface-white border border-outline-variant rounded px-2 py-1 font-code-sm text-[11px] text-on-surface w-[45%] focus:outline-none focus:border-secondary appearance-none">
+<option>uuid</option>
+<option>bigint</option>
+<option>int</option>
+</select>
+</div>
+<div class="flex items-center gap-3">
+<label class="flex items-center gap-1.5 cursor-pointer">
+<input checked="" class="w-3.5 h-3.5 accent-secondary border-outline-variant rounded-sm cursor-pointer" type="checkbox">
+<span class="font-code-sm text-[10px] text-on-surface-variant uppercase">PK</span>
+</label>
+<label class="flex items-center gap-1.5 cursor-pointer">
+<input checked="" class="w-3.5 h-3.5 accent-secondary border-outline-variant rounded-sm cursor-pointer" type="checkbox">
+<span class="font-code-sm text-[10px] text-on-surface-variant uppercase">NN</span>
+</label>
+<label class="flex items-center gap-1.5 cursor-pointer">
+<input checked="" class="w-3.5 h-3.5 accent-secondary border-outline-variant rounded-sm cursor-pointer" type="checkbox">
+<span class="font-code-sm text-[10px] text-on-surface-variant uppercase">UQ</span>
+</label>
+<label class="flex items-center gap-1.5 cursor-pointer ml-auto">
+<input class="w-3.5 h-3.5 accent-secondary border-outline-variant rounded-sm cursor-pointer" type="checkbox">
+<span class="font-code-sm text-[10px] text-on-surface-variant uppercase">AI</span>
+</label>
+</div>
+<button class="absolute -right-2 -top-2 bg-surface-white border border-outline-variant rounded-full p-0.5 text-on-surface-variant hover:text-error opacity-0 group-hover/col:opacity-100 transition-opacity shadow-sm">
+<span class="material-symbols-outlined text-[14px]">close</span>
+</button>
+</div>
+<!-- Column Edit Form (email) -->
+<div class="bg-surface border border-outline-variant/50 rounded-xl p-3 mb-3 relative group/col hover:border-outline-variant transition-colors">
+<div class="flex items-center justify-between mb-3">
+<input class="bg-surface-white border border-outline-variant/50 rounded px-2 py-1 font-code-sm text-code-sm text-on-surface w-[45%] focus:outline-none focus:border-secondary" type="text" value="email">
+<div class="relative w-[45%]">
+<input class="w-full bg-surface-white border border-outline-variant/50 rounded px-2 py-1 font-code-sm text-[11px] text-on-surface focus:outline-none focus:border-secondary" type="text" value="varchar(255)">
+</div>
+</div>
+<div class="flex items-center gap-3">
+<label class="flex items-center gap-1.5 cursor-pointer">
+<input class="w-3.5 h-3.5 accent-secondary border-outline-variant rounded-sm cursor-pointer" type="checkbox">
+<span class="font-code-sm text-[10px] text-on-surface-variant uppercase">PK</span>
+</label>
+<label class="flex items-center gap-1.5 cursor-pointer">
+<input checked="" class="w-3.5 h-3.5 accent-secondary border-outline-variant rounded-sm cursor-pointer" type="checkbox">
+<span class="font-code-sm text-[10px] text-on-surface-variant uppercase">NN</span>
+</label>
+<label class="flex items-center gap-1.5 cursor-pointer">
+<input checked="" class="w-3.5 h-3.5 accent-secondary border-outline-variant rounded-sm cursor-pointer" type="checkbox">
+<span class="font-code-sm text-[10px] text-on-surface-variant uppercase">UQ</span>
+</label>
+<label class="flex items-center gap-1.5 cursor-pointer ml-auto">
+<input class="w-3.5 h-3.5 accent-secondary border-outline-variant rounded-sm cursor-pointer" type="checkbox">
+<span class="font-code-sm text-[10px] text-on-surface-variant uppercase">AI</span>
+</label>
+</div>
+<button class="absolute -right-2 -top-2 bg-surface-white border border-outline-variant rounded-full p-0.5 text-on-surface-variant hover:text-error opacity-0 group-hover/col:opacity-100 transition-opacity shadow-sm">
+<span class="material-symbols-outlined text-[14px]">close</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Panel Footer -->
+<div class="p-4 border-t border-surface-container bg-surface-white">
+<button class="w-full py-2 bg-primary text-on-primary rounded-lg font-label-md text-label-md transition-colors hover:bg-primary/90 shadow-sm">
+                    Apply Changes
+                </button>
+</div>
+</div>
+</div>
+</div>
+<style>
+    /* Scoped minimal styles for custom scrollbar within this component */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: var(--tw-colors-outline-variant);
+        border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: var(--tw-colors-outline);
+    }
+</style>
+<script>
+    // Simple drag functionality for visual demonstration
+    document.addEventListener('DOMContentLoaded', () => {
+        const nodes = document.querySelectorAll('.table-node');
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+        let activeNode = null;
+
+        nodes.forEach(node => {
+            node.addEventListener('mousedown', dragStart, false);
+            // Bring to front on click
+            node.addEventListener('mousedown', () => {
+                nodes.forEach(n => n.style.zIndex = '10');
+                node.style.zIndex = '20';
+            });
+        });
+
+        document.addEventListener('mouseup', dragEnd, false);
+        document.addEventListener('mousemove', drag, false);
+
+        function dragStart(e) {
+            if (e.target.closest('.cursor-pointer') || e.target.tagName === 'INPUT') return; // Don't drag if clicking buttons/inputs
+            
+            activeNode = e.currentTarget;
+            
+            // Extract current translation if exists, otherwise use position
+            const style = window.getComputedStyle(activeNode);
+            const matrix = new DOMMatrixReadOnly(style.transform);
+            xOffset = matrix.m41;
+            yOffset = matrix.m42;
+
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+            
+            if (e.target === activeNode || activeNode.contains(e.target)) {
+                isDragging = true;
+                activeNode.classList.add('shadow-2xl');
+            }
+        }
+
+        function dragEnd(e) {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
+            if(activeNode) {
+                activeNode.classList.remove('shadow-2xl');
+                activeNode = null;
+            }
+        }
+
+        function drag(e) {
+            if (isDragging && activeNode) {
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+
+                xOffset = currentX;
+                yOffset = currentY;
+
+                setTranslate(currentX, currentY, activeNode);
+            }
+        }
+
+        function setTranslate(xPos, yPos, el) {
+            el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+        }
+    });
+</script></main></div><script>const toggle = document.getElementById('sidebar-toggle');const sidebar = document.getElementById('main-sidebar');const content = document.getElementById('content-wrapper');const header = document.querySelector('header');toggle.addEventListener('click', () => {sidebar.classList.toggle('collapsed');sidebar.classList.toggle('w-sidebar-width');sidebar.classList.toggle('w-20');content.classList.toggle('pl-sidebar-width');content.classList.toggle('pl-20');header.classList.toggle('left-sidebar-width');header.classList.toggle('left-20');});</script>
+
+
+
+
+
+<script>const secToggle = document.getElementById('secondary-sidebar-toggle');const secSidebar = document.getElementById('secondary-sidebar');if (secToggle && secSidebar) {secToggle.addEventListener('click', () => {secSidebar.classList.toggle('collapsed');secSidebar.classList.toggle('w-64');secSidebar.classList.toggle('w-16');const icon = secToggle.querySelector('.material-symbols-outlined');if (secSidebar.classList.contains('collapsed')) {icon.style.transform = 'rotate(180deg)';} else {icon.style.transform = 'rotate(0deg)';}});}</script>
+
+</body></html>

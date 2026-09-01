@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aastudio.core.dashboard.mapper.DashboardMapper">
+
+    <select id="selectMetricCards" resultType="map">
+        SELECT id,
+               title,
+               metric_value AS metricValue,
+               trend_text AS trendText,
+               trend_tone AS trendTone,
+               icon_name AS iconName,
+               accent_tone AS accentTone,
+               inverse
+        FROM metric_card
+        ORDER BY id
+    </select>
+
+    <select id="selectActivityLogs" resultType="map">
+        SELECT id,
+               resource_name AS resourceName,
+               resource_type AS resourceType,
+               action_name AS actionName,
+               action_tone AS actionTone,
+               user_name AS userName,
+               relative_time AS relativeTime
+        FROM activity_log
+        ORDER BY id
+    </select>
+
+    <select id="selectQuickActions" resultType="map">
+        SELECT id,
+               title,
+               icon_name AS iconName,
+               accent_tone AS accentTone
+        FROM quick_action
+        ORDER BY id
+    </select>
+
+    <select id="selectStatusItems" resultType="map">
+        SELECT id,
+               label,
+               value_text AS valueText,
+               tone
+        FROM status_item
+        ORDER BY id
+    </select>
+
+    <select id="selectTeamMembers" resultType="map">
+        SELECT id,
+               name,
+               email,
+               role
+        FROM team_member
+        ORDER BY id
+    </select>
+
+    <select id="selectProfile" resultType="map">
+        SELECT first_name AS firstName,
+               last_name AS lastName,
+               email,
+               bio
+        FROM profile
+        WHERE id = 1
+    </select>
+</mapper>

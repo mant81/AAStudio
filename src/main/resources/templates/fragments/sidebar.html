@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside class="sidebar-transition fixed left-0 top-0 h-full w-20 collapsed bg-primary-container z-50 flex flex-col shadow-lg overflow-hidden group/sidebar"
+       id="main-sidebar"
+       th:fragment="sidebar(activeNav, navigationItems)">
+    <div class="h-header-height flex items-center px-6 gap-3 border-b border-on-primary-fixed-variant/20 shrink-0">
+        <img alt="Logo" class="h-8 w-8 shrink-0 object-contain"
+             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNqyrlYsgVdORcKzUWr3pNrtyIkrS6c8212W8FqKHeLzxLtFxRLelCEIFXx4VPxdBUr0Ept-vJtFa66fyAj6lNGifE6Qy9Kb5a7w4pan5i8wJlHvCJs5kbgSH7FcOkkouh2GhGJmY3OS_0M9Y_10Q2XGyj4mq_rrUz4g4H1BIFLgSW_yGy60YS6yIZdrBwQgqvJH_c375Ikmphp4Lpq_FOLT7Wca5Bk5U9py0QbeeCRiB6Vm8UT-nY">
+        <span class="text-surface-white font-title-md text-title-md tracking-tight whitespace-nowrap opacity-100 group-[.collapsed]/sidebar:opacity-0 transition-opacity">AAStudio</span>
+    </div>
+    <div class="px-4 py-4 shrink-0 overflow-hidden">
+        <button class="w-full flex items-center justify-between px-4 py-2 bg-on-primary-fixed-variant/10 rounded-xl hover:bg-on-primary-fixed-variant/20 transition-colors group/switcher">
+            <div class="flex flex-col items-start overflow-hidden">
+                <span class="text-on-primary-container font-label-md text-label-md uppercase tracking-wider whitespace-nowrap">Project</span>
+                <span class="text-surface-white font-body-md text-body-md whitespace-nowrap">Alpha</span>
+            </div>
+            <span class="material-symbols-outlined text-on-primary-container group-hover/switcher:text-surface-white group-[.collapsed]/sidebar:hidden">unfold_more</span>
+        </button>
+    </div>
+    <nav class="flex-1 px-3 space-y-1 overflow-y-auto mt-2" data-active-classes="bg-secondary text-on-secondary rounded-xl" id="sidebar-nav">
+        <a href="/"
+           class="flex items-center px-4 py-3 transition-all font-body-md group rounded-xl"
+           th:classappend="${activeNav == 'dashboard'} ? ' bg-secondary text-on-secondary font-medium' : ' text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white'">
+            <span class="material-symbols-outlined mr-3">dashboard</span>
+            <span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">Dashboard</span>
+        </a>
+        <div class="pt-2 pb-1 group/section">
+            <div class="flex items-center justify-between px-4 py-2 text-on-primary-fixed-variant/60 font-label-md text-label-md uppercase tracking-widest group-[.collapsed]/sidebar:hidden font-bold cursor-pointer"
+                 onclick="if (window.openDiagramSpaces) window.openDiagramSpaces()"
+                 data-open-diagram-spaces>
+                <span>Spaces</span>
+                <span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-surface-white transition-colors">expand_more</span>
+            </div>
+            <div class="space-y-1">
+                <a href="/diagram"
+                   class="flex items-center px-4 py-3 transition-all rounded-xl font-body-md text-body-md group"
+                   onclick="if (window.location.pathname.replace(/\/$/, '') === '/diagram' && window.openDiagramSpaces) { event.preventDefault(); window.openDiagramSpaces(); }"
+                   data-open-diagram-spaces
+                   th:classappend="${activeNav == 'diagram'} ? ' bg-secondary text-on-secondary' : ' text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white'">
+                    <span class="material-symbols-outlined mr-3">share</span>
+                    <span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">Diagram</span>
+                </a>
+                <a href="/db-modeling"
+                   class="flex items-center px-4 py-3 transition-all rounded-xl font-body-md text-body-md group"
+                   th:classappend="${activeNav == 'db-modeling'} ? ' bg-secondary text-on-secondary' : ' text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white'">
+                    <span class="material-symbols-outlined mr-3">database</span>
+                    <span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">DB Modeling</span>
+                </a>
+                <a href="/api"
+                   class="flex items-center px-4 py-3 transition-all rounded-xl font-body-md text-body-md group"
+                   th:classappend="${activeNav == 'api-specification'} ? ' bg-secondary text-on-secondary' : ' text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white'">
+                    <span class="material-symbols-outlined mr-3">code</span>
+                    <span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">API Spec</span>
+                </a>
+            </div>
+        </div>
+        <div class="pt-2 pb-1 group/section">
+            <div class="flex items-center justify-between px-4 py-2 text-on-primary-fixed-variant/60 font-label-md text-label-md uppercase tracking-widest group-[.collapsed]/sidebar:hidden">
+                <span>Resources</span>
+                <span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-surface-white transition-colors">expand_more</span>
+            </div>
+            <div class="space-y-1">
+                <a href="/wiki"
+                   class="flex items-center px-4 py-3 transition-all rounded-xl font-body-md text-body-md group"
+                   th:classappend="${activeNav == 'wiki'} ? ' bg-secondary text-on-secondary' : ' text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white'">
+                    <span class="material-symbols-outlined mr-3">library_books</span>
+                    <span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">WIKI</span>
+                </a>
+            </div>
+        </div>
+        <a href="/settings"
+           class="flex items-center px-4 py-3 transition-all rounded-xl font-body-md text-body-md group"
+           th:classappend="${activeNav == 'settings'} ? ' bg-secondary text-on-secondary' : ' text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white'">
+            <span class="material-symbols-outlined mr-3">settings</span>
+            <span class="whitespace-nowrap group-[.collapsed]/sidebar:hidden transition-all">Settings</span>
+        </a>
+    </nav>
+    <div class="p-4 border-t border-on-primary-fixed-variant/20 shrink-0 mt-auto">
+        <button class="w-full flex items-center justify-center py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl"
+                id="sidebar-toggle"
+                type="button">
+            <span class="material-symbols-outlined transition-transform duration-300 group-[.collapsed]/sidebar:rotate-180">chevron_left</span>
+        </button>
+    </div>
+</aside>
+</body>
+</html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html><html lang="en" style=""><head></head><body class="bg-background font-body-md text-on-background"><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={theme:{extend:{"colors":{"surface-container":"#eceef0","tertiary":"#000000","accent-db":"#10B981","primary-container":"#131b2e","primary":"#000000","primary-fixed-dim":"#bec6e0","on-tertiary-container":"#75859d","surface-container-low":"#f2f4f6","inverse-on-surface":"#eff1f3","tertiary-fixed-dim":"#b7c8e1","secondary-fixed":"#cde5ff","surface-dim":"#d8dadc","secondary":"#006399","on-secondary-container":"#004f7b","secondary-container":"#7bc2ff","surface-white":"#FFFFFF","surface-container-high":"#e6e8ea","on-primary-container":"#7c839b","on-primary-fixed-variant":"#3f465c","on-primary-fixed":"#131b2e","primary-fixed":"#dae2fd","accent-api":"#8B5CF6","surface-variant":"#e0e3e5","on-error-container":"#93000a","inverse-primary":"#bec6e0","surface-container-lowest":"#ffffff","on-primary":"#ffffff","surface-container-highest":"#e0e3e5","accent-logic":"#F59E0B","tertiary-container":"#0b1c30","on-background":"#191c1e","inverse-surface":"#2d3133","error-container":"#ffdad6","on-secondary-fixed-variant":"#004b74","on-surface":"#191c1e","on-secondary":"#ffffff","on-tertiary":"#ffffff","tertiary-fixed":"#d3e4fe","surface-bright":"#f7f9fb","on-secondary-fixed":"#001d32","error":"#ba1a1a","secondary-fixed-dim":"#94ccff","outline-variant":"#c6c6cd","on-surface-variant":"#45464d","surface-tint":"#565e74","surface":"#f7f9fb","outline":"#76777d","on-error":"#ffffff","on-tertiary-fixed":"#0b1c30","background":"#f7f9fb","on-tertiary-fixed-variant":"#38485d"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter":"16px","sidebar-width":"260px","margin-mobile":"16px","margin-desktop":"32px","unit":"4px","header-height":"64px"},"fontFamily":{"body-md":["Inter"],"title-md":["Geist"],"display-lg":["Geist"],"label-md":["Inter"],"headline-lg-mobile":["Geist"],"body-lg":["Inter"],"headline-lg":["Geist"],"code-sm":["JetBrains Mono"]},"fontSize":{"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"title-md":["20px",{"lineHeight":"28px","fontWeight":"600"}],"display-lg":["48px",{"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"700"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.01em","fontWeight":"500"}],"headline-lg-mobile":["24px",{"lineHeight":"32px","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"600"}],"code-sm":["12px",{"lineHeight":"18px","fontWeight":"400"}]}}}}</script><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"><aside class="fixed left-0 top-0 h-full w-sidebar-width bg-primary-container z-50 flex flex-col shadow-lg sidebar-transition group/sidebar"><div class="h-header-height flex items-center px-6 gap-3 border-b border-on-primary-fixed-variant/20"><img alt="AAStudio Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNqyrlYsgVdORcKzUWr3pNrtyIkrS6c8212W8FqKHeLzxLtFxRLelCEIFXx4VPxdBUr0Ept-vJtFa66fyAj6lNGifE6Qy9Kb5a7w4pan5i8wJlHvCJs5kbgSH7FcOkkouh2GhGJmY3OS_0M9Y_10Q2XGyj4mq_rrUz4g4H1BIFLgSW_yGy60YS6yIZdrBwQgqvJH_c375Ikmphp4Lpq_FOLT7Wca5Bk5U9py0QbeeCRiB6Vm8UT-nY"><span class="text-surface-white font-title-md text-title-md tracking-tight group-[.collapsed]/sidebar:hidden">AAStudio</span></div><div class="px-4 py-4"><button class="w-full flex items-center justify-between px-4 py-2 bg-on-primary-fixed-variant/10 rounded-xl hover:bg-on-primary-fixed-variant/20 transition-colors group"><div class="flex flex-col items-start"><span class="text-on-primary-container font-label-md text-label-md uppercase tracking-wider group-[.collapsed]/sidebar:hidden">Active Project</span><span class="text-surface-white font-body-md text-body-md group-[.collapsed]/sidebar:hidden">Project Alpha</span></div><span class="material-symbols-outlined text-on-primary-container group-hover:text-surface-white">unfold_more</span></button></div><nav class="flex-1 px-3 space-y-1 overflow-y-auto mt-2" data-active-classes="bg-secondary text-on-secondary rounded-xl"><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md" data-path="dashboard" href="#"><span class="material-symbols-outlined mr-3">dashboard</span>Dashboard</a><div class="space-y-1"><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md" data-path="diagram" href="#"><span class="material-symbols-outlined mr-3">share</span>Diagram</a></div><div class="space-y-1"><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md" data-path="db-modeling" href="#"><span class="material-symbols-outlined mr-3">database</span>DB Modeling</a></div><div class="space-y-1"><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md" data-path="api-specification" href="#"><span class="material-symbols-outlined mr-3">code</span>API Specification</a></div><div class="space-y-1"><a aria-current="page" class="flex items-center px-4 py-3 transition-all font-body-md bg-secondary text-on-secondary rounded-xl" data-path="wiki" href="#"><span class="material-symbols-outlined mr-3">description</span>WIKI</a></div><div class="space-y-1"><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md" data-path="note" href="#"><span class="material-symbols-outlined mr-3">sticky_note</span>NOTE</a></div><a class="flex items-center px-4 py-3 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl font-body-md text-body-md" data-path="settings" href="#"><span class="material-symbols-outlined mr-3">settings</span>Settings</a></nav><div class="p-4 border-t border-on-primary-fixed-variant/20 shrink-0"><button class="w-full flex items-center justify-center py-2 text-on-primary-container hover:bg-on-primary-fixed-variant/10 hover:text-surface-white transition-all rounded-xl" id="sidebar-toggle"><span class="material-symbols-outlined transition-transform duration-300 group-[.collapsed]/sidebar:rotate-180">chevron_left</span></button></div></aside><div class="pl-sidebar-width content-transition group-[.collapsed]/sidebar:pl-20"><header class="fixed top-0 left-sidebar-width right-0 h-header-height bg-surface-white/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-end px-margin-desktop gap-6 sidebar-transition group-[.collapsed]/sidebar:left-20"><div class="flex items-center gap-4 border-r border-outline-variant pr-6"><button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">search</span></button><button class="text-on-surface-variant hover:text-primary transition-colors relative"><span class="material-symbols-outlined">notifications</span><span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span></button></div><div class="flex items-center gap-3 pl-2"><div class="flex flex-col items-end"><span class="font-label-md text-label-md text-on-surface leading-none">Alex Architect</span><span class="font-label-md text-[10px] text-accent-db uppercase font-bold">Online</span></div><div class="relative"><img alt="Profile" class="w-9 h-9 rounded-full object-cover border-2 border-surface-container-high" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5vh9NvhhiOcBZGOLNP-kN4RTbtWU_UBGz2kSI0bLnG9d3TQQXIuX4jfJipmGCILQDUUj9W5u0k6UtLYIyiaLZjqAiThHifBsx763Ahd1htyoHtgU9bpIxkUFVmLUCM6QdB_mco9R2JV9dvcIzPHPXrdTSW7tM-TdWonTs7cvqVISFjmLAkL2-p3J3mf9_wIi-3DZiHb3xbODQ_zUsNsEy8zKMQ3WXANQM0MSSk-T9JrmTldpJCFay"><span class="absolute bottom-0 right-0 w-3 h-3 bg-accent-db border-2 border-surface-white rounded-full"></span></div></div></header><main class="relative pt-header-height bg-surface min-h-screen"><div class="flex flex-col w-full h-full font-body-md text-on-background relative overflow-hidden bg-surface-container-lowest">
+<!-- Top Action Bar -->
+<div class="flex items-center justify-between px-gutter py-3 border-b border-outline-variant bg-surface-white shrink-0 z-10 shadow-sm relative">
+<div class="flex items-center gap-4">
+<h1 class="font-title-md text-title-md text-on-surface">Microservices Architecture v2</h1>
+<span class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-label-md text-label-md">Draft</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center -space-x-2 mr-4">
+<img class="w-8 h-8 rounded-full border-2 border-surface-white object-cover shadow-sm z-30" data-alt="A small circular avatar of a software architect, professional lighting, realistic style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqHJUP_cibdSaxk0xQkvYi9azNKnWi0jSuh4RMj0bBscpO91CHzpcFQR-SITmOeyPf_yL9_n7EA3VurTEr1uJYaunBCApmuvWpWzHA0X4uBX7d_XVxzRTf44eS5VkYgofICJNNKYyj9KsuYwSA0U9UhqFCjK3P7vTEZRnZRygH13MW8654u4sD4qavxcex_-hbom8WkVh2UWC5svj8y-w76_MRIXX2PurioPIhf7C6BgMvUJ1lBfjM">
+<img class="w-8 h-8 rounded-full border-2 border-surface-white object-cover shadow-sm z-20" data-alt="A small circular avatar of a developer, bright studio lighting, realistic style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_dxAE8O7yI9A3yk_zQggrB9h9JmWljWw_eAaV-IJzphED3ef_mgZeclVQcetMyuksSCODYmwo23G2GqpNoe32FbxAkeFDAA09NQ5Khki6riZgV6GYI2Cx7o13YI5o3-cSFAcjl1yikJuWc7IpFTDwDRfxA3GY6gbncjaaNFUY3t4HpcLAv6I94i8HMjvTRHVfy4SVbUUUTj9GpDE1EC2pRHbGTZRwR64yQHnZ0cKXIMrL8GusjGlc">
+<div class="w-8 h-8 rounded-full border-2 border-surface-white bg-surface-variant flex items-center justify-center font-label-md text-label-md text-on-surface-variant shadow-sm z-10">+3</div>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 text-on-surface-variant hover:bg-surface-variant rounded-xl transition-colors font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">history</span>
+                History
+            </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-secondary text-on-secondary hover:opacity-90 rounded-xl shadow-sm transition-opacity font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">share</span>
+                Share
+            </button>
+</div>
+</div>
+<!-- Main Workspace -->
+<div class="flex flex-1 h-[calc(100vh-130px)] overflow-hidden">
+<!-- Left Sidebar: Diagram Spaces -->
+<div class="hidden w-0 opacity-0 pointer-events-none bg-transparent flex-col border-r border-transparent shrink-0 relative z-10 transition-all duration-300 ease-in-out overflow-hidden" id="spaces-panel">
+<div class="p-4 flex items-center justify-between border-b border-outline-variant/50"><div class="flex items-center gap-2 cursor-pointer group/spaces" onclick="toggleFolder('spaces-content')"><span class="material-symbols-outlined text-[20px] text-on-surface-variant transition-transform duration-200" id="icon-spaces-content">expand_more</span><span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider whitespace-nowrap overflow-hidden">Spaces</span></div><button class="text-on-surface-variant hover:text-primary transition-colors p-1"><span class="material-symbols-outlined text-[20px]">create_new_folder</span></button></div>
+<div class="flex-1 overflow-y-auto p-2 space-y-1 transition-all sidebar-transition" id="spaces-content">
+<!-- Group 1 -->
+<div class="group">
+<button class="w-full flex items-center gap-2 px-3 py-2 text-on-surface hover:bg-surface-variant/50 rounded-lg transition-colors text-left" onclick="toggleFolder('folder-sys')">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform duration-200" id="icon-folder-sys">expand_more</span>
+<span class="material-symbols-outlined text-[18px] text-accent-api">folder</span>
+<span class="font-body-md text-body-md flex-1 truncate">System Architecture</span>
+</button>
+<div class="pl-9 pr-2 py-1 space-y-1" id="folder-sys">
+<button class="w-full flex items-center gap-2 px-3 py-1.5 bg-secondary/10 text-secondary rounded-lg font-body-md text-body-md text-left">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+<span class="truncate">Microservices v2</span>
+</button>
+<button class="w-full flex items-center gap-2 px-3 py-1.5 text-on-surface-variant hover:bg-surface-variant/50 rounded-lg font-body-md text-body-md text-left transition-colors">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+<span class="truncate">Legacy Monolith</span>
+</button>
+</div>
+</div>
+<!-- Group 2 -->
+<div class="group">
+<button class="w-full flex items-center gap-2 px-3 py-2 text-on-surface hover:bg-surface-variant/50 rounded-lg transition-colors text-left" onclick="toggleFolder('folder-infra')">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform duration-200 -rotate-90" id="icon-folder-infra">expand_more</span>
+<span class="material-symbols-outlined text-[18px] text-accent-db">folder</span>
+<span class="font-body-md text-body-md flex-1 truncate">Infrastructure</span>
+</button>
+<div class="pl-9 pr-2 py-1 space-y-1 hidden" id="folder-infra">
+<button class="w-full flex items-center gap-2 px-3 py-1.5 text-on-surface-variant hover:bg-surface-variant/50 rounded-lg font-body-md text-body-md text-left transition-colors">
+<span class="material-symbols-outlined text-[16px]">cloud</span>
+<span class="truncate">AWS Topology</span>
+</button>
+</div>
+</div>
+<!-- Group 3 -->
+<div class="group">
+<button class="w-full flex items-center gap-2 px-3 py-2 text-on-surface hover:bg-surface-variant/50 rounded-lg transition-colors text-left" onclick="toggleFolder('folder-flow')">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform duration-200 -rotate-90" id="icon-folder-flow">expand_more</span>
+<span class="material-symbols-outlined text-[18px] text-accent-logic">folder</span>
+<span class="font-body-md text-body-md flex-1 truncate">Flowcharts</span>
+</button>
+<div class="pl-9 pr-2 py-1 space-y-1 hidden" id="folder-flow">
+<button class="w-full flex items-center gap-2 px-3 py-1.5 text-on-surface-variant hover:bg-surface-variant/50 rounded-lg font-body-md text-body-md text-left transition-colors">
+<span class="material-symbols-outlined text-[16px]">schema</span>
+<span class="truncate">Checkout Flow</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Mini Map -->
+<div class="h-40 border-t border-outline-variant/50 bg-surface-container-lowest p-2 transition-all duration-300 ease-in-out z-30" id="minimap-container">
+<div class="w-full h-full bg-surface-variant/30 rounded border border-outline-variant/30 relative overflow-hidden flex items-center justify-center">
+<div class="w-3/4 h-3/4 border-2 border-secondary/40 bg-secondary/10 absolute top-2 left-2 rounded-sm backdrop-blur-sm"></div>
+<svg class="opacity-20 pointer-events-none" height="100%" viewBox="0 0 100 100" width="100%">
+<rect fill="currentColor" height="15" rx="2" width="20" x="20" y="20"></rect>
+<rect fill="currentColor" height="15" rx="2" width="20" x="60" y="20"></rect>
+<rect fill="currentColor" height="15" rx="2" width="20" x="40" y="60"></rect>
+<path d="M30 35 L50 60 M70 35 L50 60" fill="none" stroke="currentColor" stroke-width="1"></path>
+</svg>
+</div>
+</div>
+<div class="p-4 border-t border-outline-variant/50 bg-surface shrink-0"><button id="collapse-spaces-btn" class="w-full flex items-center justify-center p-2 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors" onclick="toggleSpacesPanel()"><span class="material-symbols-outlined text-[20px]" id="collapse-icon">chevron_left</span></button></div></div>
+<!-- Center Canvas Area -->
+<div class="flex-1 flex flex-col relative bg-surface-container-low overflow-hidden" id="canvas-container">
+<button class="absolute top-4 left-4 w-10 h-10 rounded-xl bg-surface-white border border-outline-variant/30 shadow-lg text-on-surface-variant hover:text-primary hover:bg-surface transition-colors z-30 flex items-center justify-center" id="diagram-spaces-open" onclick="openDiagramSpaces()" title="Open Spaces" type="button"><span class="material-symbols-outlined text-[20px] pointer-events-none">folder_open</span></button>
+<!-- Toolbar (Floating) -->
+<div class="absolute top-4 left-1/2 -translate-x-1/2 bg-surface-white rounded-xl shadow-lg border border-outline-variant/30 p-1.5 flex items-center gap-1 z-20 backdrop-blur-md bg-opacity-90">
+<button class="p-2 rounded-lg text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors" title="Select">
+<span class="material-symbols-outlined text-[20px]">near_me</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" title="Rectangle">
+<span class="material-symbols-outlined text-[20px]">rectangle</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" title="Circle">
+<span class="material-symbols-outlined text-[20px]">circle</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" title="Diamond">
+<span class="material-symbols-outlined text-[20px]">category</span>
+</button>
+<div class="w-[1px] h-6 bg-outline-variant/50 mx-1"></div>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" title="Connector">
+<span class="material-symbols-outlined text-[20px]">conversion_path</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" title="Text">
+<span class="material-symbols-outlined text-[20px]">text_fields</span>
+</button>
+<div class="w-[1px] h-6 bg-outline-variant/50 mx-1"></div>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" title="Image">
+<span class="material-symbols-outlined text-[20px]">image</span>
+</button>
+</div>
+<!-- Zoom Controls (Floating Bottom Right) -->
+<div class="absolute bottom-4 right-4 bg-surface-white rounded-xl shadow-md border border-outline-variant/30 flex items-center p-1 z-20">
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]">remove</span>
+</button>
+<span class="px-2 font-code-sm text-code-sm text-on-surface">100%</span>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+<!-- The Canvas -->
+<div class="absolute inset-0 w-full h-full overflow-auto" id="zoom-layer" style="background-image: radial-gradient(circle at 2px 2px, rgba(200, 205, 215, 0.4) 1px, transparent 0px); background-size: 24px 24px; cursor: default;">
+<div class="relative w-[1500px] h-[1000px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+<!-- Connection Lines (SVG) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: 1;">
+<defs>
+<marker id="arrow" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#7c839b"></path>
+</marker>
+<marker id="arrow-selected" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#006399"></path>
+</marker>
+</defs>
+<!-- Client to Gateway -->
+<path d="M 350 250 L 550 250" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-dasharray="4" stroke-width="2"></path>
+<!-- Gateway to Auth -->
+<path d="M 650 310 C 650 450, 450 450, 450 550" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-width="2"></path>
+<!-- Gateway to Orders -->
+<path d="M 650 310 L 650 550" fill="none" marker-end="url(#arrow-selected)" stroke="#006399" stroke-width="2"></path>
+<!-- Gateway to Inventory -->
+<path d="M 650 310 C 650 450, 850 450, 850 550" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-width="2"></path>
+<!-- Auth to DB -->
+<path d="M 450 630 L 450 750" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-width="2"></path>
+<!-- Orders to DB -->
+<path d="M 650 630 L 650 750" fill="none" marker-end="url(#arrow-selected)" stroke="#006399" stroke-width="2"></path>
+<!-- Inventory to DB -->
+<path d="M 850 630 L 850 750" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-width="2"></path>
+</svg>
+<!-- Nodes -->
+<!-- Client -->
+<div class="absolute top-[210px] left-[150px] w-48 bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-pointer z-10">
+<div class="w-12 h-12 bg-primary-fixed rounded-full flex items-center justify-center text-on-primary-fixed mb-1">
+<span class="material-symbols-outlined text-[24px]">devices</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface">Client Apps</h3>
+<p class="font-label-md text-label-md text-on-surface-variant">Web &amp; Mobile</p>
+</div>
+<!-- API Gateway -->
+<div class="absolute top-[190px] left-[550px] w-[200px] bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-pointer z-10">
+<div class="absolute -top-3 -right-3 bg-accent-api text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shadow-sm">v1.2</div>
+<div class="w-12 h-12 bg-surface-variant rounded-lg flex items-center justify-center text-on-surface mb-1">
+<span class="material-symbols-outlined text-[24px]">router</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface text-center">API Gateway</h3>
+<p class="font-code-sm text-code-sm text-on-surface-variant bg-surface px-2 py-1 rounded w-full text-center truncate">api.aastudio.kr</p>
+</div>
+<!-- Auth Service -->
+<div class="absolute top-[550px] left-[350px] w-48 bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-pointer z-10">
+<div class="w-10 h-10 bg-error-container text-on-error-container rounded-lg flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface">Auth Service</h3>
+<p class="font-label-md text-label-md text-on-surface-variant">OAuth 2.0</p>
+</div>
+<!-- Order Service (Selected) -->
+<div class="absolute top-[550px] left-[550px] w-[200px] bg-secondary-fixed rounded-xl shadow-lg border-2 border-secondary p-4 flex flex-col items-center justify-center gap-2 cursor-pointer z-20 transform scale-105 transition-transform relative">
+<!-- Selection Handles -->
+<div class="absolute -top-1.5 -left-1.5 w-3 h-3 bg-surface-white border border-secondary rounded-sm"></div>
+<div class="absolute -top-1.5 -right-1.5 w-3 h-3 bg-surface-white border border-secondary rounded-sm"></div>
+<div class="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-surface-white border border-secondary rounded-sm"></div>
+<div class="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-surface-white border border-secondary rounded-sm"></div>
+<div class="w-10 h-10 bg-secondary text-on-secondary rounded-lg flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-[20px]">shopping_cart</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-secondary-container">Order Service</h3>
+<p class="font-code-sm text-code-sm text-on-secondary-container/80 bg-surface-white/50 px-2 py-1 rounded w-full text-center">Node.js / Express</p>
+</div>
+<!-- Inventory Service -->
+<div class="absolute top-[550px] left-[750px] w-48 bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-pointer z-10">
+<div class="w-10 h-10 bg-tertiary-fixed text-on-tertiary-fixed rounded-lg flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface">Inventory</h3>
+<p class="font-label-md text-label-md text-on-surface-variant">Go / gRPC</p>
+</div>
+<!-- Databases Group -->
+<div class="absolute top-[700px] left-[300px] w-[700px] h-[180px] bg-accent-db/5 border border-accent-db/20 rounded-2xl border-dashed z-0">
+<div class="absolute -top-3 left-6 bg-surface-container-low px-2 font-label-md text-label-md text-accent-db flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">database</span> Storage Layer
+                        </div>
+</div>
+<!-- Auth DB -->
+<div class="absolute top-[750px] left-[370px] w-32 h-24 bg-surface-white rounded-lg shadow border border-outline-variant/50 flex flex-col items-center justify-center gap-1 z-10">
+<span class="material-symbols-outlined text-accent-db text-[24px]">storage</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">Redis</span>
+</div>
+<!-- Order DB -->
+<div class="absolute top-[750px] left-[585px] w-32 h-24 bg-surface-white rounded-lg shadow border-2 border-secondary/50 flex flex-col items-center justify-center gap-1 z-10">
+<span class="material-symbols-outlined text-accent-db text-[24px]">storage</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">PostgreSQL</span>
+</div>
+<!-- Inventory DB -->
+<div class="absolute top-[750px] left-[785px] w-32 h-24 bg-surface-white rounded-lg shadow border border-outline-variant/50 flex flex-col items-center justify-center gap-1 z-10">
+<span class="material-symbols-outlined text-accent-db text-[24px]">storage</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">MongoDB</span>
+</div>
+</div>
+</div>
+<div class="absolute bottom-20 right-4 w-48 h-32 bg-surface-white/80 backdrop-blur-md rounded-xl shadow-lg border border-outline-variant/30 p-2 z-30" id="minimap-container"><div class="w-full h-full bg-surface-variant/30 rounded border border-outline-variant/30 relative overflow-hidden flex items-center justify-center"><div class="w-3/4 h-3/4 border-2 border-secondary/40 bg-secondary/10 absolute top-2 left-2 rounded-sm backdrop-blur-sm"></div><svg class="opacity-20 pointer-events-none" height="100%" viewBox="0 0 100 100" width="100%"><rect fill="currentColor" height="15" rx="2" width="20" x="20" y="20"></rect><rect fill="currentColor" height="15" rx="2" width="20" x="60" y="20"></rect><rect fill="currentColor" height="15" rx="2" width="20" x="40" y="60"></rect><path d="M30 35 L50 60 M70 35 L50 60" fill="none" stroke="currentColor" stroke-width="1"></path></svg></div></div></div>
+<!-- Right Properties Panel -->
+<div class="w-[300px] bg-surface-white border-l border-outline-variant flex flex-col shrink-0 relative z-20 shadow-[-4px_0_15px_rgba(0,0,0,0.03)]">
+<div class="p-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
+<h2 class="font-title-md text-title-md text-on-surface">Properties</h2>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto">
+<!-- Object Info -->
+<div class="p-4 border-b border-outline-variant/50 space-y-3">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 bg-secondary-fixed text-secondary flex items-center justify-center rounded-lg">
+<span class="material-symbols-outlined text-[20px]">shopping_cart</span>
+</div>
+<div>
+<div class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wide">Selected Node</div>
+<div class="font-body-md text-body-md font-medium text-on-surface">Order Service</div>
+</div>
+</div>
+</div>
+<!-- Text / Typography -->
+<div class="p-4 border-b border-outline-variant/50 space-y-4">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">Text</h3>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface">Label</label>
+<input class="w-full px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-body-md text-body-md transition-all" type="text" value="Order Service">
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface">Sub-label</label>
+<input class="w-full px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-code-sm text-code-sm transition-all" type="text" value="Node.js / Express">
+</div>
+</div>
+<!-- Style / Appearance -->
+<div class="p-4 border-b border-outline-variant/50 space-y-4">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">Appearance</h3>
+<!-- Color Swatches -->
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface flex justify-between">
+                            Fill Color <span class="text-on-surface-variant font-code-sm uppercase">#CDE5FF</span>
+</label>
+<div class="flex gap-2 flex-wrap">
+<button class="w-8 h-8 rounded-full bg-surface-white border border-outline-variant hover:scale-110 transition-transform"></button>
+<button class="w-8 h-8 rounded-full bg-secondary-fixed border-2 border-secondary hover:scale-110 transition-transform relative">
+<span class="material-symbols-outlined text-[16px] text-secondary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-primary-fixed border border-outline-variant hover:scale-110 transition-transform"></button>
+<button class="w-8 h-8 rounded-full bg-error-container border border-outline-variant hover:scale-110 transition-transform"></button>
+<button class="w-8 h-8 rounded-full bg-tertiary-fixed border border-outline-variant hover:scale-110 transition-transform"></button>
+<button class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center border border-outline-variant hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">add</span>
+</button>
+</div>
+</div>
+<!-- Stroke -->
+<div class="space-y-2 pt-2">
+<label class="font-label-md text-label-md text-on-surface">Stroke Width</label>
+<div class="flex items-center gap-3">
+<input class="flex-1 h-1 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-secondary" max="5" min="0" type="range" value="2">
+<span class="font-code-sm text-code-sm text-on-surface bg-surface px-2 py-1 rounded w-10 text-center border border-outline-variant/50">2px</span>
+</div>
+</div>
+<div class="space-y-2 pt-2">
+<label class="font-label-md text-label-md text-on-surface">Stroke Style</label>
+<div class="flex bg-surface rounded-lg p-1 border border-outline-variant/50">
+<button class="flex-1 py-1 bg-surface-white shadow-sm rounded flex justify-center items-center">
+<div class="w-6 h-0.5 bg-on-surface"></div>
+</button>
+<button class="flex-1 py-1 hover:bg-surface-white/50 rounded flex justify-center items-center transition-colors">
+<div class="w-6 h-0.5 border-t-2 border-dashed border-on-surface-variant"></div>
+</button>
+<button class="flex-1 py-1 hover:bg-surface-white/50 rounded flex justify-center items-center transition-colors">
+<div class="w-6 h-0.5 border-t-2 border-dotted border-on-surface-variant"></div>
+</button>
+</div>
+</div>
+</div>
+<!-- Data Binding -->
+<div class="p-4 space-y-4">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">Metadata</h3>
+<div class="space-y-3">
+<div class="flex flex-col gap-1">
+<span class="font-code-sm text-[10px] text-on-surface-variant uppercase">Link to API Spec</span>
+<div class="flex items-center justify-between bg-surface px-3 py-2 rounded-lg border border-outline-variant/50 hover:border-secondary/50 cursor-pointer transition-colors group">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-accent-api">code</span>
+<span class="font-body-md text-body-md text-on-surface">Order API v2</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-code-sm text-[10px] text-on-surface-variant uppercase">Link to DB Model</span>
+<div class="flex items-center justify-between bg-surface px-3 py-2 rounded-lg border border-outline-variant/50 hover:border-secondary/50 cursor-pointer transition-colors group">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-accent-db">database</span>
+<span class="font-body-md text-body-md text-on-surface">orders_schema</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+    // Simple toggle for sidebar folders
+    function toggleFolder(id) {
+        const folder = document.getElementById(id);
+        const icon = document.getElementById('icon-' + id);
+        if (folder.classList.contains('hidden')) {
+            folder.classList.remove('hidden');
+            icon.classList.remove('-rotate-90');
+        } else {
+            folder.classList.add('hidden');
+            icon.classList.add('-rotate-90');
+        }
+    }
+
+    // Optional: Add basic drag/pan capability to canvas (vanilla JS)
+    const zoomLayer = document.getElementById('zoom-layer');
+    let isDown = false;
+    let startX;
+    let startY;
+    let scrollLeft;
+    let scrollTop;
+
+    zoomLayer.addEventListener('mousedown', (e) => {
+        // Only pan if clicking on the background, not nodes
+        if(e.target === zoomLayer || e.target.tagName.toLowerCase() === 'svg') {
+            isDown = true;
+            zoomLayer.style.cursor = 'grabbing';
+            startX = e.pageX - zoomLayer.offsetLeft;
+            startY = e.pageY - zoomLayer.offsetTop;
+            scrollLeft = zoomLayer.scrollLeft;
+            scrollTop = zoomLayer.scrollTop;
+        }
+    });
+    
+    zoomLayer.addEventListener('mouseleave', () => {
+        isDown = false;
+        zoomLayer.style.cursor = 'default';
+    });
+    
+    zoomLayer.addEventListener('mouseup', () => {
+        isDown = false;
+        zoomLayer.style.cursor = 'default';
+    });
+    
+    zoomLayer.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - zoomLayer.offsetLeft;
+        const y = e.pageY - zoomLayer.offsetTop;
+        const walkX = (x - startX) * 1.5; 
+        const walkY = (y - startY) * 1.5;
+        zoomLayer.scrollLeft = scrollLeft - walkX;
+        zoomLayer.scrollTop = scrollTop - walkY;
+    });
+    
+    // Center initially
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            zoomLayer.scrollLeft = (zoomLayer.scrollWidth - zoomLayer.clientWidth) / 2;
+            zoomLayer.scrollTop = (zoomLayer.scrollHeight - zoomLayer.clientHeight) / 2;
+        }, 100);
+    });
+</script><script>
+function toggleSpacesPanel() {
+    const panel = document.getElementById('spaces-panel');
+    const icon = document.getElementById('collapse-icon');
+    const openButton = document.getElementById('diagram-spaces-open');
+
+    panel.style.display = 'none';
+    panel.style.width = '0px';
+    panel.style.opacity = '0';
+    panel.style.pointerEvents = 'none';
+    panel.classList.add('hidden', 'w-0', 'opacity-0', 'pointer-events-none', 'bg-transparent', 'border-transparent');
+    panel.classList.remove('flex', 'w-[280px]', 'opacity-100', 'pointer-events-auto', 'bg-surface', 'border-outline-variant');
+    if (openButton) {
+        openButton.classList.remove('hidden');
+    }
+    if (icon) {
+        icon.textContent = 'chevron_left';
+    }
+}
+
+function openDiagramSpaces() {
+    const panel = document.getElementById('spaces-panel');
+    const openButton = document.getElementById('diagram-spaces-open');
+
+    panel.style.display = 'flex';
+    panel.style.width = '280px';
+    panel.style.opacity = '1';
+    panel.style.pointerEvents = 'auto';
+    panel.classList.remove('hidden', 'w-0', 'opacity-0', 'pointer-events-none', 'bg-transparent', 'border-transparent');
+    panel.classList.add('flex', 'w-[280px]', 'opacity-100', 'pointer-events-auto', 'bg-surface', 'border-outline-variant');
+    if (openButton) {
+        openButton.classList.add('hidden');
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    toggleSpacesPanel();
+});
+</script></main></div>
+
+
+
+
+
+
+
+
+
+
+
+</body></html>

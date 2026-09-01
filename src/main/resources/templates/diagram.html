@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::div})}">
+<div class="flex flex-col w-full min-h-[calc(100vh-64px)] font-body-md text-on-background relative overflow-hidden bg-surface-container-lowest" id="diagram-root">
+    <div class="flex items-center justify-between px-gutter py-3 border-b border-outline-variant bg-surface-white shrink-0 z-10 shadow-sm relative">
+        <div class="flex items-center gap-4">
+            <h1 class="font-title-md text-title-md text-on-surface" th:text="${pageTitle}">Microservices Architecture v2</h1>
+            <span class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-label-md text-label-md">Draft</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="flex items-center -space-x-2 mr-4">
+                <div class="w-8 h-8 rounded-full border-2 border-surface-white bg-secondary/20 shadow-sm z-30"></div>
+                <div class="w-8 h-8 rounded-full border-2 border-surface-white bg-accent-db/20 shadow-sm z-20"></div>
+                <div class="w-8 h-8 rounded-full border-2 border-surface-white bg-surface-variant flex items-center justify-center font-label-md text-label-md text-on-surface-variant shadow-sm z-10">+3</div>
+            </div>
+            <button class="flex items-center gap-2 px-4 py-2 text-on-surface-variant hover:bg-surface-variant rounded-xl transition-colors font-label-md text-label-md" type="button">
+                <span class="material-symbols-outlined text-[18px]">history</span>
+                History
+            </button>
+            <button class="flex items-center gap-2 px-4 py-2 bg-secondary text-on-secondary hover:opacity-90 rounded-xl shadow-sm transition-opacity font-label-md text-label-md" type="button">
+                <span class="material-symbols-outlined text-[18px]">share</span>
+                Share
+            </button>
+        </div>
+    </div>
+
+    <div class="flex flex-1 h-[calc(100vh-130px)] overflow-hidden">
+        <div class="hidden w-0 opacity-0 pointer-events-none bg-transparent flex-col border-r border-transparent shrink-0 relative z-10 transition-all duration-300 ease-in-out overflow-hidden" id="spaces-panel">
+            <div class="p-4 flex items-center justify-between border-b border-outline-variant/50 transition-all duration-300 ease-in-out" data-spaces-header>
+                <div class="flex items-center gap-2" data-spaces-header-title>
+                    <span class="material-symbols-outlined text-[20px] text-on-surface-variant transition-transform duration-200" data-spaces-header-expander>expand_more</span>
+                    <span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider whitespace-nowrap overflow-hidden" data-spaces-text>Spaces</span>
+                </div>
+                <span class="material-symbols-outlined text-[20px] text-on-surface-variant hidden" data-spaces-collapsed-icon>folder</span>
+                <button class="text-on-surface-variant hover:text-primary transition-colors p-1"
+                        data-spaces-action
+                        title="Add group"
+                        type="button">
+                    <span class="material-symbols-outlined text-[20px]">create_new_folder</span>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-2 space-y-1 transition-all sidebar-transition" data-spaces-scroll>
+                <div class="group" data-space-group>
+                    <div class="flex items-center gap-2" data-space-group-header>
+                        <button class="flex-1 flex items-center gap-2 px-2 py-1.5 text-on-surface hover:bg-surface-variant/50 rounded-lg transition-colors text-left"
+                                data-spaces-row
+                                data-group-toggle
+                                type="button">
+                            <span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform duration-200" data-spaces-expander>expand_more</span>
+                            <span class="material-symbols-outlined text-[18px] text-accent-api" data-spaces-primary-icon>folder</span>
+                            <span class="font-body-md text-body-md flex-1 truncate font-medium" data-spaces-text data-group-name>System Architecture</span>
+                        </button>
+                        <button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-variant/60 rounded-lg transition-colors"
+                                data-group-add-diagram
+                                title="Add diagram"
+                                type="button">
+                            <span class="material-symbols-outlined text-[18px]">add</span>
+                        </button>
+                    </div>
+                    <div class="pl-9 pr-2 py-1 space-y-1" data-spaces-children>
+                        <button class="w-full flex items-center gap-2 px-3 py-1.5 bg-secondary/10 text-secondary rounded-lg font-body-md text-body-md text-left"
+                                data-space-diagram
+                                type="button">
+                            <span class="material-symbols-outlined text-[16px]">account_tree</span>
+                            <span class="truncate" data-spaces-text>Microservices v2</span>
+                        </button>
+                        <button class="w-full flex items-center gap-2 px-3 py-1.5 text-on-surface-variant hover:bg-surface-variant/50 rounded-lg font-body-md text-body-md text-left transition-colors"
+                                data-space-diagram
+                                type="button">
+                            <span class="material-symbols-outlined text-[16px]">account_tree</span>
+                            <span class="truncate" data-spaces-text>Legacy Monolith</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="group" data-space-group>
+                    <div class="flex items-center gap-2" data-space-group-header>
+                        <button class="flex-1 flex items-center gap-2 px-2 py-1.5 text-on-surface hover:bg-surface-variant/50 rounded-lg transition-colors text-left"
+                                data-spaces-row
+                                data-group-toggle
+                                type="button">
+                            <span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform duration-200 -rotate-90" data-spaces-expander>expand_more</span>
+                            <span class="material-symbols-outlined text-[18px] text-accent-db" data-spaces-primary-icon>folder</span>
+                            <span class="font-body-md text-body-md flex-1 truncate font-medium" data-spaces-text data-group-name>Infrastructure</span>
+                        </button>
+                        <button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-variant/60 rounded-lg transition-colors"
+                                data-group-add-diagram
+                                title="Add diagram"
+                                type="button">
+                            <span class="material-symbols-outlined text-[18px]">add</span>
+                        </button>
+                    </div>
+                    <div class="pl-9 pr-2 py-1 space-y-1 hidden" data-spaces-children>
+                        <button class="w-full flex items-center gap-2 px-3 py-1.5 text-on-surface-variant hover:bg-surface-variant/50 rounded-lg font-body-md text-body-md text-left transition-colors"
+                                data-space-diagram
+                                type="button">
+                            <span class="material-symbols-outlined text-[16px]">account_tree</span>
+                            <span class="truncate" data-spaces-text>AWS Topology</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="group" data-space-group>
+                    <div class="flex items-center gap-2" data-space-group-header>
+                        <button class="flex-1 flex items-center gap-2 px-2 py-1.5 text-on-surface hover:bg-surface-variant/50 rounded-lg transition-colors text-left"
+                                data-spaces-row
+                                data-group-toggle
+                                type="button">
+                            <span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform duration-200 -rotate-90" data-spaces-expander>expand_more</span>
+                            <span class="material-symbols-outlined text-[18px] text-accent-logic" data-spaces-primary-icon>folder</span>
+                            <span class="font-body-md text-body-md flex-1 truncate font-medium" data-spaces-text data-group-name>Flowcharts</span>
+                        </button>
+                        <button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-variant/60 rounded-lg transition-colors"
+                                data-group-add-diagram
+                                title="Add diagram"
+                                type="button">
+                            <span class="material-symbols-outlined text-[18px]">add</span>
+                        </button>
+                    </div>
+                    <div class="pl-9 pr-2 py-1 space-y-1 hidden" data-spaces-children>
+                        <button class="w-full flex items-center gap-2 px-3 py-1.5 text-on-surface-variant hover:bg-surface-variant/50 rounded-lg font-body-md text-body-md text-left transition-colors"
+                                data-space-diagram
+                                type="button">
+                            <span class="material-symbols-outlined text-[16px]">account_tree</span>
+                            <span class="truncate" data-spaces-text>Checkout Flow</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-outline-variant/50 bg-surface shrink-0 transition-all duration-300 ease-in-out" data-spaces-footer>
+                <button class="w-full flex items-center justify-center p-2 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors"
+                        id="diagram-spaces-toggle"
+                        type="button">
+                    <span class="material-symbols-outlined text-[20px]" id="diagram-spaces-toggle-icon">chevron_left</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 flex flex-col relative bg-surface-container-low overflow-hidden" id="canvas-container">
+            <button class="absolute top-4 left-4 w-10 h-10 rounded-xl bg-surface-white border border-outline-variant/30 shadow-lg text-on-surface-variant hover:text-primary hover:bg-surface transition-colors z-20 flex items-center justify-center"
+                    id="diagram-spaces-open"
+                    onclick="if (window.openDiagramSpaces) window.openDiagramSpaces()"
+                    title="Open Spaces"
+                    type="button">
+                <span class="material-symbols-outlined text-[20px] pointer-events-none">folder_open</span>
+            </button>
+            <div class="absolute top-4 left-1/2 -translate-x-1/2 bg-surface-white rounded-xl shadow-lg border border-outline-variant/30 p-1.5 flex items-center gap-1 z-20 backdrop-blur-md bg-opacity-90">
+                <button class="p-2 rounded-lg text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors" data-diagram-tool="select" title="Select" type="button">
+                    <span class="material-symbols-outlined text-[20px]">near_me</span>
+                </button>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="rectangle" title="Rectangle" type="button">
+                    <span class="material-symbols-outlined text-[20px]">rectangle</span>
+                </button>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="circle" title="Circle" type="button">
+                    <span class="material-symbols-outlined text-[20px]">circle</span>
+                </button>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="diamond" title="Diamond" type="button">
+                    <span class="material-symbols-outlined text-[20px]">category</span>
+                </button>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="group-box" title="Group Box" type="button">
+                    <span class="material-symbols-outlined text-[20px]">dashboard_customize</span>
+                </button>
+                <div class="w-[1px] h-6 bg-outline-variant/50 mx-1"></div>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="connector" title="Connector" type="button">
+                    <span class="material-symbols-outlined text-[20px]">conversion_path</span>
+                </button>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="text" title="Text" type="button">
+                    <span class="material-symbols-outlined text-[20px]">text_fields</span>
+                </button>
+                <div class="w-[1px] h-6 bg-outline-variant/50 mx-1"></div>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="image" title="Image" type="button">
+                    <span class="material-symbols-outlined text-[20px]">image</span>
+                </button>
+            </div>
+
+            <div class="absolute bottom-4 right-4 bg-surface-white rounded-xl shadow-md border border-outline-variant/30 flex items-center p-1 z-20">
+                <button class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" id="diagram-zoom-out" type="button">
+                    <span class="material-symbols-outlined text-[18px]">remove</span>
+                </button>
+                <span class="px-2 font-code-sm text-code-sm text-on-surface" id="diagram-zoom-value">100%</span>
+                <button class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" id="diagram-zoom-in" type="button">
+                    <span class="material-symbols-outlined text-[18px]">add</span>
+                </button>
+            </div>
+
+            <div class="absolute inset-0 w-full h-full overflow-auto" id="zoom-layer" style="background-image: radial-gradient(circle at 2px 2px, rgba(200, 205, 215, 0.4) 1px, transparent 0px); background-size: 24px 24px; cursor: grab;">
+                <div class="relative w-[1500px] h-[1000px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" id="diagram-stage">
+                    <svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: 1;">
+                        <defs>
+                            <marker id="arrow" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c839b"></path>
+                            </marker>
+                            <marker id="arrow-selected" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#006399"></path>
+                            </marker>
+                        </defs>
+                        <path data-line-from="client-apps" data-line-to="api-gateway" data-from-anchor="right" data-to-anchor="left" data-line-tone="default" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-dasharray="4" stroke-width="2"></path>
+                        <path data-line-from="api-gateway" data-line-to="auth-service" data-from-anchor="bottom" data-to-anchor="top" data-line-tone="default" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-width="2"></path>
+                        <path data-line-from="api-gateway" data-line-to="order-service" data-from-anchor="bottom" data-to-anchor="top" data-line-tone="selected" fill="none" marker-end="url(#arrow-selected)" stroke="#006399" stroke-width="2"></path>
+                        <path data-line-from="api-gateway" data-line-to="inventory-service" data-from-anchor="bottom" data-to-anchor="top" data-line-tone="default" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-width="2"></path>
+                        <path data-line-from="auth-service" data-line-to="auth-storage" data-from-anchor="bottom" data-to-anchor="top" data-line-tone="default" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-width="2"></path>
+                        <path data-line-from="order-service" data-line-to="order-storage" data-from-anchor="bottom" data-to-anchor="top" data-line-tone="selected" fill="none" marker-end="url(#arrow-selected)" stroke="#006399" stroke-width="2"></path>
+                        <path data-line-from="inventory-service" data-line-to="inventory-storage" data-from-anchor="bottom" data-to-anchor="top" data-line-tone="default" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-width="2"></path>
+                    </svg>
+
+                    <div class="absolute top-[210px] left-[150px] w-48 bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-move z-10"
+                         data-diagram-node
+                         data-node-key="client-apps">
+                        <div class="w-12 h-12 bg-primary-fixed rounded-full flex items-center justify-center text-on-primary-fixed mb-1">
+                            <span class="material-symbols-outlined text-[24px]">devices</span>
+                        </div>
+                        <h3 class="font-title-md text-title-md text-on-surface" data-node-title>Client Apps</h3>
+                        <p class="font-label-md text-label-md text-on-surface-variant" data-node-subtitle>Web &amp; Mobile</p>
+                    </div>
+                    <div class="absolute top-[190px] left-[550px] w-[200px] bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-move z-10"
+                         data-diagram-node
+                         data-node-key="api-gateway">
+                        <div class="absolute -top-3 -right-3 bg-accent-api text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shadow-sm">v1.2</div>
+                        <div class="w-12 h-12 bg-surface-variant rounded-lg flex items-center justify-center text-on-surface mb-1">
+                            <span class="material-symbols-outlined text-[24px]">router</span>
+                        </div>
+                        <h3 class="font-title-md text-title-md text-on-surface text-center" data-node-title>API Gateway</h3>
+                        <p class="font-code-sm text-code-sm text-on-surface-variant bg-surface px-2 py-1 rounded w-full text-center truncate" data-node-subtitle>api.aastudio.kr</p>
+                    </div>
+                    <div class="absolute top-[550px] left-[350px] w-48 bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-move z-10"
+                         data-diagram-node
+                         data-node-key="auth-service">
+                        <div class="w-10 h-10 bg-error-container text-on-error-container rounded-lg flex items-center justify-center mb-1">
+                            <span class="material-symbols-outlined text-[20px]">lock</span>
+                        </div>
+                        <h3 class="font-title-md text-title-md text-on-surface" data-node-title>Auth Service</h3>
+                        <p class="font-label-md text-label-md text-on-surface-variant" data-node-subtitle>OAuth 2.0</p>
+                    </div>
+                    <div class="absolute top-[550px] left-[550px] w-[200px] bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 cursor-move z-10 transition-transform relative"
+                         data-diagram-node
+                         data-fill-color="#CDE5FF"
+                         data-stroke-width="2"
+                         data-node-key="order-service">
+                        <div class="absolute -top-1.5 -left-1.5 w-3 h-3 bg-surface-white border border-secondary rounded-sm"></div>
+                        <div class="absolute -top-1.5 -right-1.5 w-3 h-3 bg-surface-white border border-secondary rounded-sm"></div>
+                        <div class="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-surface-white border border-secondary rounded-sm"></div>
+                        <div class="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-surface-white border border-secondary rounded-sm"></div>
+                        <div class="w-10 h-10 bg-secondary text-on-secondary rounded-lg flex items-center justify-center mb-1">
+                            <span class="material-symbols-outlined text-[20px]">shopping_cart</span>
+                        </div>
+                        <h3 class="font-title-md text-title-md text-on-surface" data-node-title>Order Service</h3>
+                        <p class="font-code-sm text-code-sm text-on-surface-variant bg-surface px-2 py-1 rounded w-full text-center" data-node-subtitle>Node.js / Express</p>
+                    </div>
+                    <div class="absolute top-[550px] left-[750px] w-48 bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-move z-10"
+                         data-diagram-node
+                         data-node-key="inventory-service">
+                        <div class="w-10 h-10 bg-tertiary-fixed text-on-tertiary-fixed rounded-lg flex items-center justify-center mb-1">
+                            <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                        </div>
+                        <h3 class="font-title-md text-title-md text-on-surface" data-node-title>Inventory</h3>
+                        <p class="font-label-md text-label-md text-on-surface-variant" data-node-subtitle>Go / gRPC</p>
+                    </div>
+                    <div class="absolute top-[700px] left-[300px] w-[700px] h-[180px] bg-accent-db/5 border border-accent-db/20 rounded-2xl border-dashed z-0 cursor-move"
+                         data-diagram-node
+                         data-node-key="storage-layer-group"
+                         data-node-kind="group-box"
+                         data-fill-color="rgba(16, 185, 129, 0.05)"
+                         data-stroke-width="1"
+                         data-stroke-style="dashed">
+                        <div class="absolute -top-3 left-6 bg-surface-container-low px-2 font-label-md text-label-md text-accent-db flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">database</span>
+                            <span data-node-title>Storage Layer</span>
+                        </div>
+                        <span class="hidden" data-node-subtitle>Group Box</span>
+                    </div>
+                    <div class="absolute top-[750px] left-[370px] w-32 h-24 bg-surface-white rounded-lg shadow border border-outline-variant/50 flex flex-col items-center justify-center gap-1 z-10"
+                         data-diagram-node
+                         data-node-key="auth-storage">
+                        <span class="material-symbols-outlined text-accent-db text-[24px]">storage</span>
+                        <span class="font-body-md text-body-md text-on-surface font-medium" data-node-title>Redis</span>
+                        <span class="hidden" data-node-subtitle>Storage</span>
+                    </div>
+                    <div class="absolute top-[750px] left-[585px] w-32 h-24 bg-surface-white rounded-lg shadow border-2 border-secondary/50 flex flex-col items-center justify-center gap-1 z-10"
+                         data-diagram-node
+                         data-node-key="order-storage">
+                        <span class="material-symbols-outlined text-accent-db text-[24px]">storage</span>
+                        <span class="font-body-md text-body-md text-on-surface font-medium" data-node-title>PostgreSQL</span>
+                        <span class="hidden" data-node-subtitle>Storage</span>
+                    </div>
+                    <div class="absolute top-[750px] left-[785px] w-32 h-24 bg-surface-white rounded-lg shadow border border-outline-variant/50 flex flex-col items-center justify-center gap-1 z-10"
+                         data-diagram-node
+                         data-node-key="inventory-storage">
+                        <span class="material-symbols-outlined text-accent-db text-[24px]">storage</span>
+                        <span class="font-body-md text-body-md text-on-surface font-medium" data-node-title>MongoDB</span>
+                        <span class="hidden" data-node-subtitle>Storage</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-0 opacity-0 pointer-events-none overflow-hidden bg-surface-white border-l border-outline-variant flex-col shrink-0 relative z-20 shadow-[-4px_0_15px_rgba(0,0,0,0.03)] transition-all duration-300 ease-in-out"
+             id="diagram-properties-panel">
+            <div class="p-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
+                <h2 class="font-title-md text-title-md text-on-surface">Properties</h2>
+                <button class="text-on-surface-variant hover:text-primary transition-colors"
+                        id="diagram-properties-close"
+                        type="button">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto">
+                <div class="p-4 border-b border-outline-variant/50 space-y-3">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-10 h-10 bg-secondary-fixed text-secondary flex items-center justify-center rounded-lg"
+                             id="diagram-selected-node-icon-wrap">
+                            <span class="material-symbols-outlined text-[20px]" id="diagram-selected-node-icon">shopping_cart</span>
+                        </div>
+                        <div>
+                            <div class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wide"
+                                 id="diagram-selected-node-type">Selected Node</div>
+                            <div class="font-body-md text-body-md font-medium text-on-surface" id="diagram-selected-node-name">Order Service</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 border-b border-outline-variant/50 space-y-4">
+                    <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">Text</h3>
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface">Label</label>
+                        <input class="w-full px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-body-md text-body-md transition-all" id="diagram-node-label-input" type="text" value="Order Service">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface">Sub-label</label>
+                        <input class="w-full px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-code-sm text-code-sm transition-all" id="diagram-node-sub-label-input" type="text" value="Node.js / Express">
+                    </div>
+                </div>
+                <div class="p-4 border-b border-outline-variant/50 space-y-4">
+                    <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">Appearance</h3>
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface flex justify-between">
+                            Fill Color <span class="text-on-surface-variant font-code-sm uppercase" id="diagram-fill-color-value">#CDE5FF</span>
+                        </label>
+                        <div class="flex gap-2 flex-wrap">
+                            <button class="w-8 h-8 rounded-full bg-surface-white border border-outline-variant hover:scale-110 transition-transform"
+                                    data-fill-color="#FFFFFF"
+                                    type="button"></button>
+                            <button class="w-8 h-8 rounded-full bg-secondary-fixed border-2 border-secondary hover:scale-110 transition-transform relative"
+                                    data-fill-color="#CDE5FF"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[16px] text-secondary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
+                            </button>
+                            <button class="w-8 h-8 rounded-full bg-primary-fixed border border-outline-variant hover:scale-110 transition-transform"
+                                    data-fill-color="#DAE2FD"
+                                    type="button"></button>
+                            <button class="w-8 h-8 rounded-full bg-error-container border border-outline-variant hover:scale-110 transition-transform"
+                                    data-fill-color="#FFDAD6"
+                                    type="button"></button>
+                            <button class="w-8 h-8 rounded-full bg-tertiary-fixed border border-outline-variant hover:scale-110 transition-transform"
+                                    data-fill-color="#D3E4FE"
+                                    type="button"></button>
+                            <button class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center border border-outline-variant hover:scale-110 transition-transform"
+                                    data-fill-color="#E0E3E5"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[16px] text-on-surface-variant">add</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-2 pt-2">
+                        <label class="font-label-md text-label-md text-on-surface">Stroke Width</label>
+                        <div class="flex items-center gap-3">
+                            <input class="flex-1 h-1 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-secondary"
+                                   id="diagram-stroke-width-input"
+                                   max="5"
+                                   min="0"
+                                   type="range"
+                                   value="2">
+                            <span class="font-code-sm text-code-sm text-on-surface bg-surface px-2 py-1 rounded w-10 text-center border border-outline-variant/50"
+                                  id="diagram-stroke-width-value">2px</span>
+                        </div>
+                    </div>
+                    <div class="space-y-2 pt-2">
+                        <label class="font-label-md text-label-md text-on-surface">Stroke Style</label>
+                        <div class="flex bg-surface rounded-lg p-1 border border-outline-variant/50">
+                            <button class="flex-1 py-1 bg-surface-white shadow-sm rounded flex justify-center items-center"
+                                    data-stroke-style="solid"
+                                    type="button">
+                                <div class="w-6 h-0.5 bg-on-surface"></div>
+                            </button>
+                            <button class="flex-1 py-1 hover:bg-surface-white/50 rounded flex justify-center items-center transition-colors"
+                                    data-stroke-style="dashed"
+                                    type="button">
+                                <div class="w-6 h-0.5 border-t-2 border-dashed border-on-surface-variant"></div>
+                            </button>
+                            <button class="flex-1 py-1 hover:bg-surface-white/50 rounded flex justify-center items-center transition-colors"
+                                    data-stroke-style="dotted"
+                                    type="button">
+                                <div class="w-6 h-0.5 border-t-2 border-dotted border-on-surface-variant"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>
