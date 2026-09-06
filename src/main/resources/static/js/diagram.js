@@ -55,6 +55,27 @@ function initializeDiagramPage() {
     const strokeWidthInput = document.getElementById("diagram-stroke-width-input");
     const strokeWidthValue = document.getElementById("diagram-stroke-width-value");
     const strokeStyleButtons = Array.from(diagramRoot.querySelectorAll("[data-stroke-style]"));
+    const iconPickerTrigger = document.getElementById("diagram-icon-picker-trigger");
+    const iconLibraryPanel = document.getElementById("diagram-icon-library-panel");
+    const iconLibraryClose = document.getElementById("diagram-icon-library-close");
+    const iconLibraryCancel = document.getElementById("diagram-icon-library-cancel");
+    const iconLibraryApply = document.getElementById("diagram-icon-library-apply");
+    const iconLibraryTabList = document.getElementById("diagram-icon-library-tabs");
+    const iconLibraryTabs = Array.from(diagramRoot.querySelectorAll("[data-icon-category]"));
+    const iconServiceGroups = document.getElementById("diagram-icon-service-groups");
+    const iconSearchInput = document.getElementById("diagram-icon-search");
+    const iconGrid = document.getElementById("diagram-icon-grid");
+    const iconEmpty = document.getElementById("diagram-icon-empty");
+    const currentIconPreview = document.getElementById("diagram-current-icon-preview");
+    const currentIconLabel = document.getElementById("diagram-current-icon-label");
+    const draftIconPreview = document.getElementById("diagram-icon-draft-preview");
+    const draftIconLabel = document.getElementById("diagram-icon-draft-label");
+    const iconColorValue = document.getElementById("diagram-icon-color-value");
+    const iconColorHelp = document.getElementById("diagram-icon-color-help");
+    const iconColorModeButtons = Array.from(diagramRoot.querySelectorAll("[data-icon-color-mode]"));
+    const iconCustomColors = document.getElementById("diagram-icon-custom-colors");
+    const iconCustomColorButtons = Array.from(diagramRoot.querySelectorAll("[data-icon-custom-color]"));
+    const iconCustomColorPicker = document.getElementById("diagram-icon-custom-color-picker");
 
     if (!spacesPanel) {
         return;
@@ -68,6 +89,163 @@ function initializeDiagramPage() {
     let nodeCounter = diagramRoot.querySelectorAll("[data-diagram-node]").length;
     let diagramCounter = diagramRoot.querySelectorAll("[data-space-diagram]").length + 1;
     let groupCounter = spaceGroups.length + 1;
+    let activeIconCategory = "all";
+    let activeIconGroup = "all";
+    let draftIcon = null;
+    let iconLibraryNode = null;
+    let originalIconSnapshot = null;
+    let iconColorModeTouched = false;
+
+    const iconCategoryColors = {
+        default: {
+            서버: "#3B82F6", 데이터베이스: "#10B981", API: "#F97316", "외부 서비스": "#A855F7",
+            클라이언트: "#EC4899", "메시지 큐": "#EAB308", 사용자: "#64748B", 모바일: "#14B8A6"
+        },
+        infra: {
+            Docker: "#2496ED", Kubernetes: "#326CE5", Nginx: "#009639", Traefik: "#18A1FF", Ingress: "#0F766E",
+            Redis: "#DC382D", PostgreSQL: "#336791", MySQL: "#00758F", MongoDB: "#47A248",
+            Elasticsearch: "#005571", OpenSearch: "#005571", Kafka: "#334155", RabbitMQ: "#FF6600", NATS: "#334155",
+            CDN: "#06B6D4", "Load Balancer": "#6366F1", DNS: "#7C3AED", Firewall: "#EF4444", WAF: "#DC2626",
+            Vault: "#6D28D9", Prometheus: "#E6522C", Grafana: "#F46800", Loki: "#0EA5E9", Jaeger: "#7C3AED",
+            Registry: "#475569", Artifacts: "#475569", Backup: "#0EA5E9"
+        },
+        modeling: {
+            프로세스: "#334155", 의사결정: "#D97706", "시작/종료": "#059669", 문서: "#2563EB",
+            입출력: "#0891B2", 서브프로세스: "#7C3AED", "데이터 저장소": "#4F46E5", 텍스트: "#E11D48"
+        }
+    };
+    const iconCategoryDefaultColors = { aws: "#FF9900", gcp: "#4285F4", azure: "#0078D4", infra: "#475569", modeling: "#475569", default: "#64748B" };
+    const cloudIconCategories = ["aws", "gcp", "azure"];
+    const iconGroupLabels = {
+        compute: "컴퓨팅", container: "컨테이너", storage: "스토리지", database: "데이터베이스",
+        network: "네트워크", integration: "통합", data: "데이터", ai: "AI/ML", security: "보안/운영"
+    };
+    const iconCategoryItems = (category, items) => items.map(([name, label, groupOrKeywords = "", keywords = ""]) => ({
+        category,
+        set: "remix",
+        name,
+        label,
+        group: cloudIconCategories.includes(category) ? groupOrKeywords : "general",
+        keywords: cloudIconCategories.includes(category) ? `${keywords} ${iconGroupLabels[groupOrKeywords] || ""}` : groupOrKeywords,
+        color: iconCategoryColors[category]?.[label] || iconCategoryDefaultColors[category]
+    }));
+    const diagramIcons = [
+        { category: "default", set: "none", name: "", label: "아이콘 없음", keywords: "none empty 없음 제거", color: "#76777D" },
+        ...iconCategoryItems("default", [
+            ["ri-server-line", "서버"], ["ri-database-2-line", "데이터베이스"], ["ri-global-line", "API"],
+            ["ri-cloud-line", "외부 서비스"], ["ri-computer-line", "클라이언트"], ["ri-stack-line", "메시지 큐"],
+            ["ri-user-line", "사용자"], ["ri-smartphone-line", "모바일"]
+        ]),
+        ...iconCategoryItems("aws", [
+            ["ri-server-line", "EC2", "compute", "가상 머신 VM"],
+            ["ri-flashlight-line", "Lambda", "compute", "서버리스 함수 function"],
+            ["ri-ship-line", "ECS", "container", "컨테이너 오케스트레이션"],
+            ["ri-settings-3-line", "EKS", "container", "쿠버네티스 Kubernetes"],
+            ["ri-cloud-line", "Fargate", "container", "서버리스 컨테이너"],
+            ["ri-hard-drive-2-line", "S3", "storage", "오브젝트 스토리지 버킷"],
+            ["ri-hard-drive-line", "EBS", "storage", "블록 스토리지 볼륨"],
+            ["ri-folder-line", "EFS", "storage", "파일 스토리지"],
+            ["ri-database-2-line", "RDS", "database", "관계형 데이터베이스 SQL"],
+            ["ri-database-2-line", "Aurora", "database", "MySQL PostgreSQL"],
+            ["ri-database-line", "DynamoDB", "database", "NoSQL 키 값"],
+            ["ri-speed-line", "ElastiCache", "database", "Redis Valkey 캐시"],
+            ["ri-global-line", "VPC", "network", "가상 네트워크"],
+            ["ri-git-branch-line", "Elastic Load Balancing", "network", "ELB 로드 밸런서"],
+            ["ri-global-line", "CloudFront", "network", "CDN 콘텐츠 전송"],
+            ["ri-compass-3-line", "Route 53", "network", "DNS 도메인"],
+            ["ri-node-tree", "API Gateway", "network", "API 관리 게이트웨이"],
+            ["ri-stack-line", "SQS", "integration", "메시지 큐"],
+            ["ri-broadcast-line", "SNS", "integration", "알림 pub sub"],
+            ["ri-broadcast-line", "EventBridge", "integration", "이벤트 버스"],
+            ["ri-git-merge-line", "Step Functions", "integration", "워크플로 상태 머신"],
+            ["ri-bar-chart-line", "Redshift", "data", "데이터 웨어하우스 분석"],
+            ["ri-pulse-line", "Kinesis", "data", "스트리밍 데이터"],
+            ["ri-sparkling-2-line", "Bedrock", "ai", "생성형 AI 에이전트 파운데이션 모델"],
+            ["ri-brain-line", "SageMaker AI", "ai", "머신러닝 ML 모델"],
+            ["ri-key-line", "IAM", "security", "권한 자격 증명"],
+            ["ri-shield-flash-line", "AWS WAF", "security", "웹 방화벽"],
+            ["ri-lock-line", "Secrets Manager", "security", "비밀 키 보안"],
+            ["ri-line-chart-line", "CloudWatch", "security", "모니터링 로그 메트릭"]
+        ]),
+        ...iconCategoryItems("gcp", [
+            ["ri-server-line", "Compute Engine", "compute", "가상 머신 VM"],
+            ["ri-rocket-line", "Cloud Run", "compute", "서버리스 애플리케이션"],
+            ["ri-flashlight-line", "Cloud Run functions", "compute", "Cloud Functions 함수"],
+            ["ri-building-4-line", "App Engine", "compute", "애플리케이션 플랫폼 PaaS"],
+            ["ri-settings-3-line", "Google Kubernetes Engine", "container", "GKE 쿠버네티스"],
+            ["ri-apps-line", "Artifact Registry", "container", "컨테이너 이미지 패키지"],
+            ["ri-hard-drive-2-line", "Cloud Storage", "storage", "오브젝트 스토리지 버킷"],
+            ["ri-folder-line", "Filestore", "storage", "파일 스토리지"],
+            ["ri-database-2-line", "Cloud SQL", "database", "MySQL PostgreSQL SQL Server"],
+            ["ri-database-2-line", "AlloyDB", "database", "PostgreSQL 호환"],
+            ["ri-database-line", "Spanner", "database", "분산 관계형 데이터베이스"],
+            ["ri-file-list-3-line", "Firestore", "database", "문서 NoSQL MongoDB"],
+            ["ri-speed-line", "Memorystore", "database", "Redis Valkey Memcached 캐시"],
+            ["ri-global-line", "VPC", "network", "가상 네트워크"],
+            ["ri-git-branch-line", "Cloud Load Balancing", "network", "로드 밸런서"],
+            ["ri-global-line", "Cloud CDN", "network", "콘텐츠 전송"],
+            ["ri-compass-3-line", "Cloud DNS", "network", "도메인"],
+            ["ri-node-tree", "Apigee API Management", "network", "API 게이트웨이 관리"],
+            ["ri-broadcast-line", "Pub/Sub", "integration", "메시징 이벤트"],
+            ["ri-git-merge-line", "Workflows", "integration", "워크플로 오케스트레이션"],
+            ["ri-flashlight-line", "Eventarc", "integration", "이벤트 라우팅"],
+            ["ri-bar-chart-line", "BigQuery", "data", "데이터 웨어하우스 분석"],
+            ["ri-pulse-line", "Dataflow", "data", "스트림 배치 처리"],
+            ["ri-brain-line", "Vertex AI", "ai", "Gemini 머신러닝 모델"],
+            ["ri-sparkling-2-line", "Gemini Enterprise Agent Platform", "ai", "에이전트 생성형 AI"],
+            ["ri-key-line", "Cloud IAM", "security", "권한 자격 증명"],
+            ["ri-lock-line", "Secret Manager", "security", "비밀 키 보안"],
+            ["ri-line-chart-line", "Cloud Monitoring", "security", "관측 모니터링 로그"]
+        ]),
+        ...iconCategoryItems("azure", [
+            ["ri-server-line", "Virtual Machines", "compute", "가상 머신 VM"],
+            ["ri-stack-line", "Virtual Machine Scale Sets", "compute", "VMSS 오토스케일"],
+            ["ri-building-4-line", "App Service", "compute", "웹 앱 PaaS"],
+            ["ri-flashlight-line", "Azure Functions", "compute", "서버리스 함수"],
+            ["ri-cloud-line", "Azure Container Apps", "container", "서버리스 컨테이너"],
+            ["ri-settings-3-line", "Azure Kubernetes Service", "container", "AKS 쿠버네티스"],
+            ["ri-apps-line", "Azure Container Registry", "container", "ACR 이미지 레지스트리"],
+            ["ri-hard-drive-2-line", "Blob Storage", "storage", "오브젝트 스토리지"],
+            ["ri-folder-line", "Azure Files", "storage", "파일 스토리지"],
+            ["ri-database-2-line", "Azure SQL Database", "database", "관계형 SQL"],
+            ["ri-database-line", "Azure Cosmos DB", "database", "NoSQL 분산 데이터베이스"],
+            ["ri-database-2-line", "Azure Database for PostgreSQL", "database", "Postgres 관계형"],
+            ["ri-file-list-3-line", "Azure DocumentDB", "database", "MongoDB 호환 문서 데이터베이스"],
+            ["ri-speed-line", "Azure Managed Redis", "database", "인메모리 캐시"],
+            ["ri-global-line", "Virtual Network", "network", "VNet 가상 네트워크"],
+            ["ri-git-branch-line", "Azure Load Balancer", "network", "로드 밸런서"],
+            ["ri-shield-flash-line", "Application Gateway", "network", "WAF L7 게이트웨이"],
+            ["ri-apps-line", "Azure Front Door", "network", "글로벌 CDN 엣지"],
+            ["ri-compass-3-line", "Azure DNS", "network", "도메인"],
+            ["ri-node-tree", "API Management", "network", "APIM API 게이트웨이"],
+            ["ri-stack-line", "Service Bus", "integration", "메시지 큐 토픽"],
+            ["ri-broadcast-line", "Event Grid", "integration", "이벤트 라우팅"],
+            ["ri-sparkling-2-line", "Microsoft Foundry", "ai", "AI 앱 에이전트 팩토리"],
+            ["ri-brain-line", "Foundry Models", "ai", "모델 카탈로그 생성형 AI"],
+            ["ri-robot-2-line", "Foundry Agent Service", "ai", "AI 에이전트"],
+            ["ri-search-line", "Azure AI Search", "ai", "RAG 벡터 검색"],
+            ["ri-user-line", "Microsoft Entra ID", "security", "ID 자격 증명 인증"],
+            ["ri-lock-line", "Key Vault", "security", "키 비밀 인증서"],
+            ["ri-shield-line", "Defender for Cloud", "security", "클라우드 보안 태세"],
+            ["ri-line-chart-line", "Azure Monitor", "security", "모니터링 로그 메트릭"]
+        ]),
+        ...iconCategoryItems("infra", [
+            ["ri-ship-line", "Docker"], ["ri-settings-3-line", "Kubernetes"], ["ri-server-line", "Nginx"],
+            ["ri-global-line", "Traefik"], ["ri-git-branch-line", "Ingress"], ["ri-database-line", "Redis"],
+            ["ri-database-2-line", "PostgreSQL"], ["ri-database-2-line", "MySQL"], ["ri-database-line", "MongoDB"],
+            ["ri-search-line", "Elasticsearch"], ["ri-search-line", "OpenSearch"], ["ri-stack-line", "Kafka"],
+            ["ri-stack-line", "RabbitMQ"], ["ri-bubble-chart-line", "NATS"], ["ri-global-line", "CDN"],
+            ["ri-git-branch-line", "Load Balancer"], ["ri-global-line", "DNS"], ["ri-shield-line", "Firewall"],
+            ["ri-shield-flash-line", "WAF"], ["ri-lock-line", "Vault"], ["ri-line-chart-line", "Prometheus"],
+            ["ri-dashboard-3-line", "Grafana"], ["ri-file-list-line", "Loki"], ["ri-timer-line", "Jaeger"],
+            ["ri-apps-line", "Registry"], ["ri-file-list-3-line", "Artifacts"], ["ri-hard-drive-line", "Backup"]
+        ]),
+        ...iconCategoryItems("modeling", [
+            ["ri-square-line", "프로세스"], ["ri-diamond-line", "의사결정"], ["ri-circle-line", "시작/종료"],
+            ["ri-file-text-line", "문서"], ["ri-git-branch-line", "입출력"], ["ri-stack-line", "서브프로세스"],
+            ["ri-database-2-line", "데이터 저장소"], ["ri-text", "텍스트"]
+        ])
+    ];
 
     const getNodes = () => Array.from(diagramRoot.querySelectorAll("[data-diagram-node]"));
 
@@ -264,6 +442,299 @@ function initializeDiagramPage() {
         zoomLayer.style.cursor = activeTool === "select" ? "grab" : "copy";
     };
 
+    const closeIconPicker = ({ restore = true } = {}) => {
+        if (restore && iconLibraryNode && originalIconSnapshot) {
+            const iconElement = ensureNodeIconElement(iconLibraryNode);
+            if (iconElement) {
+                setIconGlyph(iconElement, originalIconSnapshot.icon.set, originalIconSnapshot.icon.name);
+                iconElement.classList.toggle("hidden", originalIconSnapshot.hidden);
+                iconElement.style.color = originalIconSnapshot.inlineColor;
+                const iconWrap = getNodeIconWrap(iconLibraryNode, iconElement);
+                iconWrap?.classList.toggle("hidden", originalIconSnapshot.wrapperHidden);
+            }
+        }
+        iconLibraryPanel?.classList.remove("is-open");
+        iconLibraryPanel?.classList.add("hidden");
+        iconPickerTrigger?.setAttribute("aria-expanded", "false");
+        iconLibraryNode = null;
+        draftIcon = null;
+        originalIconSnapshot = null;
+        iconColorModeTouched = false;
+    };
+
+    const setIconGlyph = (element, iconSet, iconName) => {
+        if (!(element instanceof HTMLElement)) {
+            return;
+        }
+        element.classList.remove("material-symbols-outlined");
+        Array.from(element.classList)
+            .filter((className) => className.startsWith("ri-"))
+            .forEach((className) => element.classList.remove(className));
+        if (iconSet === "remix" && iconName) {
+            element.classList.add(iconName);
+            element.textContent = "";
+        } else {
+            element.classList.add("material-symbols-outlined");
+            element.textContent = iconName || "block";
+        }
+    };
+
+    const normalizeNodeIcon = (node) => {
+        let iconElement = node.querySelector("[data-node-icon-element]");
+        if (!(iconElement instanceof HTMLElement) && node.dataset.nodeKind !== "shape") {
+            iconElement = node.querySelector(".material-symbols-outlined");
+            if (iconElement instanceof HTMLElement) {
+                iconElement.dataset.nodeIconElement = "";
+            }
+        }
+
+        if (node.dataset.nodeIcon === undefined) {
+            const remixClass = iconElement instanceof HTMLElement
+                ? Array.from(iconElement.classList).find((className) => className.startsWith("ri-"))
+                : "";
+            node.dataset.nodeIcon = remixClass || iconElement?.textContent?.trim() || "";
+            node.dataset.nodeIconSet = remixClass ? "remix" : "material";
+        }
+        node.dataset.nodeIconSet = node.dataset.nodeIconSet || (node.dataset.nodeIcon.startsWith("ri-") ? "remix" : "material");
+        node.dataset.nodeIconLabel = node.dataset.nodeIconLabel || node.dataset.nodeIcon || "아이콘 없음";
+        return node.dataset.nodeIcon;
+    };
+
+    const ensureNodeIconElement = (node) => {
+        let iconElement = node.querySelector("[data-node-icon-element]");
+        if (iconElement instanceof HTMLElement) {
+            return iconElement;
+        }
+        if (node.dataset.nodeKind !== "shape") {
+            return null;
+        }
+
+        iconElement = document.createElement("span");
+        iconElement.className = "material-symbols-outlined diagram-shape-icon";
+        iconElement.dataset.nodeIconElement = "";
+        node.prepend(iconElement);
+        return iconElement;
+    };
+
+    const getNodeIconWrap = (node, iconElement = ensureNodeIconElement(node)) => {
+        if (!(iconElement instanceof HTMLElement)) {
+            return null;
+        }
+        const explicitWrap = iconElement.closest("[data-node-icon-wrap]");
+        if (explicitWrap instanceof HTMLElement) {
+            return explicitWrap;
+        }
+        const parent = iconElement.parentElement;
+        if (parent && parent !== node && parent.children.length === 1) {
+            parent.dataset.nodeIconWrap = "";
+            return parent;
+        }
+        return null;
+    };
+
+    const ensureShapeContent = (node) => {
+        if (node.dataset.nodeKind !== "shape") {
+            return;
+        }
+        const iconElement = ensureNodeIconElement(node);
+        const titleElement = node.querySelector("[data-node-title]");
+        const subtitleElement = node.querySelector("[data-node-subtitle]");
+        let contentElement = node.querySelector(".diagram-shape-content");
+        if (!(contentElement instanceof HTMLElement)) {
+            contentElement = document.createElement("div");
+            contentElement.className = "diagram-shape-content";
+            node.appendChild(contentElement);
+        }
+        [iconElement, titleElement, subtitleElement].forEach((element) => {
+            if (element instanceof HTMLElement) {
+                contentElement.appendChild(element);
+            }
+        });
+        titleElement?.classList.remove("hidden");
+        titleElement?.classList.add("diagram-shape-title");
+        subtitleElement?.classList.remove("hidden");
+        subtitleElement?.classList.add("diagram-shape-subtitle");
+    };
+
+    const nodeIconState = (node) => {
+        const name = normalizeNodeIcon(node);
+        const catalogIcon = diagramIcons.find((icon) => icon.category === node.dataset.nodeIconCategory
+            && icon.name === name
+            && icon.label === node.dataset.nodeIconLabel);
+        const iconElement = ensureNodeIconElement(node);
+        const computedColor = iconElement instanceof HTMLElement ? getComputedStyle(iconElement).color : "#45464D";
+        const strokeColor = node.dataset.strokeColor;
+        const inheritColor = node.dataset.textColor
+            || (strokeColor && strokeColor !== "transparent" && strokeColor.toUpperCase() !== "#C6C6CD" ? strokeColor : "")
+            || computedColor
+            || "#45464D";
+        const originalColor = node.dataset.nodeIconOriginalColor || catalogIcon?.color || inheritColor;
+        return {
+            category: node.dataset.nodeIconCategory || "default",
+            set: name ? (node.dataset.nodeIconSet || "material") : "none",
+            name,
+            label: node.dataset.nodeIconLabel || name || "아이콘 없음",
+            colorMode: node.dataset.nodeIconColorMode === "inherit"
+                ? "default"
+                : (node.dataset.nodeIconColorMode || "default"),
+            originalColor,
+            customColor: node.dataset.nodeIconColor || catalogIcon?.color || "#006399",
+            inheritColor
+        };
+    };
+
+    const resolveIconColor = (icon) => {
+        if (icon.colorMode === "custom") {
+            return icon.customColor;
+        }
+        if (icon.colorMode === "original") {
+            return icon.originalColor;
+        }
+        return "#45464D";
+    };
+
+    const previewNodeIcon = (node, icon) => {
+        const iconElement = ensureNodeIconElement(node);
+        if (!iconElement) {
+            return;
+        }
+        setIconGlyph(iconElement, icon.set, icon.name);
+        iconElement.classList.toggle("hidden", !icon.name);
+        iconElement.style.color = icon.colorMode === "default" ? "" : resolveIconColor(icon);
+        getNodeIconWrap(node, iconElement)?.classList.toggle("hidden", !icon.name);
+    };
+
+    const syncCurrentIconControls = (icon) => {
+        setIconGlyph(currentIconPreview, icon.set, icon.name);
+        if (currentIconPreview instanceof HTMLElement) {
+            currentIconPreview.style.color = resolveIconColor(icon);
+        }
+        if (currentIconLabel) {
+            currentIconLabel.textContent = icon.label;
+        }
+    };
+
+    const syncDraftIconControls = () => {
+        if (!draftIcon) {
+            return;
+        }
+        setIconGlyph(draftIconPreview, draftIcon.set, draftIcon.name);
+        if (draftIconPreview instanceof HTMLElement) {
+            draftIconPreview.style.color = resolveIconColor(draftIcon);
+        }
+        if (draftIconLabel) {
+            draftIconLabel.textContent = draftIcon.label;
+        }
+        const colorModeLabels = { default: "단색", original: "도형 컬러", custom: "커스텀" };
+        const colorModeHelp = {
+            default: "서비스 색상 없이 노드의 기본 아이콘 색상을 사용합니다.",
+            original: "서비스 제공사와 도형 카탈로그의 대표색을 사용합니다.",
+            custom: "선택한 사용자 색상을 아이콘에 적용합니다."
+        };
+        if (iconColorValue) {
+            iconColorValue.textContent = draftIcon.colorMode === "default"
+                ? "단색 · 노드 기본값"
+                : `${colorModeLabels[draftIcon.colorMode]} · ${resolveIconColor(draftIcon).toUpperCase()}`;
+        }
+        if (iconColorHelp) {
+            iconColorHelp.textContent = colorModeHelp[draftIcon.colorMode];
+        }
+        iconColorModeButtons.forEach((button) => {
+            const isActive = button.dataset.iconColorMode === draftIcon.colorMode;
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-checked", String(isActive));
+        });
+        iconCustomColors?.classList.toggle("hidden", draftIcon.colorMode !== "custom");
+        if (iconCustomColorPicker instanceof HTMLInputElement) {
+            iconCustomColorPicker.value = draftIcon.customColor;
+        }
+        iconCustomColorButtons.forEach((button) => {
+            button.classList.toggle("active", button.dataset.iconCustomColor?.toUpperCase() === draftIcon.customColor.toUpperCase());
+        });
+    };
+
+    const renderIconServiceGroups = () => {
+        if (!(iconServiceGroups instanceof HTMLElement)) {
+            return;
+        }
+
+        const isCloudCategory = cloudIconCategories.includes(activeIconCategory);
+        iconServiceGroups.classList.toggle("hidden", !isCloudCategory);
+        iconServiceGroups.replaceChildren();
+        if (!isCloudCategory) {
+            activeIconGroup = "all";
+            return;
+        }
+
+        const availableGroups = [...new Set(diagramIcons
+            .filter((icon) => icon.category === activeIconCategory)
+            .map((icon) => icon.group))];
+        [{ value: "all", label: "전체 서비스" }, ...availableGroups.map((group) => ({
+            value: group,
+            label: iconGroupLabels[group] || group
+        }))].forEach(({ value, label }) => {
+            const button = document.createElement("button");
+            const isActive = value === activeIconGroup;
+            button.type = "button";
+            button.dataset.iconGroup = value;
+            button.className = isActive ? "active" : "";
+            button.setAttribute("aria-pressed", String(isActive));
+            button.textContent = label;
+            iconServiceGroups.appendChild(button);
+        });
+    };
+
+    const renderIconOptions = (query = "") => {
+        if (!(iconGrid instanceof HTMLElement)) {
+            return;
+        }
+
+        const normalizedQuery = query.trim().toLocaleLowerCase();
+        const matches = diagramIcons.map((icon, index) => ({ icon, index })).filter(({ icon }) => {
+            const searchable = `${icon.name} ${icon.label} ${icon.keywords}`.toLocaleLowerCase();
+            const matchesCategory = activeIconCategory === "all" || icon.category === activeIconCategory;
+            const matchesGroup = activeIconGroup === "all" || icon.group === activeIconGroup;
+            return matchesCategory && matchesGroup && (!normalizedQuery || searchable.includes(normalizedQuery));
+        });
+
+        iconGrid.replaceChildren();
+        matches.forEach(({ icon, index }) => {
+            const button = document.createElement("button");
+            const symbol = document.createElement(icon.set === "remix" ? "i" : "span");
+            const label = document.createElement("span");
+            button.type = "button";
+            button.className = "diagram-icon-option";
+            button.dataset.iconIndex = String(index);
+            button.setAttribute("aria-label", icon.label);
+            button.setAttribute("aria-selected", String(Boolean(draftIcon)
+                && icon.category === draftIcon.category
+                && icon.set === draftIcon.set
+                && icon.name === draftIcon.name
+                && icon.label === draftIcon.label));
+            button.setAttribute("role", "option");
+            button.title = icon.label;
+            setIconGlyph(symbol, icon.set, icon.name);
+            symbol.style.color = icon.color;
+            label.className = "diagram-icon-option-label";
+            label.textContent = icon.label;
+            button.append(symbol, label);
+            iconGrid.appendChild(button);
+        });
+        iconEmpty?.classList.toggle("hidden", matches.length > 0);
+    };
+
+    const setNodeIcon = (node, icon) => {
+        node.dataset.nodeIcon = icon.name;
+        node.dataset.nodeIconSet = icon.set;
+        node.dataset.nodeIconLabel = icon.label;
+        node.dataset.nodeIconCategory = icon.category;
+        node.dataset.nodeIconColorMode = icon.colorMode;
+        node.dataset.nodeIconOriginalColor = icon.originalColor;
+        node.dataset.nodeIconColor = icon.customColor;
+        previewNodeIcon(node, icon);
+        syncCurrentIconControls(icon);
+    };
+
     const setPropertiesPanelVisible = (visible) => {
         if (!(propertiesPanel instanceof HTMLElement)) {
             return;
@@ -277,6 +748,9 @@ function initializeDiagramPage() {
         propertiesPanel.classList.toggle("w-0", !visible);
         propertiesPanel.classList.toggle("opacity-0", !visible);
         propertiesPanel.classList.toggle("pointer-events-none", !visible);
+        if (!visible) {
+            closeIconPicker();
+        }
     };
 
     const setActivePropertyTab = (tabName) => {
@@ -287,6 +761,13 @@ function initializeDiagramPage() {
         propertyPanels.forEach((panel) => {
             panel.classList.toggle("hidden", panel.dataset.propertyPanel !== tabName);
         });
+        if (tabName === "icon") {
+            if (selectedNode && iconLibraryPanel?.classList.contains("hidden")) {
+                openIconPicker();
+            }
+        } else {
+            closeIconPicker();
+        }
     };
 
     const syncNodeBadge = (node) => {
@@ -330,9 +811,11 @@ function initializeDiagramPage() {
         const strokeWidth = node.dataset.strokeWidth ?? "2";
         const strokeStyle = node.dataset.strokeStyle ?? "solid";
         const nodeKind = node.dataset.nodeKind ?? "node";
-        const nodeIcon = node.querySelector(".material-symbols-outlined")?.textContent?.trim() ?? "widgets";
+        const icon = nodeIconState(node);
         const panelTypeLabel = nodeKind === "group-box" ? "Selected Group" : "Selected Node";
-        const panelIcon = nodeKind === "group-box" ? "dashboard_customize" : nodeIcon;
+        const panelIcon = icon.name
+            ? icon
+            : { category: "default", set: "material", name: nodeKind === "group-box" ? "dashboard_customize" : "block", label: "아이콘 없음" };
         if (selectedNodeName) {
             selectedNodeName.textContent = title;
         }
@@ -340,8 +823,10 @@ function initializeDiagramPage() {
             selectedNodeType.textContent = panelTypeLabel;
         }
         if (selectedNodeIcon) {
-            selectedNodeIcon.textContent = panelIcon;
+            setIconGlyph(selectedNodeIcon, panelIcon.set, panelIcon.name);
+            selectedNodeIcon.style.color = resolveIconColor(icon);
         }
+        syncCurrentIconControls(icon);
         if (selectedNodeIconWrap) {
             selectedNodeIconWrap.classList.toggle("bg-secondary-fixed", nodeKind !== "group-box");
             selectedNodeIconWrap.classList.toggle("text-secondary", nodeKind !== "group-box");
@@ -438,6 +923,9 @@ function initializeDiagramPage() {
 
     const setSelectedNodes = (nodes) => {
         const uniqueNodes = nodes.filter((node, index, list) => list.indexOf(node) === index);
+        if (iconLibraryNode && (uniqueNodes.length !== 1 || uniqueNodes[0] !== iconLibraryNode)) {
+            closeIconPicker();
+        }
         selectedNodes = uniqueNodes;
         selectedNode = uniqueNodes.length === 1 ? uniqueNodes[0] : null;
 
@@ -746,6 +1234,7 @@ function initializeDiagramPage() {
             return;
         }
         element.dataset.bound = "true";
+        ensureShapeContent(element);
         ensureResizeHandle(element);
         element.classList.remove("relative");
         element.style.left = `${element.offsetLeft}px`;
@@ -891,6 +1380,7 @@ function initializeDiagramPage() {
 
             node.dataset.nodeKind = "shape";
             node.dataset.shapeType = tool;
+            node.dataset.nodeIcon = "";
             node.dataset.fillColor = "#FFFFFF";
             node.dataset.strokeColor = "#C6C6CD";
             node.dataset.strokeWidth = "2";
@@ -898,6 +1388,7 @@ function initializeDiagramPage() {
             node.dataset.textColor = "";
             node.className = `absolute ${shapeClass} bg-surface-white border border-outline-variant shadow-sm cursor-move z-10`;
             node.innerHTML = `
+                <span class="material-symbols-outlined diagram-shape-icon hidden" data-node-icon-element></span>
                 <span class="hidden" data-node-title>${title}</span>
                 <span class="hidden" data-node-subtitle">Shape</span>
             `;
@@ -931,6 +1422,7 @@ function initializeDiagramPage() {
 
         if (tool === "group-box") {
             node.dataset.nodeKind = "group-box";
+            node.dataset.nodeIcon = "database";
             node.dataset.fillColor = "rgba(16, 185, 129, 0.05)";
             node.dataset.strokeColor = "#8FD5B7";
             node.dataset.strokeWidth = "1";
@@ -939,7 +1431,7 @@ function initializeDiagramPage() {
             node.className = `absolute ${widthClass} ${shapeClass} ${extraClass} border p-0 cursor-move`;
             node.innerHTML = `
                 <div class="absolute -top-3 left-6 bg-surface-container-low px-2 font-label-md text-label-md text-accent-db flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[14px]">database</span>
+                    <span class="material-symbols-outlined text-[14px]" data-node-icon-element>database</span>
                     <span data-node-title>${title}</span>
                 </div>
                 <span class="hidden" data-node-subtitle>${subtitle}</span>
@@ -947,10 +1439,11 @@ function initializeDiagramPage() {
             return node;
         }
 
+        node.dataset.nodeIcon = icon;
         node.className = `absolute ${widthClass} bg-surface-white border border-outline-variant ${shapeClass} shadow-md p-4 flex flex-col items-center justify-center gap-2 cursor-move z-10`;
         node.innerHTML = `
             <div class="w-10 h-10 bg-secondary/10 text-secondary rounded-lg flex items-center justify-center mb-1">
-                <span class="material-symbols-outlined text-[20px]">${icon}</span>
+                <span class="material-symbols-outlined text-[20px]" data-node-icon-element>${icon}</span>
             </div>
             <h3 class="font-title-md text-title-md text-on-surface text-center" data-node-title>${title}</h3>
             <p class="font-label-md text-label-md text-on-surface-variant text-center" data-node-subtitle>${subtitle}</p>
@@ -1211,7 +1704,10 @@ function initializeDiagramPage() {
         moveNodesByDelta(activeNodes, deltaX, deltaY);
     });
 
-    getNodes().forEach(bindNodeInteractions);
+    getNodes().forEach((node) => {
+        normalizeNodeIcon(node);
+        bindNodeInteractions(node);
+    });
 
     nodeLabelInput?.addEventListener("input", () => {
         if (!selectedNode) {
@@ -1380,6 +1876,193 @@ function initializeDiagramPage() {
             }
         });
     }
+
+    const openIconPicker = () => {
+        if (!selectedNode || !(iconLibraryPanel instanceof HTMLElement)) {
+            return;
+        }
+        iconLibraryNode = selectedNode;
+        draftIcon = nodeIconState(selectedNode);
+        const iconElement = ensureNodeIconElement(selectedNode);
+        originalIconSnapshot = {
+            icon: { ...draftIcon },
+            hidden: iconElement?.classList.contains("hidden") ?? true,
+            wrapperHidden: getNodeIconWrap(selectedNode, iconElement)?.classList.contains("hidden") ?? false,
+            inlineColor: iconElement?.style.color || ""
+        };
+        iconColorModeTouched = false;
+        activeIconCategory = draftIcon.set === "remix" ? draftIcon.category : "all";
+        activeIconGroup = "all";
+        if (iconSearchInput instanceof HTMLInputElement) {
+            iconSearchInput.value = "";
+        }
+        iconLibraryTabs.forEach((button) => {
+            const isActive = button.dataset.iconCategory === activeIconCategory;
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-selected", String(isActive));
+        });
+        syncDraftIconControls();
+        renderIconServiceGroups();
+        renderIconOptions();
+        iconLibraryPanel.classList.remove("hidden");
+        iconLibraryPanel.classList.add("is-open");
+        iconPickerTrigger.setAttribute("aria-expanded", "true");
+        window.setTimeout(() => iconSearchInput?.focus(), 0);
+    };
+
+    iconPickerTrigger?.addEventListener("click", () => {
+        if (iconLibraryPanel?.classList.contains("hidden")) {
+            openIconPicker();
+        } else {
+            closeIconPicker();
+        }
+    });
+
+    iconSearchInput?.addEventListener("input", () => {
+        renderIconOptions(iconSearchInput instanceof HTMLInputElement ? iconSearchInput.value : "");
+    });
+
+    iconSearchInput?.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeIconPicker();
+            iconPickerTrigger?.focus();
+        }
+    });
+
+    const bindHorizontalWheelScroll = (element) => {
+        element?.addEventListener("wheel", (event) => {
+            if (element.scrollWidth <= element.clientWidth || Math.abs(event.deltaX) >= Math.abs(event.deltaY)) {
+                return;
+            }
+            event.preventDefault();
+            element.scrollLeft += event.deltaY;
+        }, { passive: false });
+    };
+    bindHorizontalWheelScroll(iconLibraryTabList);
+    bindHorizontalWheelScroll(iconServiceGroups);
+
+    iconServiceGroups?.addEventListener("click", (event) => {
+        if (!(event.target instanceof HTMLElement)) {
+            return;
+        }
+        const button = event.target.closest("[data-icon-group]");
+        if (!(button instanceof HTMLElement)) {
+            return;
+        }
+        activeIconGroup = button.dataset.iconGroup || "all";
+        renderIconServiceGroups();
+        iconServiceGroups.querySelector(`[data-icon-group="${activeIconGroup}"]`)?.scrollIntoView({
+            behavior: "smooth", block: "nearest", inline: "nearest"
+        });
+        renderIconOptions(iconSearchInput instanceof HTMLInputElement ? iconSearchInput.value : "");
+    });
+
+    iconGrid?.addEventListener("click", (event) => {
+        if (!iconLibraryNode || !(event.target instanceof HTMLElement)) {
+            return;
+        }
+        const option = event.target.closest("[data-icon-index]");
+        if (!(option instanceof HTMLElement)) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        const icon = diagramIcons[Number(option.dataset.iconIndex)];
+        if (!icon) {
+            return;
+        }
+        const colorMode = iconColorModeTouched
+            ? draftIcon?.colorMode || "original"
+            : (iconLibraryNode.dataset.nodeIconColorMode === "inherit"
+                ? "default"
+                : (iconLibraryNode.dataset.nodeIconColorMode || "default"));
+        draftIcon = {
+            ...icon,
+            colorMode,
+            originalColor: icon.color,
+            customColor: draftIcon?.customColor || "#006399",
+            inheritColor: originalIconSnapshot?.icon.inheritColor || "#45464D"
+        };
+        previewNodeIcon(iconLibraryNode, draftIcon);
+        syncDraftIconControls();
+        renderIconOptions(iconSearchInput instanceof HTMLInputElement ? iconSearchInput.value : "");
+    });
+
+    iconColorModeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!draftIcon || !iconLibraryNode || !button.dataset.iconColorMode) {
+                return;
+            }
+            iconColorModeTouched = true;
+            draftIcon.colorMode = button.dataset.iconColorMode;
+            previewNodeIcon(iconLibraryNode, draftIcon);
+            syncDraftIconControls();
+        });
+    });
+
+    iconCustomColorButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!draftIcon || !iconLibraryNode || !button.dataset.iconCustomColor) {
+                return;
+            }
+            iconColorModeTouched = true;
+            draftIcon.colorMode = "custom";
+            draftIcon.customColor = button.dataset.iconCustomColor;
+            previewNodeIcon(iconLibraryNode, draftIcon);
+            syncDraftIconControls();
+        });
+    });
+
+    iconCustomColorPicker?.addEventListener("input", () => {
+        if (!draftIcon || !iconLibraryNode || !(iconCustomColorPicker instanceof HTMLInputElement)) {
+            return;
+        }
+        iconColorModeTouched = true;
+        draftIcon.colorMode = "custom";
+        draftIcon.customColor = iconCustomColorPicker.value;
+        previewNodeIcon(iconLibraryNode, draftIcon);
+        syncDraftIconControls();
+    });
+
+    iconLibraryTabs.forEach((button) => {
+        button.addEventListener("click", () => {
+            activeIconCategory = button.dataset.iconCategory || "all";
+            activeIconGroup = "all";
+            iconLibraryTabs.forEach((item) => {
+                const isActive = item === button;
+                item.classList.toggle("active", isActive);
+                item.setAttribute("aria-selected", String(isActive));
+            });
+            button.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+            renderIconServiceGroups();
+            renderIconOptions(iconSearchInput instanceof HTMLInputElement ? iconSearchInput.value : "");
+        });
+    });
+
+    iconLibraryApply?.addEventListener("click", () => {
+        if (!iconLibraryNode || !draftIcon) {
+            return;
+        }
+        setNodeIcon(iconLibraryNode, draftIcon);
+        if (selectedNode === iconLibraryNode) {
+            updateSelectionPanel(iconLibraryNode);
+        }
+        closeIconPicker({ restore: false });
+        iconPickerTrigger?.focus();
+    });
+
+    const cancelIconSelection = () => {
+        closeIconPicker();
+        iconPickerTrigger?.focus();
+    };
+    iconLibraryClose?.addEventListener("click", cancelIconSelection);
+    iconLibraryCancel?.addEventListener("click", cancelIconSelection);
+    iconLibraryPanel?.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            event.preventDefault();
+            cancelIconSelection();
+        }
+    });
 
     propertiesCloseButton?.addEventListener("click", () => {
         clearSelectedNode();
