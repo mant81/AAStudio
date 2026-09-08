@@ -70,6 +70,23 @@
         };
     };
 
+    const rotatePoint = (point, center, degrees) => {
+        const radians = degrees * Math.PI / 180;
+        const x = point.x - center.x;
+        const y = point.y - center.y;
+        return {
+            x: center.x + x * Math.cos(radians) - y * Math.sin(radians),
+            y: center.y + x * Math.sin(radians) + y * Math.cos(radians)
+        };
+    };
+
+    const resizeRotatedBox = (startBox, corner, point, minimumSize, options, degrees) => {
+        const center = { x: startBox.left + startBox.width / 2, y: startBox.top + startBox.height / 2 };
+        const box = resizeBox(startBox, corner, rotatePoint(point, center, -degrees), minimumSize, options);
+        const nextCenter = rotatePoint({ x: box.left + box.width / 2, y: box.top + box.height / 2 }, center, degrees);
+        return { ...box, left: nextCenter.x - box.width / 2, top: nextCenter.y - box.height / 2 };
+    };
+
     const badgeClassName = (position) => {
         const safePosition = ["left", "center", "right"].includes(position) ? position : "right";
         return `diagram-node-badge diagram-node-badge--${safePosition}`;
@@ -80,6 +97,8 @@
         isBoxInside,
         nodeMinimumSize,
         normalizeBox,
-        resizeBox
+        resizeBox,
+        resizeRotatedBox,
+        rotatePoint
     };
 }));

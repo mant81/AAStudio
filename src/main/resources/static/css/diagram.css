@@ -93,7 +93,7 @@
 
 .diagram-property-tabs {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 4px;
     padding: 4px;
     border: 1px solid rgba(198, 198, 205, 0.55);
@@ -103,6 +103,8 @@
 
 .diagram-property-tab {
     height: 32px;
+    min-width: 0;
+    padding: 0 4px;
     border: 0;
     border-radius: 8px;
     background: transparent;
@@ -111,6 +113,9 @@
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     transition: background 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
 }
 
@@ -479,6 +484,34 @@
     color: #004a74;
 }
 
+.diagram-icon-position-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.diagram-icon-position-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 38px;
+    border: 1px solid #c6c6cd;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #45464d;
+    font-size: 12px;
+    font-weight: 600;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.diagram-icon-position-option:hover,
+.diagram-icon-position-option.active {
+    border-color: #006399;
+    background: #e6f4ff;
+    color: #006399;
+}
+
 .diagram-icon-color-help {
     margin: 7px 2px 0;
     color: #76777d;
@@ -518,12 +551,14 @@
     content: "";
 }
 
+.diagram-color-picker,
 .diagram-icon-custom-picker {
     overflow: hidden;
     background: conic-gradient(#ef4444, #f59e0b, #10b981, #006399, #8b5cf6, #ef4444);
     color: #ffffff;
 }
 
+.diagram-color-picker input,
 .diagram-icon-custom-picker input {
     position: absolute;
     inset: 0;
@@ -533,6 +568,7 @@
     cursor: pointer;
 }
 
+.diagram-color-picker span,
 .diagram-icon-custom-picker span {
     font-size: 15px;
     pointer-events: none;
@@ -565,6 +601,37 @@
 .diagram-icon-option i,
 .diagram-icon-option > .material-symbols-outlined {
     font-size: 23px;
+}
+
+.diagram-icon-option i[class^="ri-"],
+.diagram-icon-option i[class*=" ri-"],
+[data-node-icon-element][class^="ri-"],
+[data-node-icon-element][class*=" ri-"],
+#diagram-selected-node-icon[class^="ri-"],
+#diagram-selected-node-icon[class*=" ri-"],
+#diagram-current-icon-preview[class^="ri-"],
+#diagram-current-icon-preview[class*=" ri-"],
+#diagram-icon-draft-preview[class^="ri-"],
+#diagram-icon-draft-preview[class*=" ri-"] {
+    font-family: "remixicon" !important;
+    line-height: 1;
+}
+
+.diagram-remix-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1em;
+    min-height: 1em;
+    font-family: "remixicon" !important;
+    font-style: normal;
+    font-size: inherit;
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    line-height: 1;
+}
+
+.diagram-remix-icon::before {
+    display: inline-block;
 }
 
 .diagram-icon-option-label {
@@ -754,17 +821,12 @@
 }
 
 .diagram-color-picker {
-    display: block;
-    border: 1px solid #c6c6cd;
-    cursor: pointer;
-}
-
-.diagram-color-picker input {
-    width: 150%;
-    height: 150%;
-    margin: -25%;
-    padding: 0;
-    border: 0;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 1px #c6c6cd;
     cursor: pointer;
 }
 
@@ -790,6 +852,71 @@
 .diagram-shape-diamond {
     border-radius: 6px;
     transform: rotate(45deg);
+}
+
+.diagram-node-rotate-handle {
+    position: absolute;
+    left: 50%;
+    top: -42px;
+    transform: translateX(-50%);
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #006399;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #006399;
+    box-shadow: 0 2px 6px rgba(0, 99, 153, 0.22);
+    pointer-events: auto;
+    cursor: grab;
+}
+
+.diagram-node-rotate-handle::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    height: 16px;
+    border-left: 1.5px solid #006399;
+    pointer-events: none;
+}
+
+.diagram-node-rotate-handle .material-symbols-outlined {
+    font-size: 18px;
+}
+
+.diagram-node-rotate-handle:hover,
+.diagram-node-rotate-handle:focus-visible {
+    background: #e0f2fe;
+    outline: 2px solid #006399;
+    outline-offset: 2px;
+}
+
+.diagram-node-rotate-handle.is-rotating {
+    cursor: grabbing;
+}
+
+.diagram-node-icon-left {
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    text-align: left;
+}
+
+.diagram-node-icon-left [data-node-icon-wrap] {
+    flex: 0 0 auto;
+    margin-bottom: 0 !important;
+}
+
+.diagram-node-icon-left [data-node-title],
+.diagram-node-icon-left [data-node-subtitle] {
+    text-align: left !important;
+}
+
+.diagram-node-icon-top {
+    flex-direction: column !important;
+    text-align: center;
 }
 
 .diagram-node-resize-handle {

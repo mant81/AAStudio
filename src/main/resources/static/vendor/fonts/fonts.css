@@ -1,0 +1,51 @@
+@font-face {
+    font-family: "Material Symbols Outlined";
+    font-style: normal;
+    font-weight: 400;
+    src: url("materialsymbolsoutlined-v369-kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHOem.ttf") format("truetype");
+}
+
+.material-symbols-outlined {
+    direction: ltr;
+    display: inline-block;
+    font-family: "Material Symbols Outlined";
+    font-feature-settings: "liga";
+    font-size: 24px;
+    font-style: normal;
+    font-weight: normal;
+    letter-spacing: normal;
+    line-height: 1;
+    text-transform: none;
+    white-space: nowrap;
+    word-wrap: normal;
+    -webkit-font-feature-settings: "liga";
+    -webkit-font-smoothing: antialiased;
+}
+
+@font-face {
+    font-family: "Geist";
+    font-style: normal;
+    font-weight: 100 900;
+    src: url("geist-v5-gyBhhwUxId8gMGYQMKR3pzfaWI_Re-Q4nQ.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Inter";
+    font-style: normal;
+    font-weight: 100 900;
+    src: url("inter-v20-UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuBWYMZg.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "JetBrains Mono";
+    font-style: normal;
+    font-weight: 400 700;
+    src: url("jetbrainsmono-v24-tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8-qxjPQ.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "IBM Plex Sans KR";
+    font-style: normal;
+    font-weight: 400 700;
+    src: url("ibmplexsanskr-v11-vEFK2-VJISZe3O_rc3ZVYh4aTwNO8tI.ttf") format("truetype");
+}

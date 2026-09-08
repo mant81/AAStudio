@@ -57,3 +57,4 @@ mvn spring-boot:run -Dspring-boot.run.profiles=mariadb
 - Java 코드에서는 `VO`, `Model` 네이밍과 `model` 패키지를 사용하지 않는다.
 - Java 데이터 타입은 의미에 맞게 `domain`, `request`, `response`, `entity` 같은 이름으로 구분한다.
 - 조회/화면 바인딩 데이터는 Java 클래스 대신 `Map<String, Object>` 기반으로 작업한다.
+- 질문 응답은 10자 이내로 작성하고 상세 설명은 하지 않는다.

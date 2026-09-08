@@ -39,13 +39,18 @@ function initializeDiagramPage() {
     const propertyTabs = Array.from(diagramRoot.querySelectorAll("[data-property-tab]"));
     const propertyPanels = Array.from(diagramRoot.querySelectorAll("[data-property-panel]"));
     const nodeLabelInput = document.getElementById("diagram-node-label-input");
-    const nodeSubLabelInput = document.getElementById("diagram-node-sub-label-input");
     const nodeBadgeInput = document.getElementById("diagram-node-badge-input");
     const badgePositionButtons = Array.from(diagramRoot.querySelectorAll("[data-badge-position]"));
+    const badgeColorValue = document.getElementById("diagram-badge-color-value");
+    const badgeColorButtons = Array.from(diagramRoot.querySelectorAll("[data-badge-color]"));
+    const badgeColorPicker = document.getElementById("diagram-badge-color-picker");
     const linePaths = Array.from(diagramRoot.querySelectorAll("[data-line-from][data-line-to]"));
     const textColorValue = document.getElementById("diagram-text-color-value");
     const textColorButtons = Array.from(diagramRoot.querySelectorAll("[data-text-color]"));
     const textColorPicker = document.getElementById("diagram-text-color-picker");
+    const textFontFamilyInput = document.getElementById("diagram-text-font-family");
+    const textFontSizeInput = document.getElementById("diagram-text-font-size");
+    const textFontSizeValue = document.getElementById("diagram-text-font-size-value");
     const fillColorValue = document.getElementById("diagram-fill-color-value");
     const fillColorButtons = Array.from(diagramRoot.querySelectorAll("[data-fill-color]"));
     const fillColorPicker = document.getElementById("diagram-fill-color-picker");
@@ -76,6 +81,7 @@ function initializeDiagramPage() {
     const iconCustomColors = document.getElementById("diagram-icon-custom-colors");
     const iconCustomColorButtons = Array.from(diagramRoot.querySelectorAll("[data-icon-custom-color]"));
     const iconCustomColorPicker = document.getElementById("diagram-icon-custom-color-picker");
+    const iconPositionButtons = Array.from(diagramRoot.querySelectorAll("[data-icon-position]"));
 
     if (!spacesPanel) {
         return;
@@ -467,13 +473,17 @@ function initializeDiagramPage() {
             return;
         }
         element.classList.remove("material-symbols-outlined");
+        element.classList.remove("diagram-remix-icon");
         Array.from(element.classList)
             .filter((className) => className.startsWith("ri-"))
             .forEach((className) => element.classList.remove(className));
         if (iconSet === "remix" && iconName) {
             element.classList.add(iconName);
+            element.classList.add("diagram-remix-icon");
+            element.dataset.remixIconName = iconName;
             element.textContent = "";
         } else {
+            delete element.dataset.remixIconName;
             element.classList.add("material-symbols-outlined");
             element.textContent = iconName || "block";
         }
@@ -735,6 +745,22 @@ function initializeDiagramPage() {
         syncCurrentIconControls(icon);
     };
 
+    const applyNodeIconPosition = (node) => {
+        if (node.dataset.nodeKind === "shape" || node.dataset.nodeKind === "group-box") {
+            return;
+        }
+        const position = node.dataset.nodeIconPosition === "left" ? "left" : "top";
+        const iconElement = ensureNodeIconElement(node);
+        const iconWrap = getNodeIconWrap(node, iconElement);
+        const titleElement = node.querySelector("[data-node-title]");
+        const subtitleElement = node.querySelector("[data-node-subtitle]");
+        node.classList.toggle("diagram-node-icon-left", position === "left");
+        node.classList.toggle("diagram-node-icon-top", position !== "left");
+        iconWrap?.classList.toggle("mb-1", position !== "left");
+        titleElement?.classList.toggle("text-center", position !== "left");
+        subtitleElement?.classList.toggle("text-center", position !== "left");
+    };
+
     const setPropertiesPanelVisible = (visible) => {
         if (!(propertiesPanel instanceof HTMLElement)) {
             return;
@@ -773,6 +799,7 @@ function initializeDiagramPage() {
     const syncNodeBadge = (node) => {
         const badgeText = (node.dataset.nodeBadgeText ?? "").trim();
         const badgePosition = node.dataset.nodeBadgePosition ?? "right";
+        const badgeColor = node.dataset.nodeBadgeColor ?? "#006399";
         let badge = node.querySelector("[data-node-badge]");
 
         if (!badgeText) {
@@ -788,24 +815,32 @@ function initializeDiagramPage() {
 
         badge.textContent = badgeText;
         badge.className = logic.badgeClassName(badgePosition);
+        badge.style.backgroundColor = badgeColor;
+        badge.style.boxShadow = `0 6px 14px ${badgeColor}38`;
     };
 
     const applyNodeTextAppearance = (node) => {
         const textColor = node.dataset.textColor ?? "";
-        node.querySelectorAll("[data-node-title], [data-node-subtitle]").forEach((element) => {
+        const textFontFamily = node.dataset.textFontFamily ?? "";
+        const textFontSize = node.dataset.textFontSize ?? "";
+        node.querySelectorAll("[data-node-title]").forEach((element) => {
             if (!(element instanceof HTMLElement)) {
                 return;
             }
             element.style.color = textColor;
+            element.style.fontFamily = textFontFamily;
+            element.style.fontSize = textFontSize ? `${textFontSize}px` : "";
         });
     };
 
     const updateSelectionPanel = (node) => {
         const title = node.querySelector("[data-node-title]")?.textContent?.trim() ?? "";
-        const subtitle = node.querySelector("[data-node-subtitle]")?.textContent?.trim() ?? "";
         const badgeText = node.dataset.nodeBadgeText ?? "";
         const badgePosition = node.dataset.nodeBadgePosition ?? "right";
+        const badgeColor = node.dataset.nodeBadgeColor ?? "#006399";
         const textColor = node.dataset.textColor ?? "";
+        const textFontFamily = node.dataset.textFontFamily ?? "";
+        const textFontSize = node.dataset.textFontSize ?? "20";
         const fillColor = node.dataset.fillColor ?? "#CDE5FF";
         const strokeColor = node.dataset.strokeColor ?? "#C6C6CD";
         const strokeWidth = node.dataset.strokeWidth ?? "2";
@@ -833,18 +868,36 @@ function initializeDiagramPage() {
             selectedNodeIconWrap.classList.toggle("bg-accent-db/10", nodeKind === "group-box");
             selectedNodeIconWrap.classList.toggle("text-accent-db", nodeKind === "group-box");
         }
+        iconPositionButtons.forEach((button) => {
+            const isActive = button.dataset.iconPosition === (node.dataset.nodeIconPosition || "top");
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+        });
         if (nodeLabelInput) {
             nodeLabelInput.value = title;
-        }
-        if (nodeSubLabelInput) {
-            nodeSubLabelInput.value = subtitle;
         }
         if (nodeBadgeInput) {
             nodeBadgeInput.value = badgeText;
         }
+        if (badgeColorValue) {
+            badgeColorValue.textContent = badgeColor;
+        }
+        if (badgeColorPicker instanceof HTMLInputElement) {
+            badgeColorPicker.value = badgeColor;
+        }
         badgePositionButtons.forEach((button) => {
             const isActive = button.dataset.badgePosition === badgePosition;
             button.classList.toggle("diagram-align-button-active", isActive);
+        });
+        badgeColorButtons.forEach((button) => {
+            const isActive = button.dataset.badgeColor === badgeColor;
+            button.classList.toggle("border-2", isActive);
+            button.classList.toggle("border-secondary", isActive);
+            button.classList.toggle("border-outline-variant", !isActive);
+            const icon = button.querySelector(".material-symbols-outlined, .ri-check-line");
+            if (icon) {
+                icon.classList.toggle("hidden", !isActive);
+            }
         });
         if (textColorValue) {
             textColorValue.textContent = textColor || "Default";
@@ -852,12 +905,22 @@ function initializeDiagramPage() {
         if (textColorPicker instanceof HTMLInputElement && textColor) {
             textColorPicker.value = textColor;
         }
+        if (textFontFamilyInput instanceof HTMLSelectElement) {
+            textFontFamilyInput.value = textFontFamily;
+            textFontFamilyInput.style.fontFamily = textFontFamily;
+        }
+        if (textFontSizeInput instanceof HTMLInputElement) {
+            textFontSizeInput.value = textFontSize;
+        }
+        if (textFontSizeValue) {
+            textFontSizeValue.textContent = `${textFontSize}px`;
+        }
         textColorButtons.forEach((button) => {
             const isActive = (button.dataset.textColor ?? "") === textColor;
             button.classList.toggle("border-2", isActive);
             button.classList.toggle("border-secondary", isActive);
             button.classList.toggle("border-outline-variant", !isActive);
-            const icon = button.querySelector(".material-symbols-outlined");
+            const icon = button.querySelector(".material-symbols-outlined, .ri-check-line");
             if (icon) {
                 icon.classList.toggle("hidden", !isActive);
             }
@@ -884,7 +947,7 @@ function initializeDiagramPage() {
             const isActive = button.dataset.fillColor === fillColor;
             button.classList.toggle("border-2", isActive);
             button.classList.toggle("border-secondary", isActive);
-            const icon = button.querySelector(".material-symbols-outlined");
+            const icon = button.querySelector(".material-symbols-outlined, .ri-check-line");
             if (icon) {
                 icon.classList.toggle("hidden", !isActive);
             }
@@ -894,7 +957,7 @@ function initializeDiagramPage() {
             button.classList.toggle("border-2", isActive);
             button.classList.toggle("border-secondary", isActive);
             button.classList.toggle("border-outline-variant", !isActive);
-            const icon = button.querySelector(".material-symbols-outlined");
+            const icon = button.querySelector(".material-symbols-outlined, .ri-check-line");
             if (icon) {
                 icon.classList.toggle("hidden", !isActive);
             }
@@ -985,22 +1048,26 @@ function initializeDiagramPage() {
         node.querySelectorAll("[data-node-resize-handle]").forEach((handle) => handle.remove());
     };
 
+    const getNodeRotation = (node) => Number(node.dataset.rotation ?? 0)
+        + (node.dataset.shapeType === "diamond" ? 45 : 0);
+
     const getAnchorPoint = (node, anchor) => {
         const left = node.offsetLeft;
         const top = node.offsetTop;
         const width = node.offsetWidth;
         const height = node.offsetHeight;
 
+        const rotate = (point) => logic.rotatePoint(point, { x: left + width / 2, y: top + height / 2 }, getNodeRotation(node));
         switch (anchor) {
             case "left":
-                return { x: left, y: top + height / 2 };
+                return rotate({ x: left, y: top + height / 2 });
             case "right":
-                return { x: left + width, y: top + height / 2 };
+                return rotate({ x: left + width, y: top + height / 2 });
             case "top":
-                return { x: left + width / 2, y: top };
+                return rotate({ x: left + width / 2, y: top });
             case "bottom":
             default:
-                return { x: left + width / 2, y: top + height };
+                return rotate({ x: left + width / 2, y: top + height });
         }
     };
 
@@ -1069,7 +1136,11 @@ function initializeDiagramPage() {
 
     const isNodeInsideBox = (node, area) => {
         const box = getNodeBox(node);
-        return logic.isBoxInside(box, area);
+        const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        return [[0, 0], [box.width, 0], [0, box.height], [box.width, box.height]].every(([x, y]) => {
+            const point = logic.rotatePoint({ x: box.x + x, y: box.y + y }, center, getNodeRotation(node));
+            return logic.isBoxInside({ ...point, width: 0, height: 0 }, area);
+        });
     };
 
     const createSelectionBox = () => {
@@ -1123,9 +1194,9 @@ function initializeDiagramPage() {
 
     const resizeNodeFromCorner = (node, corner, startBox, currentPoint) => {
         const min = getNodeMinimumSize(node);
-        const nextBox = logic.resizeBox(startBox, corner, currentPoint, min, {
+        const nextBox = logic.resizeRotatedBox(startBox, corner, currentPoint, min, {
             preserveAspect: node.dataset.shapeType === "circle"
-        });
+        }, getNodeRotation(node));
 
         node.style.left = `${nextBox.left}px`;
         node.style.top = `${nextBox.top}px`;
@@ -1136,6 +1207,16 @@ function initializeDiagramPage() {
     let isFrameResizing = false;
     let frameResizeCorner = "se";
     let frameResizeStartBox = null;
+    let frameRotation = null;
+
+    window.addEventListener("blur", () => {
+        if (!frameRotation && !isFrameResizing) return;
+        frameRotation = null;
+        isFrameResizing = false;
+        frameResizeStartBox = null;
+        selectionFrame?.querySelector("[data-node-rotate-handle]")?.classList.remove("is-rotating");
+        document.body.style.userSelect = "";
+    });
 
     const getOrCreateSelectionFrame = () => {
         if (selectionFrame) {
@@ -1144,6 +1225,33 @@ function initializeDiagramPage() {
 
         const frame = document.createElement("div");
         frame.className = "diagram-node-selection-frame";
+        frame.addEventListener("click", (event) => {
+            suppressCanvasClick = false;
+            event.stopPropagation();
+        });
+        const rotateHandle = document.createElement("button");
+        rotateHandle.type = "button";
+        rotateHandle.className = "diagram-node-rotate-handle";
+        rotateHandle.dataset.nodeRotateHandle = "";
+        rotateHandle.setAttribute("aria-label", "선택한 노드 회전");
+        rotateHandle.title = "드래그하여 회전 (Shift: 15° 간격)";
+        rotateHandle.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">rotate_right</span>';
+        rotateHandle.addEventListener("mousedown", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (event.button !== 0 || activeTool !== "select" || !selectedNode) return;
+            const center = { x: selectedNode.offsetLeft + selectedNode.offsetWidth / 2, y: selectedNode.offsetTop + selectedNode.offsetHeight / 2 };
+            const point = getStagePoint(event);
+            frameRotation = {
+                node: selectedNode,
+                center,
+                angle: Math.atan2(point.y - center.y, point.x - center.x),
+                rotation: Number(selectedNode.dataset.rotation ?? 0)
+            };
+            document.body.style.userSelect = "none";
+            rotateHandle.classList.add("is-rotating");
+        });
+        frame.appendChild(rotateHandle);
         ["nw", "n", "ne", "e", "se", "s", "sw", "w"].forEach((corner) => {
             const handle = document.createElement("button");
             handle.type = "button";
@@ -1184,12 +1292,11 @@ function initializeDiagramPage() {
 
         const padding = 8;
         const frame = getOrCreateSelectionFrame();
-        const stageRect = diagramStage.getBoundingClientRect();
-        const nodeRect = selectedNode.getBoundingClientRect();
-        frame.style.left = `${(nodeRect.left - stageRect.left) / currentScale - padding}px`;
-        frame.style.top = `${(nodeRect.top - stageRect.top) / currentScale - padding}px`;
-        frame.style.width = `${nodeRect.width / currentScale + padding * 2}px`;
-        frame.style.height = `${nodeRect.height / currentScale + padding * 2}px`;
+        frame.style.left = `${selectedNode.offsetLeft - padding}px`;
+        frame.style.top = `${selectedNode.offsetTop - padding}px`;
+        frame.style.width = `${selectedNode.offsetWidth + padding * 2}px`;
+        frame.style.height = `${selectedNode.offsetHeight + padding * 2}px`;
+        frame.style.transform = `rotate(${getNodeRotation(selectedNode)}deg)`;
     };
 
     const updateLinePaths = () => {
@@ -1244,11 +1351,16 @@ function initializeDiagramPage() {
         element.dataset.strokeColor = element.dataset.strokeColor ?? (element.dataset.nodeKind === "group-box" ? "#8FD5B7" : "#C6C6CD");
         element.dataset.strokeWidth = element.dataset.strokeWidth ?? (element.dataset.nodeKey === "order-service" ? "2" : "1");
         element.dataset.strokeStyle = element.dataset.strokeStyle ?? "solid";
+        element.dataset.textColor = element.dataset.textColor ?? "";
+        element.dataset.textFontFamily = element.dataset.textFontFamily ?? "";
+        element.dataset.textFontSize = element.dataset.textFontSize ?? "20";
         element.dataset.nodeBadgeText = element.dataset.nodeBadgeText ?? (element.querySelector("[data-node-badge]")?.textContent?.trim() ?? "");
         element.dataset.nodeBadgePosition = element.dataset.nodeBadgePosition ?? "right";
+        element.dataset.nodeBadgeColor = element.dataset.nodeBadgeColor ?? "#006399";
         syncNodeBadge(element);
         applyNodeTextAppearance(element);
         applyNodeAppearance(element);
+        applyNodeIconPosition(element);
         syncNodeGroupMembership(element);
 
         element.addEventListener("click", (event) => {
@@ -1386,6 +1498,8 @@ function initializeDiagramPage() {
             node.dataset.strokeWidth = "2";
             node.dataset.strokeStyle = "solid";
             node.dataset.textColor = "";
+            node.dataset.textFontFamily = "";
+            node.dataset.textFontSize = "20";
             node.className = `absolute ${shapeClass} bg-surface-white border border-outline-variant shadow-sm cursor-move z-10`;
             node.innerHTML = `
                 <span class="material-symbols-outlined diagram-shape-icon hidden" data-node-icon-element></span>
@@ -1423,11 +1537,14 @@ function initializeDiagramPage() {
         if (tool === "group-box") {
             node.dataset.nodeKind = "group-box";
             node.dataset.nodeIcon = "database";
+            node.dataset.nodeIconSet = "material";
             node.dataset.fillColor = "rgba(16, 185, 129, 0.05)";
             node.dataset.strokeColor = "#8FD5B7";
             node.dataset.strokeWidth = "1";
             node.dataset.strokeStyle = "dashed";
             node.dataset.textColor = "";
+            node.dataset.textFontFamily = "";
+            node.dataset.textFontSize = "12";
             node.className = `absolute ${widthClass} ${shapeClass} ${extraClass} border p-0 cursor-move`;
             node.innerHTML = `
                 <div class="absolute -top-3 left-6 bg-surface-container-low px-2 font-label-md text-label-md text-accent-db flex items-center gap-1">
@@ -1440,6 +1557,11 @@ function initializeDiagramPage() {
         }
 
         node.dataset.nodeIcon = icon;
+        node.dataset.nodeIconSet = "material";
+        node.dataset.textColor = "";
+        node.dataset.textFontFamily = "";
+        node.dataset.textFontSize = tool === "text" ? "20" : "20";
+        node.dataset.nodeIconPosition = "top";
         node.className = `absolute ${widthClass} bg-surface-white border border-outline-variant ${shapeClass} shadow-md p-4 flex flex-col items-center justify-center gap-2 cursor-move z-10`;
         node.innerHTML = `
             <div class="w-10 h-10 bg-secondary/10 text-secondary rounded-lg flex items-center justify-center mb-1">
@@ -1575,6 +1697,19 @@ function initializeDiagramPage() {
             return;
         }
 
+        if (frameRotation) {
+            const { node, center, angle, rotation } = frameRotation;
+            const point = getStagePoint(event);
+            const delta = Math.atan2(point.y - center.y, point.x - center.x) - angle;
+            let degrees = rotation + delta * 180 / Math.PI;
+            if (event.shiftKey) degrees = Math.round(degrees / 15) * 15;
+            node.dataset.rotation = String((degrees % 360 + 360) % 360);
+            node.style.transform = `rotate(${getNodeRotation(node)}deg)`;
+            updateLinePaths();
+            syncSelectionFrame();
+            return;
+        }
+
         if (drawingShape) {
             const currentPoint = getStagePoint(event);
             const area = normalizeBox(drawingShape.start, currentPoint);
@@ -1607,6 +1742,13 @@ function initializeDiagramPage() {
             frameResizeStartBox = null;
             document.body.style.userSelect = "";
             syncSelectionFrame();
+        }
+
+        if (frameRotation) {
+            frameRotation = null;
+            selectionFrame?.querySelector("[data-node-rotate-handle]")?.classList.remove("is-rotating");
+            document.body.style.userSelect = "";
+            suppressCanvasClick = true;
         }
 
         if (drawingShape) {
@@ -1723,17 +1865,6 @@ function initializeDiagramPage() {
         updateLinePaths();
     });
 
-    nodeSubLabelInput?.addEventListener("input", () => {
-        if (!selectedNode) {
-            return;
-        }
-        const subtitleElement = selectedNode.querySelector("[data-node-subtitle]");
-        if (subtitleElement) {
-            subtitleElement.textContent = nodeSubLabelInput.value;
-        }
-        updateLinePaths();
-    });
-
     textColorButtons.forEach((button) => {
         button.addEventListener("click", () => {
             if (!selectedNode) {
@@ -1754,6 +1885,28 @@ function initializeDiagramPage() {
         updateSelectionPanel(selectedNode);
     });
 
+    textFontFamilyInput?.addEventListener("change", () => {
+        if (!selectedNode || !(textFontFamilyInput instanceof HTMLSelectElement)) {
+            return;
+        }
+        selectedNode.dataset.textFontFamily = textFontFamilyInput.value;
+        textFontFamilyInput.style.fontFamily = textFontFamilyInput.value;
+        applyNodeTextAppearance(selectedNode);
+        updateSelectionPanel(selectedNode);
+    });
+
+    textFontSizeInput?.addEventListener("input", () => {
+        if (!selectedNode || !(textFontSizeInput instanceof HTMLInputElement)) {
+            return;
+        }
+        selectedNode.dataset.textFontSize = textFontSizeInput.value;
+        applyNodeTextAppearance(selectedNode);
+        if (textFontSizeValue) {
+            textFontSizeValue.textContent = `${textFontSizeInput.value}px`;
+        }
+        updateLinePaths();
+    });
+
     nodeBadgeInput?.addEventListener("input", () => {
         if (!selectedNode) {
             return;
@@ -1771,6 +1924,39 @@ function initializeDiagramPage() {
             selectedNode.dataset.nodeBadgePosition = button.dataset.badgePosition;
             syncNodeBadge(selectedNode);
             updateSelectionPanel(selectedNode);
+        });
+    });
+
+    badgeColorButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!selectedNode || !button.dataset.badgeColor) {
+                return;
+            }
+            selectedNode.dataset.nodeBadgeColor = button.dataset.badgeColor;
+            syncNodeBadge(selectedNode);
+            updateSelectionPanel(selectedNode);
+        });
+    });
+
+    badgeColorPicker?.addEventListener("input", () => {
+        if (!selectedNode || !(badgeColorPicker instanceof HTMLInputElement)) {
+            return;
+        }
+        selectedNode.dataset.nodeBadgeColor = badgeColorPicker.value;
+        syncNodeBadge(selectedNode);
+        updateSelectionPanel(selectedNode);
+    });
+
+    iconPositionButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!selectedNode || !button.dataset.iconPosition) {
+                return;
+            }
+            selectedNode.dataset.nodeIconPosition = button.dataset.iconPosition;
+            applyNodeIconPosition(selectedNode);
+            updateSelectionPanel(selectedNode);
+            syncSelectionFrame();
+            updateLinePaths();
         });
     });
 

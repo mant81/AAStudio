@@ -111,12 +111,10 @@
             }
         };
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/vendor/fonts/fonts.css(v='20260907-3')}">
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <link rel="stylesheet" th:if="${activeNav == 'diagram'}" th:href="@{/vendor/remixicon/remixicon.css(v='4.9.0')}">
-    <link rel="stylesheet" th:if="${activeNav == 'diagram'}" th:href="@{/css/diagram.css(v='20260906-14')}">
+    <link rel="stylesheet" th:if="${activeNav == 'diagram'}" th:href="@{/vendor/remixicon/remixicon.css(v='20260907-2')}">
+    <link rel="stylesheet" th:if="${activeNav == 'diagram'}" th:href="@{/css/diagram.css(v='20260907-4')}">
 </head>
 <body class="bg-background font-body-md text-on-background">
 <div class="app-shell">
@@ -126,7 +124,7 @@
     </div>
 </div>
 <script th:src="@{/js/app.js}"></script>
-<script th:if="${activeNav == 'diagram'}" th:src="@{/js/diagram-logic.js(v='20260906-2')}"></script>
-<script th:if="${activeNav == 'diagram'}" th:src="@{/js/diagram.js(v='20260906-14')}"></script>
+<script th:if="${activeNav == 'diagram'}" th:src="@{/js/diagram-logic.js(v='20260907-1')}"></script>
+<script th:if="${activeNav == 'diagram'}" th:src="@{/js/diagram.js(v='20260907-3')}"></script>
 </body>
 </html>
