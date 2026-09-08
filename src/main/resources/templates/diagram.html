@@ -183,13 +183,16 @@
 
             <div class="absolute inset-0 w-full h-full overflow-auto" id="zoom-layer" style="background-image: radial-gradient(circle at 2px 2px, rgba(200, 205, 215, 0.4) 1px, transparent 0px); background-size: 24px 24px; cursor: grab;">
                 <div class="relative w-[1500px] h-[1000px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" id="diagram-stage">
-                    <svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: 1;">
+                    <svg class="absolute inset-0 w-full h-full" style="z-index: 1;">
                         <defs>
                             <marker id="arrow" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
                                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c839b"></path>
                             </marker>
                             <marker id="arrow-selected" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
                                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#006399"></path>
+                            </marker>
+                            <marker id="arrow-line" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"></path>
                             </marker>
                         </defs>
                         <path data-line-from="client-apps" data-line-to="api-gateway" data-from-anchor="right" data-to-anchor="left" data-line-tone="default" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-dasharray="4" stroke-width="2"></path>
@@ -380,6 +383,9 @@
                         <button class="diagram-property-tab"
                                 data-property-tab="icon"
                                 type="button">아이콘</button>
+                        <button class="diagram-property-tab"
+                                data-property-tab="line"
+                                type="button">선</button>
                     </div>
                 </div>
                 <div class="p-4 border-b border-outline-variant/50 space-y-4"
@@ -703,6 +709,87 @@
                             </button>
                         </div>
                     </div>
+                </div>
+                <div class="hidden p-4 border-b border-outline-variant/50 space-y-4"
+                     data-property-panel="line">
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface">선 모양</label>
+                        <div class="flex bg-surface rounded-lg p-1 border border-outline-variant/50">
+                            <button class="flex-1 py-1 bg-surface-white shadow-sm rounded flex justify-center items-center font-label-md text-label-md"
+                                    data-line-type="curve"
+                                    type="button">곡선</button>
+                            <button class="flex-1 py-1 hover:bg-surface-white/50 rounded flex justify-center items-center transition-colors font-label-md text-label-md"
+                                    data-line-type="straight"
+                                    type="button">직선</button>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface flex justify-between">
+                            선 색상 <span class="text-on-surface-variant font-code-sm uppercase" id="diagram-line-color-value">#7C839B</span>
+                        </label>
+                        <div class="diagram-color-row">
+                            <button class="diagram-color-swatch border-2 border-secondary hover:scale-110 transition-transform relative"
+                                    data-line-color="#7C839B"
+                                    style="background-color: #7C839B;"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[16px] text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
+                            </button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-line-color="#006399"
+                                    style="background-color: #006399;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-line-color="#10B981"
+                                    style="background-color: #10B981;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-line-color="#8B5CF6"
+                                    style="background-color: #8B5CF6;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-line-color="#F59E0B"
+                                    style="background-color: #F59E0B;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-line-color="#EF4444"
+                                    style="background-color: #EF4444;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-line-color="#191C1E"
+                                    style="background-color: #191C1E;"
+                                    type="button"></button>
+                            <label class="diagram-color-picker" title="Custom line color">
+                                <input id="diagram-line-color-picker" type="color" value="#7C839B">
+                                <span class="material-symbols-outlined">palette</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface">선 스타일</label>
+                        <div class="flex bg-surface rounded-lg p-1 border border-outline-variant/50">
+                            <button class="flex-1 py-1 bg-surface-white shadow-sm rounded flex justify-center items-center"
+                                    data-line-dash="solid"
+                                    type="button">
+                                <div class="w-6 h-0.5 bg-on-surface"></div>
+                            </button>
+                            <button class="flex-1 py-1 hover:bg-surface-white/50 rounded flex justify-center items-center transition-colors"
+                                    data-line-dash="small"
+                                    type="button">
+                                <div class="w-6 h-0.5 border-t-2 border-dashed border-on-surface-variant"></div>
+                            </button>
+                            <button class="flex-1 py-1 hover:bg-surface-white/50 rounded flex justify-center items-center transition-colors"
+                                    data-line-dash="large"
+                                    type="button">
+                                <div class="w-6 h-0.5 border-t-2 border-dotted border-on-surface-variant"></div>
+                            </button>
+                        </div>
+                    </div>
+                    <label class="flex items-center justify-between gap-3 font-label-md text-label-md text-on-surface">
+                        움직이는 선
+                        <input class="accent-secondary"
+                               id="diagram-line-animated"
+                               type="checkbox">
+                    </label>
                 </div>
             </div>
         </div>

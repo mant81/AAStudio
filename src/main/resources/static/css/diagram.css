@@ -127,6 +127,115 @@
     color: #191c1e;
 }
 
+.diagram-line-path {
+    cursor: move;
+    pointer-events: stroke;
+}
+
+.diagram-line-hit-path {
+    cursor: move;
+    fill: none;
+    pointer-events: stroke;
+    stroke: rgba(0, 0, 0, 0.01);
+    stroke-width: 28px;
+}
+
+.diagram-line-handles {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
+
+.diagram-line-handle {
+    cursor: pointer;
+    fill: rgba(109, 93, 252, 0.2);
+    pointer-events: all;
+    stroke: #6d5dfc;
+    stroke-width: 1.5px;
+    transition: fill 0.12s ease, filter 0.12s ease, stroke-width 0.12s ease;
+}
+
+.diagram-line-handle:hover {
+    fill: rgba(109, 93, 252, 0.32);
+    filter: drop-shadow(0 0 7px rgba(109, 93, 252, 0.65));
+    stroke-width: 4px;
+}
+
+.diagram-line-handle--middle {
+    fill: rgba(109, 93, 252, 0.16);
+    stroke: rgba(109, 93, 252, 0.55);
+}
+
+.diagram-line-connect-target {
+    outline: 2px solid #6d5dfc;
+    outline-offset: 4px;
+}
+
+.diagram-line-connect-point {
+    position: absolute;
+    z-index: 45;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid #6d5dfc;
+    border-radius: 999px;
+    background: rgba(109, 93, 252, 0.18);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 0 5px rgba(109, 93, 252, 0.12);
+    pointer-events: none;
+    transition: background-color 0.12s ease, box-shadow 0.12s ease, border-width 0.12s ease, transform 0.12s ease;
+}
+
+.diagram-line-connect-point[data-anchor="top"] {
+    left: 50%;
+    top: 0;
+    transform: translate(-50%, -50%);
+}
+
+.diagram-line-connect-point[data-anchor="right"] {
+    right: 0;
+    top: 50%;
+    transform: translate(50%, -50%);
+}
+
+.diagram-line-connect-point[data-anchor="bottom"] {
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%, 50%);
+}
+
+.diagram-line-connect-point[data-anchor="left"] {
+    left: 0;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.diagram-line-connect-point-active {
+    background: rgba(109, 93, 252, 0.34);
+    border-color: #ffffff;
+    border-width: 3px;
+    box-shadow: 0 0 0 1px #6d5dfc, 0 0 0 7px rgba(109, 93, 252, 0.18), 0 0 10px rgba(109, 93, 252, 0.42);
+}
+
+.diagram-line-hovered + .diagram-line-hit-path + .diagram-line-handles,
+.diagram-line-selected + .diagram-line-hit-path + .diagram-line-handles {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.diagram-line-path:hover,
+.diagram-line-selected {
+    filter: drop-shadow(0 0 4px rgba(0, 99, 153, 0.45));
+}
+
+.diagram-line-animated {
+    animation: diagram-line-dash 0.8s linear infinite;
+}
+
+@keyframes diagram-line-dash {
+    to {
+        stroke-dashoffset: -18;
+    }
+}
+
 .diagram-icon-picker {
     position: relative;
 }
