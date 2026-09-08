@@ -1030,6 +1030,25 @@ function initializeDiagramPage() {
         setPropertiesPanelVisible(false);
     };
 
+    const deleteSelectedNodes = () => {
+        const nodesToDelete = selectedNodes.length ? selectedNodes : (selectedNode ? [selectedNode] : []);
+        if (!nodesToDelete.length) {
+            return false;
+        }
+
+        const deletedKeys = new Set(nodesToDelete.map((node) => node.dataset.nodeKey).filter(Boolean));
+        nodesToDelete.forEach((node) => node.remove());
+        getNodes().forEach((node) => {
+            if (deletedKeys.has(node.dataset.groupParent)) {
+                delete node.dataset.groupParent;
+                node.classList.remove("diagram-node-grouped-highlight");
+            }
+        });
+        clearSelectedNode();
+        updateLinePaths();
+        return true;
+    };
+
     const applyNodeAppearance = (node) => {
         const fillColor = node.dataset.fillColor ?? "#CDE5FF";
         const strokeColor = node.dataset.strokeColor ?? (node.dataset.nodeKind === "group-box" ? "#8FD5B7" : "#C6C6CD");
@@ -1307,8 +1326,11 @@ function initializeDiagramPage() {
             const toNode = diagramRoot.querySelector(`[data-node-key="${toKey}"]`);
 
             if (!(fromNode instanceof HTMLElement) || !(toNode instanceof HTMLElement)) {
+                path.removeAttribute("d");
+                path.style.display = "none";
                 return;
             }
+            path.style.display = "";
 
             const start = getAnchorPoint(fromNode, path.dataset.fromAnchor || "bottom");
             const end = getAnchorPoint(toNode, path.dataset.toAnchor || "top");
@@ -1365,6 +1387,11 @@ function initializeDiagramPage() {
 
         element.addEventListener("click", (event) => {
             event.stopPropagation();
+            if (skipClickSelection) {
+                skipClickSelection = false;
+                event.preventDefault();
+                return;
+            }
             if (hasDragged) {
                 hasDragged = false;
                 event.preventDefault();
@@ -1378,6 +1405,7 @@ function initializeDiagramPage() {
         let startX = 0;
         let startY = 0;
         let dragSnapshots = [];
+        let skipClickSelection = false;
 
         element.addEventListener("mousedown", (event) => {
             if (activeTool !== "select") {
@@ -1392,12 +1420,16 @@ function initializeDiagramPage() {
             startY = event.clientY;
 
             if (event.shiftKey || event.ctrlKey || event.metaKey) {
+                skipClickSelection = true;
                 if (selectedNodes.includes(element)) {
-                    const nextSelection = selectedNodes.filter((node) => node !== element);
-                    setSelectedNodes(nextSelection.length ? nextSelection : [element]);
+                    setSelectedNodes(selectedNodes.filter((node) => node !== element));
                 } else {
                     setSelectedNodes([...selectedNodes, element]);
                 }
+                isDragging = false;
+                event.preventDefault();
+                event.stopPropagation();
+                return;
             } else if (!selectedNodes.includes(element)) {
                 setSelectedNode(element);
             }
@@ -1824,6 +1856,12 @@ function initializeDiagramPage() {
             if (tagName === "input" || tagName === "textarea" || event.target.isContentEditable) {
                 return;
             }
+        }
+
+        if (event.key === "Delete" || event.key === "Backspace") {
+            event.preventDefault();
+            deleteSelectedNodes();
+            return;
         }
 
         const step = event.shiftKey ? 10 : 2;

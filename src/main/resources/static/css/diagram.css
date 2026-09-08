@@ -8,7 +8,9 @@
 }
 
 .diagram-node-selected {
-    outline: 0;
+    outline: 2px solid rgba(0, 99, 153, 0.7);
+    outline-offset: 3px;
+    box-shadow: 0 10px 24px rgba(0, 99, 153, 0.16) !important;
 }
 
 .diagram-node-grouped-highlight {
