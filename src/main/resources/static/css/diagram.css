@@ -147,7 +147,7 @@
 }
 
 .diagram-line-handle {
-    cursor: pointer;
+    cursor: crosshair;
     fill: rgba(109, 93, 252, 0.2);
     pointer-events: all;
     stroke: #6d5dfc;

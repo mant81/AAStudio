@@ -104,6 +104,7 @@ function initializeDiagramPage() {
     let lineDrag = null;
     const lineConnectSnapPadding = 28;
     const lineConnectAnchorSnapRadius = 42;
+    const lineConnectAnchorAttachRadius = 30;
     let selectionFrame = null;
     let nodeCounter = diagramRoot.querySelectorAll("[data-diagram-node]").length;
     let diagramCounter = diagramRoot.querySelectorAll("[data-space-diagram]").length + 1;
@@ -1059,8 +1060,24 @@ function initializeDiagramPage() {
     };
 
     const clearSelectedLine = () => {
+        selectedLine?.ownerSVGElement?.style.removeProperty("z-index");
         selectedLine?.classList.remove("diagram-line-selected");
         selectedLine = null;
+    };
+
+    const bringSelectedLineControlsToFront = (line) => {
+        const svg = line.ownerSVGElement;
+        const hitPath = lineHitPaths.get(line);
+        const handles = lineHandleGroups.get(line);
+        if (!svg) {
+            return;
+        }
+        svg.style.zIndex = "35";
+        [line, hitPath, handles].forEach((element) => {
+            if (element) {
+                svg.appendChild(element);
+            }
+        });
     };
 
     const setPropertyTabsForSelection = (selectionType) => {
@@ -1127,6 +1144,7 @@ function initializeDiagramPage() {
     const setSelectedLine = (line) => {
         clearSelectedNode();
         selectedLine = line;
+        bringSelectedLineControlsToFront(line);
         linePaths.forEach((path) => path.classList.toggle("diagram-line-selected", path === line));
         applyLineAppearance(line);
         updateLineSelectionPanel(line);
@@ -1163,8 +1181,9 @@ function initializeDiagramPage() {
         });
     };
 
-    const findNodeAtPoint = (point, excludedNodeKey = "") => {
-        const nodes = getNodes().filter((node) => node.dataset.nodeKey !== excludedNodeKey);
+    const findNodeAtPoint = (point, excludedNodeKeys = []) => {
+        const excludedKeys = Array.isArray(excludedNodeKeys) ? excludedNodeKeys : [excludedNodeKeys];
+        const nodes = getNodes().filter((node) => !excludedKeys.includes(node.dataset.nodeKey));
         let closestAnchorTarget = null;
         let closestBoxTarget = null;
         for (let index = nodes.length - 1; index >= 0; index -= 1) {
@@ -1201,6 +1220,14 @@ function initializeDiagramPage() {
             const distance = Math.hypot(anchorPoint.x - point.x, anchorPoint.y - point.y);
             return distance < closest.distance ? { anchor, distance } : closest;
         }, { anchor: "bottom", distance: Number.POSITIVE_INFINITY }).anchor;
+    };
+
+    const getClosestAnchorHit = (node, point) => {
+        return ["top", "right", "bottom", "left"].reduce((closest, anchor) => {
+            const anchorPoint = getAnchorPoint(node, anchor);
+            const distance = Math.hypot(anchorPoint.x - point.x, anchorPoint.y - point.y);
+            return distance < closest.distance ? { anchor, anchorPoint, distance } : closest;
+        }, { anchor: "bottom", anchorPoint: getAnchorPoint(node, "bottom"), distance: Number.POSITIVE_INFINITY });
     };
 
     const deleteSelectedNodes = () => {
@@ -1258,7 +1285,11 @@ function initializeDiagramPage() {
                 mode: "move",
                 start: getStagePoint(event),
                 offsetX: Number(line.dataset.lineOffsetX ?? 0),
-                offsetY: Number(line.dataset.lineOffsetY ?? 0)
+                offsetY: Number(line.dataset.lineOffsetY ?? 0),
+                freeStartX: Number(line.dataset.freeStartX ?? 0),
+                freeStartY: Number(line.dataset.freeStartY ?? 0),
+                freeEndX: Number(line.dataset.freeEndX ?? 0),
+                freeEndY: Number(line.dataset.freeEndY ?? 0)
             };
             document.body.style.userSelect = "none";
         });
@@ -1276,7 +1307,11 @@ function initializeDiagramPage() {
                 mode: "move",
                 start: getStagePoint(event),
                 offsetX: Number(line.dataset.lineOffsetX ?? 0),
-                offsetY: Number(line.dataset.lineOffsetY ?? 0)
+                offsetY: Number(line.dataset.lineOffsetY ?? 0),
+                freeStartX: Number(line.dataset.freeStartX ?? 0),
+                freeStartY: Number(line.dataset.freeStartY ?? 0),
+                freeEndX: Number(line.dataset.freeEndX ?? 0),
+                freeEndY: Number(line.dataset.freeEndY ?? 0)
             };
             document.body.style.userSelect = "none";
         });
@@ -1291,9 +1326,10 @@ function initializeDiagramPage() {
         handles.classList.add("diagram-line-handles");
         handles.addEventListener("mouseenter", () => line.classList.add("diagram-line-hovered"));
         handles.addEventListener("mouseleave", () => line.classList.remove("diagram-line-hovered"));
-        ["start", "middle", "end"].forEach((position) => {
+        ["middle", "start", "end"].forEach((position) => {
             const handle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
             handle.classList.add("diagram-line-handle", `diagram-line-handle--${position}`);
+            handle.dataset.lineHandlePosition = position;
             handle.setAttribute("r", position === "middle" ? "7" : "8");
             handle.addEventListener("mousedown", (event) => {
                 if (activeTool !== "select") {
@@ -1302,11 +1338,16 @@ function initializeDiagramPage() {
                 event.preventDefault();
                 event.stopPropagation();
                 setSelectedLine(line);
+                handles.appendChild(handle);
                 const point = getStagePoint(event);
                 lineDrag = {
                     line,
                     mode: position === "middle" ? "control" : `endpoint-${position}`,
                     start: point,
+                    originNodeKey: position === "start" ? line.dataset.lineFrom : line.dataset.lineTo,
+                    originAnchor: position === "start" ? (line.dataset.fromAnchor || "bottom") : (line.dataset.toAnchor || "top"),
+                    oppositeNodeKey: position === "start" ? line.dataset.lineTo : line.dataset.lineFrom,
+                    hasLeftOriginNode: position === "middle",
                     offsetX: Number(line.dataset.lineOffsetX ?? 0),
                     offsetY: Number(line.dataset.lineOffsetY ?? 0),
                     controlX: Number(line.dataset.lineControlX ?? 0),
@@ -1627,8 +1668,12 @@ function initializeDiagramPage() {
             const lineOffsetY = Number(path.dataset.lineOffsetY ?? 0);
             const baseStart = getAnchorPoint(fromNode, path.dataset.fromAnchor || "bottom");
             const baseEnd = getAnchorPoint(toNode, path.dataset.toAnchor || "top");
-            const start = { x: baseStart.x + lineOffsetX, y: baseStart.y + lineOffsetY };
-            const end = { x: baseEnd.x + lineOffsetX, y: baseEnd.y + lineOffsetY };
+            const start = path.dataset.freeStartX !== undefined && path.dataset.freeStartY !== undefined
+                ? { x: Number(path.dataset.freeStartX), y: Number(path.dataset.freeStartY) }
+                : { x: baseStart.x + lineOffsetX, y: baseStart.y + lineOffsetY };
+            const end = path.dataset.freeEndX !== undefined && path.dataset.freeEndY !== undefined
+                ? { x: Number(path.dataset.freeEndX), y: Number(path.dataset.freeEndY) }
+                : { x: baseEnd.x + lineOffsetX, y: baseEnd.y + lineOffsetY };
             if (lineDrag?.line === path && lineDrag.point) {
                 if (lineDrag.mode === "endpoint-start") {
                     start.x = lineDrag.point.x;
@@ -1658,10 +1703,14 @@ function initializeDiagramPage() {
             path.setAttribute("d", pathValue);
             hitPath?.setAttribute("d", pathValue);
             if (handleGroup) {
-                const handlePoints = [start, middle, end];
-                Array.from(handleGroup.querySelectorAll("circle")).forEach((handle, index) => {
-                    handle.setAttribute("cx", String(handlePoints[index].x));
-                    handle.setAttribute("cy", String(handlePoints[index].y));
+                const handlePoints = { start, middle, end };
+                Array.from(handleGroup.querySelectorAll("circle")).forEach((handle) => {
+                    const point = handlePoints[handle.dataset.lineHandlePosition];
+                    if (!point) {
+                        return;
+                    }
+                    handle.setAttribute("cx", String(point.x));
+                    handle.setAttribute("cy", String(point.y));
                 });
             }
             applyLineAppearance(path);
@@ -2033,19 +2082,44 @@ function initializeDiagramPage() {
             const deltaX = point.x - lineDrag.start.x;
             const deltaY = point.y - lineDrag.start.y;
             if (lineDrag.mode === "endpoint-start" || lineDrag.mode === "endpoint-end") {
-                const excludedKey = lineDrag.mode === "endpoint-start"
-                    ? lineDrag.line.dataset.lineTo
-                    : lineDrag.line.dataset.lineFrom;
+                const originNode = diagramRoot.querySelector(`[data-node-key="${lineDrag.originNodeKey}"]`);
+                if (!lineDrag.hasLeftOriginNode && originNode instanceof HTMLElement) {
+                    const originAnchorPoint = getAnchorPoint(originNode, lineDrag.originAnchor);
+                    if (Math.hypot(originAnchorPoint.x - point.x, originAnchorPoint.y - point.y) > lineConnectAnchorAttachRadius) {
+                        lineDrag.hasLeftOriginNode = true;
+                    }
+                }
+                const excludedKeys = [
+                    !lineDrag.hasLeftOriginNode ? lineDrag.originNodeKey : "",
+                    lineDrag.oppositeNodeKey
+                ].filter(Boolean);
                 lineDrag.point = point;
                 lineDrag.pointerPoint = point;
                 clearLineConnectTargets();
-                lineDrag.targetNode = findNodeAtPoint(point, excludedKey ?? "");
+                lineDrag.targetNode = findNodeAtPoint(point, excludedKeys);
                 if (lineDrag.targetNode) {
-                    lineDrag.targetAnchor = getClosestAnchor(lineDrag.targetNode, point);
-                    lineDrag.point = getAnchorPoint(lineDrag.targetNode, lineDrag.targetAnchor);
+                    const anchorHit = getClosestAnchorHit(lineDrag.targetNode, point);
+                    lineDrag.targetAnchor = anchorHit.anchor;
+                    lineDrag.shouldAttach = anchorHit.distance <= lineConnectAnchorAttachRadius;
+                    if (lineDrag.shouldAttach) {
+                        lineDrag.point = anchorHit.anchorPoint;
+                    }
                     showLineConnectPoints(lineDrag.targetNode, lineDrag.targetAnchor);
                 } else {
-                    lineDrag.targetAnchor = "";
+                    if (!lineDrag.hasLeftOriginNode && originNode instanceof HTMLElement) {
+                        const anchorHit = getClosestAnchorHit(originNode, point);
+                        lineDrag.targetAnchor = anchorHit.anchor;
+                        lineDrag.shouldAttach = anchorHit.anchor !== lineDrag.originAnchor
+                            && anchorHit.distance <= lineConnectAnchorAttachRadius;
+                        if (lineDrag.shouldAttach) {
+                            lineDrag.targetNode = originNode;
+                            lineDrag.point = anchorHit.anchorPoint;
+                        }
+                        showLineConnectPoints(originNode, lineDrag.targetAnchor);
+                    } else {
+                        lineDrag.targetAnchor = "";
+                        lineDrag.shouldAttach = false;
+                    }
                 }
             } else if (lineDrag.mode === "control") {
                 lineDrag.line.dataset.lineControlX = String(lineDrag.controlX + deltaX);
@@ -2054,6 +2128,14 @@ function initializeDiagramPage() {
             } else {
                 lineDrag.line.dataset.lineOffsetX = String(lineDrag.offsetX + deltaX);
                 lineDrag.line.dataset.lineOffsetY = String(lineDrag.offsetY + deltaY);
+                if (lineDrag.line.dataset.freeStartX && lineDrag.line.dataset.freeStartY) {
+                    lineDrag.line.dataset.freeStartX = String(lineDrag.freeStartX + deltaX);
+                    lineDrag.line.dataset.freeStartY = String(lineDrag.freeStartY + deltaY);
+                }
+                if (lineDrag.line.dataset.freeEndX && lineDrag.line.dataset.freeEndY) {
+                    lineDrag.line.dataset.freeEndX = String(lineDrag.freeEndX + deltaX);
+                    lineDrag.line.dataset.freeEndY = String(lineDrag.freeEndY + deltaY);
+                }
             }
             updateLinePaths();
             updateLineSelectionPanel(lineDrag.line);
@@ -2117,19 +2199,40 @@ function initializeDiagramPage() {
                 (lineDrag.mode === "endpoint-start" || lineDrag.mode === "endpoint-end")
             ) {
                 const point = lineDrag.pointerPoint ?? getStagePoint(event);
-                const excludedKey = lineDrag.mode === "endpoint-start"
-                    ? lineDrag.line.dataset.lineTo
-                    : lineDrag.line.dataset.lineFrom;
-                const targetNode = lineDrag.targetNode ?? findNodeAtPoint(point, excludedKey ?? "");
-                if (targetNode) {
+                const excludedKeys = [
+                    !lineDrag.hasLeftOriginNode ? lineDrag.originNodeKey : "",
+                    lineDrag.oppositeNodeKey
+                ].filter(Boolean);
+                let targetNode = lineDrag.targetNode ?? findNodeAtPoint(point, excludedKeys);
+                let anchorHit = targetNode ? getClosestAnchorHit(targetNode, point) : null;
+                if (!targetNode && !lineDrag.hasLeftOriginNode) {
+                    const originNode = diagramRoot.querySelector(`[data-node-key="${lineDrag.originNodeKey}"]`);
+                    const originAnchorHit = originNode instanceof HTMLElement
+                        ? getClosestAnchorHit(originNode, point)
+                        : null;
+                    if (
+                        originNode instanceof HTMLElement
+                        && originAnchorHit
+                        && originAnchorHit.anchor !== lineDrag.originAnchor
+                        && originAnchorHit.distance <= lineConnectAnchorAttachRadius
+                    ) {
+                        targetNode = originNode;
+                        anchorHit = originAnchorHit;
+                    }
+                }
+                if (targetNode && anchorHit && (lineDrag.shouldAttach || anchorHit.distance <= lineConnectAnchorAttachRadius)) {
                     const targetKey = targetNode.dataset.nodeKey ?? "";
-                    const targetAnchor = lineDrag.targetAnchor || getClosestAnchor(targetNode, point);
+                    const targetAnchor = lineDrag.targetAnchor || anchorHit.anchor;
                     if (lineDrag.mode === "endpoint-start") {
                         lineDrag.line.dataset.lineFrom = targetKey;
                         lineDrag.line.dataset.fromAnchor = targetAnchor;
+                        delete lineDrag.line.dataset.freeStartX;
+                        delete lineDrag.line.dataset.freeStartY;
                     } else {
                         lineDrag.line.dataset.lineTo = targetKey;
                         lineDrag.line.dataset.toAnchor = targetAnchor;
+                        delete lineDrag.line.dataset.freeEndX;
+                        delete lineDrag.line.dataset.freeEndY;
                     }
                     lineDrag.line.dataset.lineOffsetX = "0";
                     lineDrag.line.dataset.lineOffsetY = "0";
@@ -2137,6 +2240,16 @@ function initializeDiagramPage() {
                     if (selectedNodeName) {
                         selectedNodeName.textContent = `${lineDrag.line.dataset.lineFrom ?? ""} -> ${lineDrag.line.dataset.lineTo ?? ""}`;
                     }
+                } else if (lineDrag.mode === "endpoint-start") {
+                    lineDrag.line.dataset.freeStartX = String(point.x);
+                    lineDrag.line.dataset.freeStartY = String(point.y);
+                    lineDrag.line.dataset.lineOffsetX = "0";
+                    lineDrag.line.dataset.lineOffsetY = "0";
+                } else {
+                    lineDrag.line.dataset.freeEndX = String(point.x);
+                    lineDrag.line.dataset.freeEndY = String(point.y);
+                    lineDrag.line.dataset.lineOffsetX = "0";
+                    lineDrag.line.dataset.lineOffsetY = "0";
                 }
             }
             lineDrag = null;
