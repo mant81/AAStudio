@@ -45,7 +45,7 @@ function initializeDiagramPage() {
     const badgeColorValue = document.getElementById("diagram-badge-color-value");
     const badgeColorButtons = Array.from(diagramRoot.querySelectorAll("[data-badge-color]"));
     const badgeColorPicker = document.getElementById("diagram-badge-color-picker");
-    const linePaths = Array.from(diagramRoot.querySelectorAll("[data-line-from][data-line-to]"));
+    let linePaths = Array.from(diagramRoot.querySelectorAll("[data-line-from][data-line-to]"));
     const textColorValue = document.getElementById("diagram-text-color-value");
     const textColorButtons = Array.from(diagramRoot.querySelectorAll("[data-text-color]"));
     const textColorPicker = document.getElementById("diagram-text-color-picker");
@@ -60,6 +60,8 @@ function initializeDiagramPage() {
     const strokeColorPicker = document.getElementById("diagram-stroke-color-picker");
     const strokeWidthInput = document.getElementById("diagram-stroke-width-input");
     const strokeWidthValue = document.getElementById("diagram-stroke-width-value");
+    const nodeOpacityInput = document.getElementById("diagram-node-opacity-input");
+    const nodeOpacityValue = document.getElementById("diagram-node-opacity-value");
     const strokeStyleButtons = Array.from(diagramRoot.querySelectorAll("[data-stroke-style]"));
     const lineTypeButtons = Array.from(diagramRoot.querySelectorAll("[data-line-type]"));
     const lineDashButtons = Array.from(diagramRoot.querySelectorAll("[data-line-dash]"));
@@ -67,6 +69,13 @@ function initializeDiagramPage() {
     const lineColorButtons = Array.from(diagramRoot.querySelectorAll("[data-line-color]"));
     const lineColorPicker = document.getElementById("diagram-line-color-picker");
     const lineAnimatedInput = document.getElementById("diagram-line-animated");
+    const lineStartArrowButtons = Array.from(diagramRoot.querySelectorAll("[data-line-start-arrow]"));
+    const lineEndArrowButtons = Array.from(diagramRoot.querySelectorAll("[data-line-end-arrow]"));
+    const lineMotionButtons = Array.from(diagramRoot.querySelectorAll("[data-line-motion], [data-line-animation-direction]"));
+    const lineBadgeInput = document.getElementById("diagram-line-badge-input");
+    const lineBadgeColorValue = document.getElementById("diagram-line-badge-color-value");
+    const lineBadgeColorButtons = Array.from(diagramRoot.querySelectorAll("[data-line-badge-color]"));
+    const lineBadgeColorPicker = document.getElementById("diagram-line-badge-color-picker");
     const iconPickerTrigger = document.getElementById("diagram-icon-picker-trigger");
     const iconLibraryPanel = document.getElementById("diagram-icon-library-panel");
     const iconLibraryClose = document.getElementById("diagram-icon-library-close");
@@ -101,10 +110,44 @@ function initializeDiagramPage() {
     let selectedLine = null;
     const lineHitPaths = new WeakMap();
     const lineHandleGroups = new WeakMap();
+    const lineBadges = new WeakMap();
     let lineDrag = null;
+    let isTemporaryMoveActive = false;
+    let stagePanX = 0;
+    let stagePanY = 0;
+    let startStagePanX = 0;
+    let startStagePanY = 0;
     const lineConnectSnapPadding = 28;
     const lineConnectAnchorSnapRadius = 42;
     const lineConnectAnchorAttachRadius = 30;
+
+    const colorWithOpacity = (color, opacityPercent) => {
+        const opacity = Math.max(0, Math.min(100, Number(opacityPercent))) / 100;
+        const value = String(color || "").trim();
+        if (!value || value === "transparent") {
+            return "transparent";
+        }
+        const hex = value.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+        if (hex) {
+            const source = hex[1].length === 3
+                ? hex[1].split("").map((char) => char + char).join("")
+                : hex[1];
+            const r = parseInt(source.slice(0, 2), 16);
+            const g = parseInt(source.slice(2, 4), 16);
+            const b = parseInt(source.slice(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+        const rgb = value.match(/^rgba?\(([^)]+)\)$/i);
+        if (rgb) {
+            const [r, g, b, a] = rgb[1].split(",").map((part) => part.trim());
+            if (r && g && b) {
+                const sourceOpacity = a === undefined ? 1 : Math.max(0, Math.min(1, Number(a)));
+                return `rgba(${r}, ${g}, ${b}, ${sourceOpacity * opacity})`;
+            }
+        }
+        return value;
+    };
+
     let selectionFrame = null;
     let nodeCounter = diagramRoot.querySelectorAll("[data-diagram-node]").length;
     let diagramCounter = diagramRoot.querySelectorAll("[data-space-diagram]").length + 1;
@@ -115,6 +158,9 @@ function initializeDiagramPage() {
     let iconLibraryNode = null;
     let originalIconSnapshot = null;
     let iconColorModeTouched = false;
+    const historyStack = [];
+    let isRestoringHistory = false;
+    const maxHistorySize = 80;
 
     const iconCategoryColors = {
         default: {
@@ -446,7 +492,7 @@ function initializeDiagramPage() {
     };
 
     const applyScale = () => {
-        diagramStage.style.transform = `translate(-50%, -50%) scale(${currentScale})`;
+        diagramStage.style.transform = `translate(calc(-50% + ${stagePanX}px), calc(-50% + ${stagePanY}px)) scale(${currentScale})`;
         if (zoomValue) {
             zoomValue.textContent = `${Math.round(currentScale * 100)}%`;
         }
@@ -454,13 +500,17 @@ function initializeDiagramPage() {
 
     const syncToolButtons = () => {
         toolButtons.forEach((button) => {
-            const isActive = button.dataset.diagramTool === activeTool;
+            const isActive = button.dataset.diagramTool === activeTool
+                || (isTemporaryMoveActive && button.dataset.diagramTool === "move");
             button.classList.toggle("text-secondary", isActive);
             button.classList.toggle("bg-secondary/10", isActive);
             button.classList.toggle("text-on-surface-variant", !isActive);
         });
-        zoomLayer.style.cursor = activeTool === "select" ? "grab" : "copy";
+        zoomLayer.style.cursor = activeTool === "move" ? "grab" : (activeTool === "select" ? "default" : "copy");
     };
+
+    const isSelectionTool = () => activeTool === "select";
+    const isCanvasMoveTool = () => activeTool === "move";
 
     const closeIconPicker = ({ restore = true } = {}) => {
         if (restore && iconLibraryNode && originalIconSnapshot) {
@@ -578,6 +628,18 @@ function initializeDiagramPage() {
         titleElement?.classList.add("diagram-shape-title");
         subtitleElement?.classList.remove("hidden");
         subtitleElement?.classList.add("diagram-shape-subtitle");
+    };
+
+    const syncShapeClass = (node) => {
+        if (node.dataset.nodeKind !== "shape") {
+            return;
+        }
+        const shapeType = ["rectangle", "circle", "diamond"].includes(node.dataset.shapeType)
+            ? node.dataset.shapeType
+            : "rectangle";
+        node.dataset.shapeType = shapeType;
+        node.classList.remove("diagram-shape-rectangle", "diagram-shape-circle", "diagram-shape-diamond");
+        node.classList.add(`diagram-shape-${shapeType}`);
     };
 
     const nodeIconState = (node) => {
@@ -859,12 +921,13 @@ function initializeDiagramPage() {
         const strokeColor = node.dataset.strokeColor ?? "#C6C6CD";
         const strokeWidth = node.dataset.strokeWidth ?? "2";
         const strokeStyle = node.dataset.strokeStyle ?? "solid";
+        const nodeOpacity = node.dataset.nodeOpacity ?? "100";
         const nodeKind = node.dataset.nodeKind ?? "node";
         const icon = nodeIconState(node);
         const panelTypeLabel = nodeKind === "group-box" ? "Selected Group" : "Selected Node";
         const panelIcon = icon.name
             ? icon
-            : { category: "default", set: "material", name: nodeKind === "group-box" ? "dashboard_customize" : "block", label: "아이콘 없음" };
+            : { category: "default", set: "material", name: nodeKind === "group-box" ? "" : "block", label: "아이콘 없음" };
         if (selectedNodeName) {
             selectedNodeName.textContent = title;
         }
@@ -957,6 +1020,12 @@ function initializeDiagramPage() {
         if (strokeWidthValue) {
             strokeWidthValue.textContent = `${strokeWidth}px`;
         }
+        if (nodeOpacityInput instanceof HTMLInputElement) {
+            nodeOpacityInput.value = nodeOpacity;
+        }
+        if (nodeOpacityValue) {
+            nodeOpacityValue.textContent = `${nodeOpacity}%`;
+        }
         fillColorButtons.forEach((button) => {
             const isActive = button.dataset.fillColor === fillColor;
             button.classList.toggle("border-2", isActive);
@@ -1004,14 +1073,72 @@ function initializeDiagramPage() {
         return "";
     };
 
+    const lineArrowMarker = (arrow) => {
+        if (arrow === "stealth") return "url(#arrow-line-stealth)";
+        if (arrow === "diamond") return "url(#arrow-line-diamond)";
+        if (arrow === "circle") return "url(#arrow-line-circle)";
+        if (arrow === "triangle") return "url(#arrow-line-triangle)";
+        return "";
+    };
+
+    const syncLineBadge = (line, point) => {
+        const badgeText = (line.dataset.lineBadgeText ?? "").trim();
+        const badgeColor = line.dataset.lineBadgeColor ?? "#006399";
+        let badge = lineBadges.get(line);
+
+        if (!badgeText) {
+            badge?.remove();
+            lineBadges.delete(line);
+            return;
+        }
+
+        if (!(badge instanceof HTMLElement)) {
+            badge = document.createElement("div");
+            badge.className = "diagram-line-badge";
+            badge.dataset.lineBadge = "";
+            diagramStage.appendChild(badge);
+            lineBadges.set(line, badge);
+        }
+
+        badge.textContent = badgeText;
+        const hasBackground = badgeColor !== "transparent";
+        badge.style.backgroundColor = hasBackground ? badgeColor : "transparent";
+        badge.style.borderColor = hasBackground ? "rgba(255, 255, 255, 0.84)" : "transparent";
+        badge.style.boxShadow = hasBackground ? `0 6px 14px ${badgeColor}38` : "none";
+        badge.style.color = hasBackground ? "#ffffff" : "#191c1e";
+        badge.classList.toggle("diagram-line-badge-selected", line === selectedLine);
+        badge.style.display = point ? "" : "none";
+        if (point) {
+            badge.style.left = `${point.x}px`;
+            badge.style.top = `${point.y}px`;
+        }
+    };
+
     const applyLineAppearance = (line) => {
         const color = line.dataset.lineColor ?? line.getAttribute("stroke") ?? "#7C839B";
         const dash = line.dataset.lineDash ?? (line.getAttribute("stroke-dasharray") ? "small" : "solid");
         const animated = line.dataset.lineAnimated === "true";
+        const startArrow = line.dataset.lineStartArrow ?? "none";
+        const endArrow = line.dataset.lineEndArrow ?? (line.getAttribute("marker-end") ? "triangle" : "none");
+        const animationDirection = line.dataset.lineAnimationDirection ?? "forward";
         line.dataset.lineColor = color;
         line.dataset.lineDash = dash;
+        line.dataset.lineStartArrow = startArrow;
+        line.dataset.lineEndArrow = endArrow;
+        line.dataset.lineAnimationDirection = animationDirection;
         line.setAttribute("stroke", color);
-        line.setAttribute("marker-end", "url(#arrow-line)");
+        const startMarker = lineArrowMarker(startArrow);
+        const endMarker = lineArrowMarker(endArrow);
+        if (startMarker) {
+            line.setAttribute("marker-start", startMarker);
+        } else {
+            line.removeAttribute("marker-start");
+        }
+        if (endMarker) {
+            line.setAttribute("marker-end", endMarker);
+        } else {
+            line.removeAttribute("marker-end");
+        }
         if (lineDashValue(dash)) {
             line.setAttribute("stroke-dasharray", lineDashValue(dash));
         } else {
@@ -1019,6 +1146,7 @@ function initializeDiagramPage() {
         }
         line.classList.add("diagram-line-path");
         line.classList.toggle("diagram-line-animated", animated && dash !== "solid");
+        line.classList.toggle("diagram-line-animated-reverse", animated && dash !== "solid" && animationDirection === "backward");
         line.classList.toggle("diagram-line-selected", line === selectedLine);
     };
 
@@ -1027,6 +1155,9 @@ function initializeDiagramPage() {
         const dash = line.dataset.lineDash ?? (line.getAttribute("stroke-dasharray") ? "small" : "solid");
         const color = line.dataset.lineColor ?? line.getAttribute("stroke") ?? "#7C839B";
         const animated = line.dataset.lineAnimated === "true";
+        const startArrow = line.dataset.lineStartArrow ?? "none";
+        const endArrow = line.dataset.lineEndArrow ?? (line.getAttribute("marker-end") ? "triangle" : "none");
+        const animationDirection = line.dataset.lineAnimationDirection ?? "forward";
 
         lineTypeButtons.forEach((button) => {
             const isActive = button.dataset.lineType === type;
@@ -1057,9 +1188,52 @@ function initializeDiagramPage() {
         if (lineAnimatedInput instanceof HTMLInputElement) {
             lineAnimatedInput.checked = animated;
         }
+        if (lineBadgeInput instanceof HTMLInputElement) {
+            lineBadgeInput.value = line.dataset.lineBadgeText ?? "";
+        }
+        const lineBadgeColor = line.dataset.lineBadgeColor ?? "#006399";
+        if (lineBadgeColorValue) {
+            lineBadgeColorValue.textContent = lineBadgeColor;
+        }
+        if (lineBadgeColorPicker instanceof HTMLInputElement) {
+            lineBadgeColorPicker.value = lineBadgeColor;
+        }
+        lineBadgeColorButtons.forEach((button) => {
+            const isActive = button.dataset.lineBadgeColor === lineBadgeColor;
+            button.classList.toggle("border-2", isActive);
+            button.classList.toggle("border-secondary", isActive);
+            button.classList.toggle("border-outline-variant", !isActive);
+            const icon = button.querySelector(".material-symbols-outlined, .ri-check-line");
+            if (icon) {
+                icon.classList.toggle("hidden", !isActive);
+            }
+        });
+        lineStartArrowButtons.forEach((button) => {
+            const isActive = button.dataset.lineStartArrow === startArrow;
+            button.classList.toggle("bg-surface-white", isActive);
+            button.classList.toggle("shadow-sm", isActive);
+            button.classList.toggle("text-secondary", isActive);
+        });
+        lineEndArrowButtons.forEach((button) => {
+            const isActive = button.dataset.lineEndArrow === endArrow;
+            button.classList.toggle("bg-surface-white", isActive);
+            button.classList.toggle("shadow-sm", isActive);
+            button.classList.toggle("text-secondary", isActive);
+        });
+        lineMotionButtons.forEach((button) => {
+            const motion = button.dataset.lineMotion;
+            const direction = button.dataset.lineAnimationDirection;
+            const isActive = motion === "none" ? !animated : animated && direction === animationDirection;
+            button.classList.toggle("bg-surface-white", isActive);
+            button.classList.toggle("shadow-sm", isActive);
+            button.classList.toggle("text-secondary", isActive);
+        });
     };
 
     const clearSelectedLine = () => {
+        if (selectedLine) {
+            lineBadges.get(selectedLine)?.classList.remove("diagram-line-badge-selected");
+        }
         selectedLine?.ownerSVGElement?.style.removeProperty("z-index");
         selectedLine?.classList.remove("diagram-line-selected");
         selectedLine = null;
@@ -1147,6 +1321,7 @@ function initializeDiagramPage() {
         bringSelectedLineControlsToFront(line);
         linePaths.forEach((path) => path.classList.toggle("diagram-line-selected", path === line));
         applyLineAppearance(line);
+        updateLinePaths();
         updateLineSelectionPanel(line);
         if (selectedNodeType) {
             selectedNodeType.textContent = "Selected Line";
@@ -1234,6 +1409,8 @@ function initializeDiagramPage() {
         if (selectedLine) {
             lineHitPaths.get(selectedLine)?.remove();
             lineHandleGroups.get(selectedLine)?.remove();
+            lineBadges.get(selectedLine)?.remove();
+            lineBadges.delete(selectedLine);
             selectedLine.remove();
             clearSelectedNode();
             return true;
@@ -1261,13 +1438,18 @@ function initializeDiagramPage() {
         line.dataset.lineDash = line.dataset.lineDash ?? (line.getAttribute("stroke-dasharray") ? "small" : "solid");
         line.dataset.lineColor = line.dataset.lineColor ?? line.getAttribute("stroke") ?? "#7C839B";
         line.dataset.lineAnimated = line.dataset.lineAnimated ?? "false";
+        line.dataset.lineStartArrow = line.dataset.lineStartArrow ?? "none";
+        line.dataset.lineEndArrow = line.dataset.lineEndArrow ?? (line.getAttribute("marker-end") ? "triangle" : "none");
+        line.dataset.lineAnimationDirection = line.dataset.lineAnimationDirection ?? "forward";
+        line.dataset.lineBadgeText = line.dataset.lineBadgeText ?? "";
+        line.dataset.lineBadgeColor = line.dataset.lineBadgeColor ?? "#006399";
         line.dataset.lineOffsetX = line.dataset.lineOffsetX ?? "0";
         line.dataset.lineOffsetY = line.dataset.lineOffsetY ?? "0";
         line.dataset.lineControlX = line.dataset.lineControlX ?? "0";
         line.dataset.lineControlY = line.dataset.lineControlY ?? "0";
         applyLineAppearance(line);
         const selectLine = (event) => {
-            if (activeTool !== "select") {
+            if (!isSelectionTool()) {
                 return;
             }
             event.preventDefault();
@@ -1276,7 +1458,7 @@ function initializeDiagramPage() {
         };
         line.addEventListener("click", selectLine);
         line.addEventListener("mousedown", (event) => {
-            if (activeTool !== "select") {
+            if (!isSelectionTool()) {
                 return;
             }
             selectLine(event);
@@ -1298,7 +1480,7 @@ function initializeDiagramPage() {
         hitPath.classList.add("diagram-line-hit-path");
         hitPath.addEventListener("click", selectLine);
         hitPath.addEventListener("mousedown", (event) => {
-            if (activeTool !== "select") {
+            if (!isSelectionTool()) {
                 return;
             }
             selectLine(event);
@@ -1332,7 +1514,7 @@ function initializeDiagramPage() {
             handle.dataset.lineHandlePosition = position;
             handle.setAttribute("r", position === "middle" ? "7" : "8");
             handle.addEventListener("mousedown", (event) => {
-                if (activeTool !== "select") {
+                if (!isSelectionTool()) {
                     return;
                 }
                 event.preventDefault();
@@ -1369,21 +1551,27 @@ function initializeDiagramPage() {
         const strokeColor = node.dataset.strokeColor ?? (node.dataset.nodeKind === "group-box" ? "#8FD5B7" : "#C6C6CD");
         const strokeWidth = node.dataset.strokeWidth ?? "2";
         const strokeStyle = node.dataset.strokeStyle ?? "solid";
+        const nodeOpacity = Math.max(0, Math.min(100, Number(node.dataset.nodeOpacity ?? "100")));
         const hasVisibleStroke = strokeColor !== "transparent" && Number(strokeWidth) > 0;
+        const visibleFillColor = colorWithOpacity(fillColor, nodeOpacity);
+        const visibleStrokeColor = hasVisibleStroke ? colorWithOpacity(strokeColor, nodeOpacity) : "transparent";
 
-        node.style.backgroundColor = fillColor;
+        node.style.setProperty("--diagram-node-fill-color", visibleFillColor);
+        node.style.setProperty("--diagram-node-stroke-color", visibleStrokeColor);
+        node.style.setProperty("--diagram-node-stroke-width", hasVisibleStroke ? `${strokeWidth}px` : "0px");
+        node.style.backgroundColor = visibleFillColor;
         node.style.borderWidth = hasVisibleStroke ? `${strokeWidth}px` : "0px";
-        node.style.borderColor = strokeColor;
+        node.style.borderColor = visibleStrokeColor;
         node.style.borderStyle = hasVisibleStroke ? strokeStyle : "solid";
-        node.style.boxShadow = hasVisibleStroke ? "" : "none";
+        node.style.boxShadow = hasVisibleStroke && nodeOpacity > 0 ? "" : "none";
+        node.style.opacity = "";
     };
 
     const ensureResizeHandle = (node) => {
         node.querySelectorAll("[data-node-resize-handle]").forEach((handle) => handle.remove());
     };
 
-    const getNodeRotation = (node) => Number(node.dataset.rotation ?? 0)
-        + (node.dataset.shapeType === "diamond" ? 45 : 0);
+    const getNodeRotation = (node) => Number(node.dataset.rotation ?? 0);
 
     const getAnchorPoint = (node, anchor) => {
         const left = node.offsetLeft;
@@ -1529,7 +1717,7 @@ function initializeDiagramPage() {
     const resizeNodeFromCorner = (node, corner, startBox, currentPoint) => {
         const min = getNodeMinimumSize(node);
         const nextBox = logic.resizeRotatedBox(startBox, corner, currentPoint, min, {
-            preserveAspect: node.dataset.shapeType === "circle"
+            preserveAspect: node.dataset.shapeType === "circle" || node.dataset.shapeType === "diamond"
         }, getNodeRotation(node));
 
         node.style.left = `${nextBox.left}px`;
@@ -1575,7 +1763,7 @@ function initializeDiagramPage() {
         rotateHandle.addEventListener("mousedown", (event) => {
             event.preventDefault();
             event.stopPropagation();
-            if (event.button !== 0 || activeTool !== "select" || !selectedNode) return;
+            if (event.button !== 0 || !isSelectionTool() || !selectedNode) return;
             const center = { x: selectedNode.offsetLeft + selectedNode.offsetWidth / 2, y: selectedNode.offsetTop + selectedNode.offsetHeight / 2 };
             const point = getStagePoint(event);
             frameRotation = {
@@ -1595,7 +1783,7 @@ function initializeDiagramPage() {
             handle.className = `diagram-node-resize-handle diagram-node-resize-handle--${corner}`;
             handle.setAttribute("aria-label", `Resize selected node ${corner}`);
             handle.addEventListener("mousedown", (event) => {
-                if (activeTool !== "select" || !selectedNode) {
+                if (!isSelectionTool() || !selectedNode) {
                     return;
                 }
 
@@ -1654,6 +1842,7 @@ function initializeDiagramPage() {
                 if (handleGroup) {
                     handleGroup.style.display = "none";
                 }
+                syncLineBadge(path, null);
                 return;
             }
             path.style.display = "";
@@ -1713,6 +1902,7 @@ function initializeDiagramPage() {
                     handle.setAttribute("cy", String(point.y));
                 });
             }
+            syncLineBadge(path, middle);
             applyLineAppearance(path);
         });
     };
@@ -1723,6 +1913,7 @@ function initializeDiagramPage() {
             return;
         }
         element.dataset.bound = "true";
+        syncShapeClass(element);
         ensureShapeContent(element);
         ensureResizeHandle(element);
         element.classList.remove("relative");
@@ -1733,6 +1924,7 @@ function initializeDiagramPage() {
         element.dataset.strokeColor = element.dataset.strokeColor ?? (element.dataset.nodeKind === "group-box" ? "#8FD5B7" : "#C6C6CD");
         element.dataset.strokeWidth = element.dataset.strokeWidth ?? (element.dataset.nodeKey === "order-service" ? "2" : "1");
         element.dataset.strokeStyle = element.dataset.strokeStyle ?? "solid";
+        element.dataset.nodeOpacity = element.dataset.nodeOpacity ?? "100";
         element.dataset.textColor = element.dataset.textColor ?? "";
         element.dataset.textFontFamily = element.dataset.textFontFamily ?? "";
         element.dataset.textFontSize = element.dataset.textFontSize ?? "20";
@@ -1766,9 +1958,10 @@ function initializeDiagramPage() {
         let startY = 0;
         let dragSnapshots = [];
         let skipClickSelection = false;
+        let isAltMovingGroupOnly = false;
 
         element.addEventListener("mousedown", (event) => {
-            if (activeTool !== "select") {
+            if (!isSelectionTool()) {
                 return;
             }
             if (event.target instanceof HTMLElement && event.target.closest("[data-node-resize-handle]")) {
@@ -1776,6 +1969,10 @@ function initializeDiagramPage() {
             }
             isDragging = true;
             hasDragged = false;
+            const altGroupTarget = event.altKey
+                ? (element.dataset.nodeKind === "group-box" ? element : findContainingGroup(element))
+                : null;
+            isAltMovingGroupOnly = altGroupTarget instanceof HTMLElement;
             startX = event.clientX;
             startY = event.clientY;
 
@@ -1790,20 +1987,35 @@ function initializeDiagramPage() {
                 event.preventDefault();
                 event.stopPropagation();
                 return;
+            } else if (isAltMovingGroupOnly) {
+                setSelectedNode(altGroupTarget);
             } else if (!selectedNodes.includes(element)) {
                 setSelectedNode(element);
             }
 
-            dragSnapshots = (selectedNodes.includes(element) ? selectedNodes : [element]).map((node) => ({
+            dragSnapshots = (isAltMovingGroupOnly ? [altGroupTarget] : (selectedNodes.includes(element) ? selectedNodes : [element])).map((node) => ({
                 element: node,
                 initialLeft: node.offsetLeft,
                 initialTop: node.offsetTop
             }));
 
-            selectedNodes
-                .filter((node) => node.dataset.nodeKind === "group-box")
-                .forEach((groupNode) => {
-                    getGroupedChildNodes(groupNode).forEach((child) => {
+            if (!isAltMovingGroupOnly) {
+                selectedNodes
+                    .filter((node) => node.dataset.nodeKind === "group-box")
+                    .forEach((groupNode) => {
+                        getGroupedChildNodes(groupNode).forEach((child) => {
+                            if (!dragSnapshots.some((item) => item.element === child)) {
+                                dragSnapshots.push({
+                                    element: child,
+                                    initialLeft: child.offsetLeft,
+                                    initialTop: child.offsetTop
+                                });
+                            }
+                        });
+                    });
+
+                if (element.dataset.nodeKind === "group-box" && !selectedNodes.includes(element)) {
+                    getGroupedChildNodes(element).forEach((child) => {
                         if (!dragSnapshots.some((item) => item.element === child)) {
                             dragSnapshots.push({
                                 element: child,
@@ -1812,18 +2024,7 @@ function initializeDiagramPage() {
                             });
                         }
                     });
-                });
-
-            if (element.dataset.nodeKind === "group-box" && !selectedNodes.includes(element)) {
-                getGroupedChildNodes(element).forEach((child) => {
-                    if (!dragSnapshots.some((item) => item.element === child)) {
-                        dragSnapshots.push({
-                            element: child,
-                            initialLeft: child.offsetLeft,
-                            initialTop: child.offsetTop
-                        });
-                    }
-                });
+                }
             }
 
             event.preventDefault();
@@ -1849,7 +2050,7 @@ function initializeDiagramPage() {
         });
 
         window.addEventListener("mouseup", () => {
-            if (isDragging && dragSnapshots.length) {
+            if (isDragging && dragSnapshots.length && !isAltMovingGroupOnly) {
                 dragSnapshots.forEach((item) => {
                     if (item.element.dataset.nodeKind !== "group-box") {
                         syncNodeGroupMembership(item.element);
@@ -1857,6 +2058,7 @@ function initializeDiagramPage() {
                 });
             }
             isDragging = false;
+            isAltMovingGroupOnly = false;
             document.body.style.userSelect = "";
             if (!hasDragged && element.dataset.nodeKind !== "group-box") {
                 syncNodeGroupMembership(element);
@@ -1868,6 +2070,10 @@ function initializeDiagramPage() {
 
     const shapeTools = ["rectangle", "circle", "diamond"];
     const isShapeTool = (tool) => shapeTools.includes(tool);
+    const drawingNodeTools = [...shapeTools, "group-box"];
+    const isDrawingNodeTool = (tool) => drawingNodeTools.includes(tool);
+    const insertNodeTools = [...shapeTools, "group-box", "text", "image"];
+    const isInsertNodeTool = (tool) => insertNodeTools.includes(tool);
 
     const createNodeMarkup = (tool) => {
         const node = document.createElement("div");
@@ -1889,10 +2095,12 @@ function initializeDiagramPage() {
             node.dataset.strokeColor = "#C6C6CD";
             node.dataset.strokeWidth = "2";
             node.dataset.strokeStyle = "solid";
+            node.dataset.nodeOpacity = "100";
             node.dataset.textColor = "";
             node.dataset.textFontFamily = "";
             node.dataset.textFontSize = "20";
             node.className = `absolute ${shapeClass} bg-surface-white border border-outline-variant shadow-sm cursor-move z-10`;
+            syncShapeClass(node);
             node.innerHTML = `
                 <span class="material-symbols-outlined diagram-shape-icon hidden" data-node-icon-element></span>
                 <span class="hidden" data-node-title>${title}</span>
@@ -1923,24 +2131,25 @@ function initializeDiagramPage() {
             subtitle = "Group Box";
             widthClass = "w-[700px]";
             shapeClass = "rounded-2xl";
-            extraClass = "h-[180px] border-accent-db/20 bg-accent-db/5 border-dashed z-0 items-start justify-start";
+            extraClass = "h-[180px] border-accent-db/20 bg-accent-db/5 border-dashed z-[9] items-start justify-start";
         }
 
         if (tool === "group-box") {
             node.dataset.nodeKind = "group-box";
-            node.dataset.nodeIcon = "database";
-            node.dataset.nodeIconSet = "material";
+            node.dataset.nodeIcon = "";
+            node.dataset.nodeIconSet = "";
             node.dataset.fillColor = "rgba(16, 185, 129, 0.05)";
             node.dataset.strokeColor = "#8FD5B7";
             node.dataset.strokeWidth = "1";
             node.dataset.strokeStyle = "dashed";
+            node.dataset.nodeOpacity = "100";
             node.dataset.textColor = "";
             node.dataset.textFontFamily = "";
             node.dataset.textFontSize = "12";
             node.className = `absolute ${widthClass} ${shapeClass} ${extraClass} border p-0 cursor-move`;
+            node.style.zIndex = "9";
             node.innerHTML = `
-                <div class="absolute -top-3 left-6 bg-surface-container-low px-2 font-label-md text-label-md text-accent-db flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[14px]" data-node-icon-element>database</span>
+                <div class="absolute -top-3 left-6 font-label-md text-label-md text-accent-db">
                     <span data-node-title>${title}</span>
                 </div>
                 <span class="hidden" data-node-subtitle>${subtitle}</span>
@@ -1953,6 +2162,7 @@ function initializeDiagramPage() {
         node.dataset.textColor = "";
         node.dataset.textFontFamily = "";
         node.dataset.textFontSize = tool === "text" ? "20" : "20";
+        node.dataset.nodeOpacity = "100";
         node.dataset.nodeIconPosition = "top";
         node.className = `absolute ${widthClass} bg-surface-white border border-outline-variant ${shapeClass} shadow-md p-4 flex flex-col items-center justify-center gap-2 cursor-move z-10`;
         node.innerHTML = `
@@ -1977,7 +2187,7 @@ function initializeDiagramPage() {
     };
 
     const createNodeAtPointer = (event) => {
-        if (activeTool === "select") {
+        if (!isInsertNodeTool(activeTool)) {
             return;
         }
         const point = getStagePoint(event);
@@ -2014,8 +2224,6 @@ function initializeDiagramPage() {
     let suppressShapeClick = false;
     let startX = 0;
     let startY = 0;
-    let initialScrollLeft = 0;
-    let initialScrollTop = 0;
 
     const syncDrawingShape = (node, start, end) => {
         const area = normalizeBox(start, end);
@@ -2028,10 +2236,10 @@ function initializeDiagramPage() {
     };
 
     zoomLayer.addEventListener("mousedown", (event) => {
-        if (event.target instanceof HTMLElement && event.target.closest("[data-diagram-node]")) {
+        if (event.target instanceof HTMLElement && event.target.closest("[data-diagram-node]") && !isCanvasMoveTool()) {
             return;
         }
-        if (isShapeTool(activeTool) && event.button === 0) {
+        if (isDrawingNodeTool(activeTool) && event.button === 0) {
             const point = getStagePoint(event);
             const node = createNodeMarkup(activeTool);
             node.classList.add("diagram-node-drawing");
@@ -2047,17 +2255,19 @@ function initializeDiagramPage() {
             event.preventDefault();
             return;
         }
-        if (activeTool !== "select") {
+        if (!isSelectionTool() && !isCanvasMoveTool()) {
             return;
         }
 
-        if (event.altKey || event.button === 1) {
+        if ((isCanvasMoveTool() && event.button === 0) || event.altKey || event.button === 1) {
             isPanning = true;
+            isTemporaryMoveActive = !isCanvasMoveTool();
             startX = event.clientX;
             startY = event.clientY;
-            initialScrollLeft = zoomLayer.scrollLeft;
-            initialScrollTop = zoomLayer.scrollTop;
+            startStagePanX = stagePanX;
+            startStagePanY = stagePanY;
             zoomLayer.style.cursor = "grabbing";
+            syncToolButtons();
             event.preventDefault();
             return;
         }
@@ -2172,6 +2382,9 @@ function initializeDiagramPage() {
             const area = normalizeBox(drawingShape.start, currentPoint);
             drawingShape.moved = area.width > 4 || area.height > 4;
             syncDrawingShape(drawingShape.node, drawingShape.start, currentPoint);
+            if (drawingShape.tool === "group-box") {
+                syncGroupedNodeHighlights(drawingShape.node);
+            }
             return;
         }
 
@@ -2188,8 +2401,10 @@ function initializeDiagramPage() {
         }
 
         if (isPanning) {
-            zoomLayer.scrollLeft = initialScrollLeft - (event.clientX - startX);
-            zoomLayer.scrollTop = initialScrollTop - (event.clientY - startY);
+            suppressCanvasClick = true;
+            stagePanX = startStagePanX + (event.clientX - startX);
+            stagePanY = startStagePanY + (event.clientY - startY);
+            applyScale();
         }
     });
 
@@ -2283,7 +2498,16 @@ function initializeDiagramPage() {
             } else {
                 node.classList.remove("diagram-node-drawing");
                 bindNodeInteractions(node);
-                syncNodeGroupMembership(node);
+                if (node.dataset.nodeKind === "group-box") {
+                    getNodes().forEach((item) => {
+                        if (item.dataset.nodeKind !== "group-box") {
+                            syncNodeGroupMembership(item);
+                        }
+                    });
+                    syncGroupedNodeHighlights(node);
+                } else {
+                    syncNodeGroupMembership(node);
+                }
                 setSelectedNode(node);
             }
             drawingShape = null;
@@ -2304,6 +2528,7 @@ function initializeDiagramPage() {
             isSelecting = false;
         }
         isPanning = false;
+        isTemporaryMoveActive = false;
         syncToolButtons();
     });
 
@@ -2319,7 +2544,7 @@ function initializeDiagramPage() {
         if (event.target instanceof HTMLElement && event.target.closest("[data-diagram-node]")) {
             return;
         }
-        if (activeTool === "select") {
+        if (isSelectionTool()) {
             clearSelectedNode();
         }
         createNodeAtPointer(event);
@@ -2526,6 +2751,73 @@ function initializeDiagramPage() {
         applyLineAppearance(selectedLine);
     });
 
+    lineStartArrowButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!selectedLine || !button.dataset.lineStartArrow) {
+                return;
+            }
+            selectedLine.dataset.lineStartArrow = button.dataset.lineStartArrow;
+            applyLineAppearance(selectedLine);
+            updateLineSelectionPanel(selectedLine);
+        });
+    });
+
+    lineEndArrowButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!selectedLine || !button.dataset.lineEndArrow) {
+                return;
+            }
+            selectedLine.dataset.lineEndArrow = button.dataset.lineEndArrow;
+            applyLineAppearance(selectedLine);
+            updateLineSelectionPanel(selectedLine);
+        });
+    });
+
+    lineMotionButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!selectedLine) {
+                return;
+            }
+            if (button.dataset.lineMotion === "none") {
+                selectedLine.dataset.lineAnimated = "false";
+            } else if (button.dataset.lineAnimationDirection) {
+                selectedLine.dataset.lineAnimated = "true";
+                selectedLine.dataset.lineAnimationDirection = button.dataset.lineAnimationDirection;
+            }
+            applyLineAppearance(selectedLine);
+            updateLineSelectionPanel(selectedLine);
+        });
+    });
+
+    lineBadgeInput?.addEventListener("input", () => {
+        if (!selectedLine || !(lineBadgeInput instanceof HTMLInputElement)) {
+            return;
+        }
+        selectedLine.dataset.lineBadgeText = lineBadgeInput.value.trim();
+        updateLinePaths();
+        updateLineSelectionPanel(selectedLine);
+    });
+
+    lineBadgeColorButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!selectedLine || !button.dataset.lineBadgeColor) {
+                return;
+            }
+            selectedLine.dataset.lineBadgeColor = button.dataset.lineBadgeColor;
+            updateLinePaths();
+            updateLineSelectionPanel(selectedLine);
+        });
+    });
+
+    lineBadgeColorPicker?.addEventListener("input", () => {
+        if (!selectedLine || !(lineBadgeColorPicker instanceof HTMLInputElement)) {
+            return;
+        }
+        selectedLine.dataset.lineBadgeColor = lineBadgeColorPicker.value;
+        updateLinePaths();
+        updateLineSelectionPanel(selectedLine);
+    });
+
     iconPositionButtons.forEach((button) => {
         button.addEventListener("click", () => {
             if (!selectedNode || !button.dataset.iconPosition) {
@@ -2587,6 +2879,17 @@ function initializeDiagramPage() {
         applyNodeAppearance(selectedNode);
         if (strokeWidthValue) {
             strokeWidthValue.textContent = `${strokeWidthInput.value}px`;
+        }
+    });
+
+    nodeOpacityInput?.addEventListener("input", () => {
+        if (!selectedNode || !(nodeOpacityInput instanceof HTMLInputElement)) {
+            return;
+        }
+        selectedNode.dataset.nodeOpacity = nodeOpacityInput.value;
+        applyNodeAppearance(selectedNode);
+        if (nodeOpacityValue) {
+            nodeOpacityValue.textContent = `${nodeOpacityInput.value}%`;
         }
     });
 

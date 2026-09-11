@@ -143,9 +143,13 @@
                 <span class="material-symbols-outlined text-[20px] pointer-events-none">folder_open</span>
             </button>
             <div class="absolute top-4 left-1/2 -translate-x-1/2 bg-surface-white rounded-xl shadow-lg border border-outline-variant/30 p-1.5 flex items-center gap-1 z-20 backdrop-blur-md bg-opacity-90">
-                <button class="p-2 rounded-lg text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors" data-diagram-tool="select" title="Select" type="button">
-                    <span class="material-symbols-outlined text-[20px]">near_me</span>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="move" title="Move Canvas" type="button">
+                    <span class="material-symbols-outlined text-[20px]">pan_tool</span>
                 </button>
+                <button class="p-2 rounded-lg text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors" data-diagram-tool="select" title="Select" type="button">
+                    <span class="material-symbols-outlined text-[20px]">arrow_selector_tool</span>
+                </button>
+                <div class="w-[1px] h-6 bg-outline-variant/50 mx-1"></div>
                 <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="rectangle" title="Rectangle" type="button">
                     <span class="material-symbols-outlined text-[20px]">rectangle</span>
                 </button>
@@ -153,20 +157,31 @@
                     <span class="material-symbols-outlined text-[20px]">circle</span>
                 </button>
                 <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="diamond" title="Diamond" type="button">
-                    <span class="material-symbols-outlined text-[20px]">category</span>
-                </button>
-                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="group-box" title="Group Box" type="button">
-                    <span class="material-symbols-outlined text-[20px]">dashboard_customize</span>
+                    <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 20 20">
+                        <path d="M10 2.75 17.25 10 10 17.25 2.75 10 10 2.75Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.8"></path>
+                    </svg>
                 </button>
                 <div class="w-[1px] h-6 bg-outline-variant/50 mx-1"></div>
-                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="connector" title="Connector" type="button">
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="group-box" title="Group Box" type="button">
+                    <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 20 20">
+                        <path d="M5 3.25V16.75M15 3.25V16.75M3.25 6H16.75M3.25 14H16.75" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.45"></path>
+                        <path d="M5 6H15V14H5V6Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.45"></path>
+                    </svg>
+                </button>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="connector" title="Line" type="button">
                     <span class="material-symbols-outlined text-[20px]">conversion_path</span>
                 </button>
                 <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="text" title="Text" type="button">
                     <span class="material-symbols-outlined text-[20px]">text_fields</span>
                 </button>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="pen" title="Pen" type="button">
+                    <span class="material-symbols-outlined text-[20px]">draw</span>
+                </button>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="eraser" title="Eraser" type="button">
+                    <span class="material-symbols-outlined text-[20px]">ink_eraser</span>
+                </button>
                 <div class="w-[1px] h-6 bg-outline-variant/50 mx-1"></div>
-                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="image" title="Image" type="button">
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="image" title="Attach Image" type="button">
                     <span class="material-symbols-outlined text-[20px]">image</span>
                 </button>
             </div>
@@ -183,7 +198,7 @@
 
             <div class="absolute inset-0 w-full h-full overflow-auto" id="zoom-layer" style="background-image: radial-gradient(circle at 2px 2px, rgba(200, 205, 215, 0.4) 1px, transparent 0px); background-size: 24px 24px; cursor: grab;">
                 <div class="relative w-[1500px] h-[1000px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" id="diagram-stage">
-                    <svg class="absolute inset-0 w-full h-full" style="z-index: 1;">
+                    <svg class="absolute inset-0 w-full h-full" style="z-index: 8;">
                         <defs>
                             <marker id="arrow" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
                                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#7c839b"></path>
@@ -193,6 +208,18 @@
                             </marker>
                             <marker id="arrow-line" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
                                 <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"></path>
+                            </marker>
+                            <marker id="arrow-line-triangle" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="10" refY="5" viewBox="0 0 10 10">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"></path>
+                            </marker>
+                            <marker id="arrow-line-stealth" markerHeight="7" markerWidth="8" orient="auto-start-reverse" refX="10" refY="5" viewBox="0 0 10 10">
+                                <path d="M 0 0 L 10 5 L 2 5 L 0 10 z" fill="context-stroke"></path>
+                            </marker>
+                            <marker id="arrow-line-diamond" markerHeight="7" markerWidth="7" orient="auto-start-reverse" refX="10" refY="5" viewBox="0 0 10 10">
+                                <path d="M 0 5 L 5 0 L 10 5 L 5 10 z" fill="context-stroke"></path>
+                            </marker>
+                            <marker id="arrow-line-circle" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="8" refY="5" viewBox="0 0 10 10">
+                                <circle cx="5" cy="5" fill="context-stroke" r="4"></circle>
                             </marker>
                         </defs>
                         <path data-line-from="client-apps" data-line-to="api-gateway" data-from-anchor="right" data-to-anchor="left" data-line-tone="default" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-dasharray="4" stroke-width="2"></path>
@@ -253,15 +280,14 @@
                         </div>
                         <h3 class="font-title-md text-title-md text-on-surface" data-node-title>Inventory</h3>
                     </div>
-                    <div class="absolute top-[700px] left-[300px] w-[700px] h-[180px] bg-accent-db/5 border border-accent-db/20 rounded-2xl border-dashed z-0 cursor-move"
+                    <div class="absolute top-[700px] left-[300px] w-[700px] h-[180px] bg-accent-db/5 border border-accent-db/20 rounded-2xl border-dashed z-[9] cursor-move"
                          data-diagram-node
                          data-node-key="storage-layer-group"
                          data-node-kind="group-box"
                          data-fill-color="rgba(16, 185, 129, 0.05)"
                          data-stroke-width="1"
                          data-stroke-style="dashed">
-                        <div class="absolute -top-3 left-6 bg-surface-container-low px-2 font-label-md text-label-md text-accent-db flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[14px]" data-node-icon-element>database</span>
+                        <div class="absolute -top-3 left-6 font-label-md text-label-md text-accent-db">
                             <span data-node-title>Storage Layer</span>
                         </div>
                     </div>
@@ -399,8 +425,9 @@
                             텍스트 색상 <span class="text-on-surface-variant font-code-sm uppercase" id="diagram-text-color-value">Default</span>
                         </label>
                         <div class="diagram-color-row">
-                            <button class="diagram-color-swatch bg-surface-white border-2 border-secondary hover:scale-110 transition-transform relative"
+                            <button class="diagram-color-swatch border-2 border-secondary hover:scale-110 transition-transform relative"
                                     data-text-color=""
+                                    style="background-color: transparent;"
                                     title="Default text color"
                                     type="button">
                                 <span class="material-symbols-outlined text-[16px] text-secondary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
@@ -690,6 +717,19 @@
                         </div>
                     </div>
                     <div class="space-y-2 pt-2">
+                        <label class="font-label-md text-label-md text-on-surface">불투명도</label>
+                        <div class="flex items-center gap-3">
+                            <input class="flex-1 h-1 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-secondary"
+                                   id="diagram-node-opacity-input"
+                                   max="100"
+                                   min="0"
+                                   type="range"
+                                   value="100">
+                            <span class="font-code-sm text-code-sm text-on-surface bg-surface px-2 py-1 rounded w-12 text-center border border-outline-variant/50"
+                                  id="diagram-node-opacity-value">100%</span>
+                        </div>
+                    </div>
+                    <div class="space-y-2 pt-2">
                         <label class="font-label-md text-label-md text-on-surface">테두리 스타일</label>
                         <div class="flex bg-surface rounded-lg p-1 border border-outline-variant/50">
                             <button class="flex-1 py-1 bg-surface-white shadow-sm rounded flex justify-center items-center"
@@ -784,12 +824,133 @@
                             </button>
                         </div>
                     </div>
-                    <label class="flex items-center justify-between gap-3 font-label-md text-label-md text-on-surface">
-                        움직이는 선
-                        <input class="accent-secondary"
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface">화살표 종류 선택</label>
+                        <div class="space-y-2">
+                            <div class="grid grid-cols-[42px_1fr] items-center gap-2">
+                                <span class="font-label-md text-label-md text-on-surface-variant">시작</span>
+                                <div class="diagram-arrow-options">
+                                    <button class="diagram-arrow-option bg-surface-white shadow-sm" data-line-start-arrow="none" title="시작 화살표 없음" type="button">
+                                        <svg aria-hidden="true" viewBox="0 0 56 24"><path d="M 8 12 L 48 12"></path></svg>
+                                    </button>
+                                    <button class="diagram-arrow-option" data-line-start-arrow="triangle" title="시작 기본 화살표" type="button">
+                                        <svg aria-hidden="true" viewBox="0 0 56 24"><path d="M 13 12 L 48 12"></path><path class="diagram-arrow-head" d="M 14 6 L 6 12 L 14 18 Z"></path></svg>
+                                    </button>
+                                    <button class="diagram-arrow-option" data-line-start-arrow="stealth" title="시작 꺾임 화살표" type="button">
+                                        <svg aria-hidden="true" viewBox="0 0 56 24"><path d="M 13 12 L 48 12"></path><path class="diagram-arrow-head" d="M 14 6 L 6 12 L 14 18 L 12 12 Z"></path></svg>
+                                    </button>
+                                    <button class="diagram-arrow-option" data-line-start-arrow="diamond" title="시작 마름모 화살표" type="button">
+                                        <svg aria-hidden="true" viewBox="0 0 56 24"><path d="M 16 12 L 48 12"></path><path class="diagram-arrow-head" d="M 6 12 L 12 6 L 18 12 L 12 18 Z"></path></svg>
+                                    </button>
+                                    <button class="diagram-arrow-option" data-line-start-arrow="circle" title="시작 원형 화살표" type="button">
+                                        <svg aria-hidden="true" viewBox="0 0 56 24"><path d="M 16 12 L 48 12"></path><circle class="diagram-arrow-head" cx="10" cy="12" r="5"></circle></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-[42px_1fr] items-center gap-2">
+                                <span class="font-label-md text-label-md text-on-surface-variant">종료</span>
+                                <div class="diagram-arrow-options">
+                                    <button class="diagram-arrow-option" data-line-end-arrow="none" title="종료 화살표 없음" type="button">
+                                        <svg aria-hidden="true" viewBox="0 0 56 24"><path d="M 8 12 L 48 12"></path></svg>
+                                    </button>
+                                    <button class="diagram-arrow-option bg-surface-white shadow-sm" data-line-end-arrow="triangle" title="종료 기본 화살표" type="button">
+                                        <svg aria-hidden="true" viewBox="0 0 56 24"><path d="M 8 12 L 43 12"></path><path class="diagram-arrow-head" d="M 42 6 L 50 12 L 42 18 Z"></path></svg>
+                                    </button>
+                                    <button class="diagram-arrow-option" data-line-end-arrow="stealth" title="종료 꺾임 화살표" type="button">
+                                        <svg aria-hidden="true" viewBox="0 0 56 24"><path d="M 8 12 L 43 12"></path><path class="diagram-arrow-head" d="M 42 6 L 50 12 L 42 18 L 44 12 Z"></path></svg>
+                                    </button>
+                                    <button class="diagram-arrow-option" data-line-end-arrow="diamond" title="종료 마름모 화살표" type="button">
+                                        <svg aria-hidden="true" viewBox="0 0 56 24"><path d="M 8 12 L 40 12"></path><path class="diagram-arrow-head" d="M 38 12 L 44 6 L 50 12 L 44 18 Z"></path></svg>
+                                    </button>
+                                    <button class="diagram-arrow-option" data-line-end-arrow="circle" title="종료 원형 화살표" type="button">
+                                        <svg aria-hidden="true" viewBox="0 0 56 24"><path d="M 8 12 L 40 12"></path><circle class="diagram-arrow-head" cx="46" cy="12" r="5"></circle></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface">움직이는 선</label>
+                        <input class="hidden"
                                id="diagram-line-animated"
                                type="checkbox">
-                    </label>
+                        <div class="diagram-motion-options">
+                            <button class="diagram-motion-option bg-surface-white shadow-sm" data-line-motion="none" title="움직임 없음" type="button">
+                                <svg aria-hidden="true" viewBox="0 0 72 24">
+                                    <path d="M 10 12 L 62 12"></path>
+                                </svg>
+                            </button>
+                            <button class="diagram-motion-option" data-line-animation-direction="forward" title="시작에서 종료 방향" type="button">
+                                <svg aria-hidden="true" viewBox="0 0 72 24">
+                                    <path d="M 10 12 L 62 12"></path>
+                                    <circle cx="28" cy="12" r="3"></circle>
+                                    <path class="diagram-motion-head" d="M 55 7 L 63 12 L 55 17"></path>
+                                </svg>
+                            </button>
+                            <button class="diagram-motion-option" data-line-animation-direction="backward" title="종료에서 시작 방향" type="button">
+                                <svg aria-hidden="true" viewBox="0 0 72 24">
+                                    <path d="M 10 12 L 62 12"></path>
+                                    <circle cx="44" cy="12" r="3"></circle>
+                                    <path class="diagram-motion-head" d="M 17 7 L 9 12 L 17 17"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface">배지</label>
+                        <input class="w-full px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-code-sm text-code-sm transition-all"
+                               id="diagram-line-badge-input"
+                               placeholder="HTTP"
+                               type="text">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface flex justify-between">
+                            배지 색상 <span class="text-on-surface-variant font-code-sm uppercase" id="diagram-line-badge-color-value">#006399</span>
+                        </label>
+                        <div class="diagram-color-row">
+                            <button class="diagram-color-swatch bg-surface-white border border-outline-variant hover:scale-110 transition-transform relative"
+                                    data-line-badge-color="transparent"
+                                    style="background-image: linear-gradient(135deg, transparent 45%, #BA1A1A 46%, #BA1A1A 54%, transparent 55%), linear-gradient(45deg, #F7F9FB 25%, transparent 25%), linear-gradient(-45deg, #F7F9FB 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #F7F9FB 75%), linear-gradient(-45deg, transparent 75%, #F7F9FB 75%); background-color: #FFFFFF; background-position: center, 0 0, 0 4px, 4px -4px, -4px 0; background-size: 100% 100%, 8px 8px, 8px 8px, 8px 8px, 8px 8px;"
+                                    title="배경 없음"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[16px] text-secondary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hidden">check</span>
+                            </button>
+                            <button class="diagram-color-swatch border-2 border-secondary hover:scale-110 transition-transform relative"
+                                    data-line-badge-color="#006399"
+                                    style="background-color: #006399;"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[16px] text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
+                            </button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-line-badge-color="#10B981"
+                                    style="background-color: #10B981;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-line-badge-color="#8B5CF6"
+                                    style="background-color: #8B5CF6;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-line-badge-color="#F59E0B"
+                                    style="background-color: #F59E0B;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-line-badge-color="#EF4444"
+                                    style="background-color: #EF4444;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-line-badge-color="#76777D"
+                                    style="background-color: #76777D;"
+                                    type="button"></button>
+                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
+                                    data-line-badge-color="#191C1E"
+                                    style="background-color: #191C1E;"
+                                    type="button"></button>
+                            <label class="diagram-color-picker" title="Custom line badge color">
+                                <input id="diagram-line-badge-color-picker" type="color" value="#006399">
+                                <span class="material-symbols-outlined">palette</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

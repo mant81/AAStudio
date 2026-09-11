@@ -230,9 +230,142 @@
     animation: diagram-line-dash 0.8s linear infinite;
 }
 
+.diagram-line-animated-reverse {
+    animation-name: diagram-line-dash-reverse;
+}
+
+.diagram-line-badge {
+    position: absolute;
+    z-index: 36;
+    max-width: 160px;
+    min-height: 20px;
+    padding: 3px 9px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.84);
+    border-radius: 999px;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+    line-height: 13px;
+    pointer-events: none;
+    text-overflow: ellipsis;
+    transform: translate(-50%, calc(-100% - 8px));
+    white-space: nowrap;
+}
+
+.diagram-line-badge-selected {
+    outline: 2px solid rgba(0, 99, 153, 0.26);
+    outline-offset: 2px;
+}
+
+.diagram-arrow-options {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid rgba(198, 198, 205, 0.55);
+    border-radius: 10px;
+    background: #f2f4f6;
+}
+
+.diagram-arrow-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    height: 34px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #45464d;
+    cursor: pointer;
+    transition: background 0.14s ease, box-shadow 0.14s ease, color 0.14s ease;
+}
+
+.diagram-arrow-option:hover {
+    background: rgba(255, 255, 255, 0.62);
+    color: #191c1e;
+}
+
+.diagram-arrow-option svg {
+    width: 100%;
+    max-width: 48px;
+    height: 22px;
+    overflow: visible;
+}
+
+.diagram-arrow-option path:not(.diagram-arrow-head) {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 2;
+}
+
+.diagram-arrow-head {
+    fill: currentColor;
+    stroke: none;
+}
+
+.diagram-motion-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid rgba(198, 198, 205, 0.55);
+    border-radius: 10px;
+    background: #f2f4f6;
+}
+
+.diagram-motion-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    height: 38px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #45464d;
+    cursor: pointer;
+    transition: background 0.14s ease, box-shadow 0.14s ease, color 0.14s ease;
+}
+
+.diagram-motion-option:hover {
+    background: rgba(255, 255, 255, 0.62);
+    color: #191c1e;
+}
+
+.diagram-motion-option svg {
+    width: 100%;
+    max-width: 68px;
+    height: 24px;
+    overflow: visible;
+}
+
+.diagram-motion-option path {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+}
+
+.diagram-motion-option circle {
+    fill: currentColor;
+}
+
 @keyframes diagram-line-dash {
     to {
         stroke-dashoffset: -18;
+    }
+}
+
+@keyframes diagram-line-dash-reverse {
+    to {
+        stroke-dashoffset: 18;
     }
 }
 
@@ -829,10 +962,6 @@
     transform: translate(-50%, -50%);
 }
 
-.diagram-shape-diamond .diagram-shape-icon {
-    transform: translate(-50%, -50%) rotate(-45deg);
-}
-
 [data-diagram-node][data-node-kind="shape"] [data-node-title],
 [data-diagram-node][data-node-kind="shape"] [data-node-subtitle] {
     position: absolute;
@@ -874,7 +1003,6 @@
 .diagram-shape-diamond [data-node-subtitle] {
     right: 15%;
     left: 15%;
-    transform: rotate(-45deg);
 }
 
 .diagram-shape-content {
@@ -895,7 +1023,6 @@
 
 .diagram-shape-diamond .diagram-shape-content {
     width: 70%;
-    transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 [data-diagram-node][data-node-kind="shape"] .diagram-shape-content .diagram-shape-icon,
@@ -961,8 +1088,32 @@
 }
 
 .diagram-shape-diamond {
+    border: 0 !important;
     border-radius: 6px;
-    transform: rotate(45deg);
+    background: transparent !important;
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.diagram-shape-diamond::before,
+.diagram-shape-diamond::after {
+    position: absolute;
+    content: "";
+    pointer-events: none;
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.diagram-shape-diamond::before {
+    inset: 0;
+    background: var(--diagram-node-stroke-color, #c6c6cd);
+}
+
+.diagram-shape-diamond::after {
+    inset: var(--diagram-node-stroke-width, 2px);
+    background: var(--diagram-node-fill-color, #ffffff);
+}
+
+.diagram-shape-diamond > * {
+    z-index: 1;
 }
 
 .diagram-node-rotate-handle {
