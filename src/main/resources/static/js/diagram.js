@@ -29,6 +29,9 @@ function initializeDiagramPage() {
     const zoomInButton = document.getElementById("diagram-zoom-in");
     const zoomOutButton = document.getElementById("diagram-zoom-out");
     const zoomValue = document.getElementById("diagram-zoom-value");
+    const shapeToolButton = document.getElementById("diagram-shape-tool");
+    const shapeMenu = document.getElementById("diagram-shape-menu");
+    const shapeMenuButtons = Array.from(diagramRoot.querySelectorAll("[data-shape-tool]"));
     const toolButtons = Array.from(diagramRoot.querySelectorAll("[data-diagram-tool]"));
     const selectedNodeName = document.getElementById("diagram-selected-node-name");
     const selectedNodeType = document.getElementById("diagram-selected-node-type");
@@ -108,6 +111,9 @@ function initializeDiagramPage() {
     let selectedNode = null;
     let selectedNodes = [];
     let selectedLine = null;
+    let nodeClipboard = [];
+    let pasteOffset = 0;
+    let selectedShapeTool = "rectangle";
     const lineHitPaths = new WeakMap();
     const lineHandleGroups = new WeakMap();
     const lineBadges = new WeakMap();
@@ -314,6 +320,133 @@ function initializeDiagramPage() {
     ];
 
     const getNodes = () => Array.from(diagramRoot.querySelectorAll("[data-diagram-node]"));
+
+    const captureDiagramState = () => ({
+        nodes: getNodes().map((node) => node.outerHTML),
+        lines: linePaths.filter((line) => line.isConnected).map((line) => line.outerHTML),
+        nodeCounter
+    });
+
+    const createLineFromMarkup = (markup) => {
+        const parsed = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${markup}</svg>`, "image/svg+xml");
+        const source = parsed.querySelector("path");
+        if (!source || source.localName !== "path") {
+            return null;
+        }
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        Array.from(source.attributes).forEach((attribute) => {
+            line.setAttribute(attribute.name, attribute.value);
+        });
+        line.classList.remove("diagram-line-selected", "diagram-line-hovered");
+        return line;
+    };
+
+    const pushHistoryState = (state) => {
+        if (isRestoringHistory) {
+            return;
+        }
+        historyStack.push(state);
+        if (historyStack.length > maxHistorySize) {
+            historyStack.shift();
+        }
+    };
+
+    const saveHistory = () => {
+        pushHistoryState(captureDiagramState());
+    };
+
+    const restoreDiagramState = (state) => {
+        if (!state) {
+            return false;
+        }
+
+        isRestoringHistory = true;
+        selectionFrame?.remove();
+        selectionFrame = null;
+        clearSelectedLine();
+        selectedNodes = [];
+        selectedNode = null;
+        getNodes().forEach((node) => node.remove());
+        diagramStage.querySelectorAll(".diagram-line-hit-path, .diagram-line-handles, [data-line-badge]").forEach((element) => element.remove());
+        linePaths.forEach((line) => line.remove());
+        linePaths = [];
+
+        const svg = diagramStage.querySelector("svg");
+        state.lines?.forEach((markup) => {
+            if (!(svg instanceof SVGElement)) {
+                return;
+            }
+            const line = createLineFromMarkup(markup);
+            if (!line) {
+                return;
+            }
+            svg.appendChild(line);
+            linePaths.push(line);
+            bindLineInteractions(line);
+        });
+
+        state.nodes.forEach((markup) => {
+            const template = document.createElement("template");
+            template.innerHTML = markup.trim();
+            const node = template.content.firstElementChild;
+            if (!(node instanceof HTMLElement)) {
+                return;
+            }
+            node.dataset.bound = "false";
+            node.classList.remove("diagram-node-selected", "diagram-node-grouped-highlight", "diagram-node-drawing");
+            node.querySelectorAll("[data-line-connect-point]").forEach((point) => point.remove());
+            diagramStage.appendChild(node);
+            normalizeNodeIcon(node);
+            bindNodeInteractions(node);
+        });
+
+        nodeCounter = state.nodeCounter;
+        clearSelectedNode();
+        updateLinePaths();
+        isRestoringHistory = false;
+        return true;
+    };
+
+    const undoLastHistory = () => {
+        const previousState = historyStack.pop();
+        return restoreDiagramState(previousState);
+    };
+
+    let propertyEditHistoryState = null;
+    const beginPropertyEditHistory = () => {
+        if (!selectedNode && !selectedLine) {
+            return;
+        }
+        if (!propertyEditHistoryState) {
+            propertyEditHistoryState = captureDiagramState();
+            pushHistoryState(propertyEditHistoryState);
+        }
+    };
+
+    const endPropertyEditHistory = () => {
+        propertyEditHistoryState = null;
+    };
+
+    const selectedShapeInsertTool = () => selectedShapeTool;
+
+    const selectedShapeButton = () => shapeMenuButtons.find((button) => button.dataset.shapeTool === selectedShapeTool);
+
+    const syncShapeToolButton = () => {
+        if (!(shapeToolButton instanceof HTMLElement)) {
+            return;
+        }
+        const sourceIcon = selectedShapeButton()?.querySelector("svg");
+        const label = selectedShapeButton()?.getAttribute("aria-label") || "Shape";
+        if (sourceIcon instanceof SVGElement) {
+            const icon = sourceIcon.cloneNode(true);
+            icon.classList.add("w-5", "h-5");
+            icon.setAttribute("aria-hidden", "true");
+            shapeToolButton.replaceChildren(icon);
+        }
+        shapeToolButton.title = label;
+        shapeToolButton.setAttribute("aria-label", label);
+    };
 
     const setSpacesHidden = (hidden) => {
         spacesPanel.style.display = hidden ? "none" : "flex";
@@ -634,11 +767,11 @@ function initializeDiagramPage() {
         if (node.dataset.nodeKind !== "shape") {
             return;
         }
-        const shapeType = ["rectangle", "circle", "diamond"].includes(node.dataset.shapeType)
+        const shapeType = shapeTools.includes(node.dataset.shapeType)
             ? node.dataset.shapeType
             : "rectangle";
         node.dataset.shapeType = shapeType;
-        node.classList.remove("diagram-shape-rectangle", "diagram-shape-circle", "diagram-shape-diamond");
+        shapeTools.forEach((tool) => node.classList.remove(`diagram-shape-${tool}`));
         node.classList.add(`diagram-shape-${shapeType}`);
     };
 
@@ -1407,11 +1540,13 @@ function initializeDiagramPage() {
 
     const deleteSelectedNodes = () => {
         if (selectedLine) {
+            saveHistory();
             lineHitPaths.get(selectedLine)?.remove();
             lineHandleGroups.get(selectedLine)?.remove();
             lineBadges.get(selectedLine)?.remove();
             lineBadges.delete(selectedLine);
             selectedLine.remove();
+            linePaths = linePaths.filter((line) => line !== selectedLine);
             clearSelectedNode();
             return true;
         }
@@ -1420,6 +1555,7 @@ function initializeDiagramPage() {
             return false;
         }
 
+        saveHistory();
         const deletedKeys = new Set(nodesToDelete.map((node) => node.dataset.nodeKey).filter(Boolean));
         nodesToDelete.forEach((node) => node.remove());
         getNodes().forEach((node) => {
@@ -1471,7 +1607,9 @@ function initializeDiagramPage() {
                 freeStartX: Number(line.dataset.freeStartX ?? 0),
                 freeStartY: Number(line.dataset.freeStartY ?? 0),
                 freeEndX: Number(line.dataset.freeEndX ?? 0),
-                freeEndY: Number(line.dataset.freeEndY ?? 0)
+                freeEndY: Number(line.dataset.freeEndY ?? 0),
+                historyState: captureDiagramState(),
+                changed: false
             };
             document.body.style.userSelect = "none";
         });
@@ -1493,7 +1631,9 @@ function initializeDiagramPage() {
                 freeStartX: Number(line.dataset.freeStartX ?? 0),
                 freeStartY: Number(line.dataset.freeStartY ?? 0),
                 freeEndX: Number(line.dataset.freeEndX ?? 0),
-                freeEndY: Number(line.dataset.freeEndY ?? 0)
+                freeEndY: Number(line.dataset.freeEndY ?? 0),
+                historyState: captureDiagramState(),
+                changed: false
             };
             document.body.style.userSelect = "none";
         });
@@ -1536,7 +1676,9 @@ function initializeDiagramPage() {
                     controlY: Number(line.dataset.lineControlY ?? 0),
                     point,
                     pointerPoint: point,
-                    targetNode: null
+                    targetNode: null,
+                    historyState: captureDiagramState(),
+                    changed: false
                 };
                 document.body.style.userSelect = "none";
             });
@@ -1710,6 +1852,90 @@ function initializeDiagramPage() {
         moveNodesByDelta([node], deltaX, deltaY);
     };
 
+    const cloneNodeForClipboard = (node) => ({
+        element: node.cloneNode(true),
+        left: node.offsetLeft,
+        top: node.offsetTop,
+        nodeKey: node.dataset.nodeKey ?? "",
+        groupParent: node.dataset.groupParent ?? ""
+    });
+
+    const copySelectedNodes = () => {
+        const nodesToCopy = selectedNodes.length ? selectedNodes : (selectedNode ? [selectedNode] : []);
+        if (!nodesToCopy.length) {
+            return false;
+        }
+
+        nodeClipboard = nodesToCopy.map(cloneNodeForClipboard);
+        pasteOffset = 0;
+        return true;
+    };
+
+    const preparePastedNode = (snapshot, keyMap, offset) => {
+        const node = snapshot.element.cloneNode(true);
+        const nextKey = keyMap.get(snapshot.nodeKey);
+
+        node.dataset.nodeKey = nextKey ?? `generated-node-${++nodeCounter}`;
+        node.dataset.bound = "false";
+        node.classList.remove("diagram-node-selected", "diagram-node-grouped-highlight", "diagram-node-drawing");
+        node.querySelectorAll("[data-line-connect-point]").forEach((point) => point.remove());
+        node.style.left = `${snapshot.left + offset}px`;
+        node.style.top = `${snapshot.top + offset}px`;
+        if (snapshot.groupParent && keyMap.has(snapshot.groupParent)) {
+            node.dataset.groupParent = keyMap.get(snapshot.groupParent);
+        } else {
+            delete node.dataset.groupParent;
+        }
+
+        return node;
+    };
+
+    const pasteCopiedNodes = () => {
+        if (!nodeClipboard.length) {
+            return false;
+        }
+
+        saveHistory();
+        pasteOffset += 28;
+        const keyMap = new Map();
+        nodeClipboard.forEach((snapshot) => {
+            const sourceKind = snapshot.element.dataset.nodeKind || "node";
+            const sourceKey = snapshot.nodeKey || `${sourceKind}-${keyMap.size}`;
+            keyMap.set(sourceKey, `generated-${sourceKind}-${++nodeCounter}`);
+        });
+        const pastedNodes = nodeClipboard.map((snapshot) => preparePastedNode(snapshot, keyMap, pasteOffset));
+
+        pastedNodes.forEach((node) => {
+            diagramStage.appendChild(node);
+            bindNodeInteractions(node);
+        });
+        pastedNodes.forEach((node) => {
+            if (node.dataset.nodeKind !== "group-box") {
+                syncNodeGroupMembership(node);
+            }
+        });
+
+        setSelectedNodes(pastedNodes);
+        updateLinePaths();
+        return true;
+    };
+
+    const isTypingTarget = (target) => {
+        if (!(target instanceof HTMLElement)) {
+            return false;
+        }
+        const tagName = target.tagName.toLowerCase();
+        return tagName === "input" || tagName === "textarea" || target.isContentEditable;
+    };
+
+    const isCopyKeyEvent = (event) => {
+        return (event.ctrlKey || event.metaKey) && (event.key?.toLowerCase() === "c" || event.code === "KeyC");
+    };
+
+    const isPasteKeyEvent = (event) => {
+        return (event.ctrlKey || event.metaKey) && (event.key?.toLowerCase() === "v" || event.code === "KeyV");
+    };
+
     const getNodeMinimumSize = (node) => {
         return logic.nodeMinimumSize(node.dataset.nodeKind, node.dataset.shapeType);
     };
@@ -1729,6 +1955,8 @@ function initializeDiagramPage() {
     let isFrameResizing = false;
     let frameResizeCorner = "se";
     let frameResizeStartBox = null;
+    let frameResizeHistoryState = null;
+    let frameResizeChanged = false;
     let frameRotation = null;
 
     window.addEventListener("blur", () => {
@@ -1770,7 +1998,9 @@ function initializeDiagramPage() {
                 node: selectedNode,
                 center,
                 angle: Math.atan2(point.y - center.y, point.x - center.x),
-                rotation: Number(selectedNode.dataset.rotation ?? 0)
+                rotation: Number(selectedNode.dataset.rotation ?? 0),
+                historyState: captureDiagramState(),
+                changed: false
             };
             document.body.style.userSelect = "none";
             rotateHandle.classList.add("is-rotating");
@@ -1786,7 +2016,6 @@ function initializeDiagramPage() {
                 if (!isSelectionTool() || !selectedNode) {
                     return;
                 }
-
                 isFrameResizing = true;
                 frameResizeCorner = corner;
                 frameResizeStartBox = {
@@ -1795,6 +2024,8 @@ function initializeDiagramPage() {
                     width: selectedNode.offsetWidth,
                     height: selectedNode.offsetHeight
                 };
+                frameResizeHistoryState = captureDiagramState();
+                frameResizeChanged = false;
                 event.preventDefault();
                 event.stopPropagation();
                 document.body.style.userSelect = "none";
@@ -1959,6 +2190,7 @@ function initializeDiagramPage() {
         let dragSnapshots = [];
         let skipClickSelection = false;
         let isAltMovingGroupOnly = false;
+        let dragHistoryState = null;
 
         element.addEventListener("mousedown", (event) => {
             if (!isSelectionTool()) {
@@ -1975,6 +2207,7 @@ function initializeDiagramPage() {
             isAltMovingGroupOnly = altGroupTarget instanceof HTMLElement;
             startX = event.clientX;
             startY = event.clientY;
+            dragHistoryState = captureDiagramState();
 
             if (event.shiftKey || event.ctrlKey || event.metaKey) {
                 skipClickSelection = true;
@@ -2050,6 +2283,9 @@ function initializeDiagramPage() {
         });
 
         window.addEventListener("mouseup", () => {
+            if (isDragging && hasDragged && dragHistoryState) {
+                pushHistoryState(dragHistoryState);
+            }
             if (isDragging && dragSnapshots.length && !isAltMovingGroupOnly) {
                 dragSnapshots.forEach((item) => {
                     if (item.element.dataset.nodeKind !== "group-box") {
@@ -2064,15 +2300,20 @@ function initializeDiagramPage() {
                 syncNodeGroupMembership(element);
             }
             dragSnapshots = [];
+            dragHistoryState = null;
             syncSelectionFrame();
         });
     };
 
-    const shapeTools = ["rectangle", "circle", "diamond"];
+    const shapeTools = [
+        "rectangle", "rounded-rectangle", "ellipse", "circle", "triangle", "right-triangle", "diamond",
+        "pentagon", "hexagon", "octagon", "plus", "heart", "lightning", "cloud", "document", "star",
+        "gear", "speech", "database"
+    ];
     const isShapeTool = (tool) => shapeTools.includes(tool);
-    const drawingNodeTools = [...shapeTools, "group-box"];
+    const drawingNodeTools = [...shapeTools, "shape", "group-box"];
     const isDrawingNodeTool = (tool) => drawingNodeTools.includes(tool);
-    const insertNodeTools = [...shapeTools, "group-box", "text", "image"];
+    const insertNodeTools = [...shapeTools, "shape", "group-box", "text", "image", "node"];
     const isInsertNodeTool = (tool) => insertNodeTools.includes(tool);
 
     const createNodeMarkup = (tool) => {
@@ -2080,13 +2321,32 @@ function initializeDiagramPage() {
         node.dataset.diagramNode = "";
         node.dataset.nodeKey = `generated-${tool}-${++nodeCounter}`;
 
-        if (tool === "rectangle" || tool === "circle" || tool === "diamond") {
-            const title = tool === "rectangle"
-                ? "Rectangle"
-                : (tool === "circle" ? "Circle" : "Diamond");
-            const shapeClass = tool === "rectangle"
-                ? "diagram-shape-rectangle w-40 h-28"
-                : (tool === "circle" ? "diagram-shape-circle w-32 h-32" : "diagram-shape-diamond w-28 h-28");
+        if (isShapeTool(tool)) {
+            const shapeLabels = {
+                rectangle: "사각형",
+                "rounded-rectangle": "둥근 사각형",
+                ellipse: "타원",
+                circle: "원",
+                triangle: "삼각형",
+                "right-triangle": "직각 삼각형",
+                diamond: "마름모",
+                pentagon: "오각형",
+                hexagon: "육각형",
+                octagon: "팔각형",
+                plus: "플러스",
+                heart: "하트",
+                lightning: "번개",
+                cloud: "구름",
+                document: "문서",
+                star: "별",
+                gear: "톱니",
+                speech: "말풍선",
+                database: "데이터베이스"
+            };
+            const title = shapeLabels[tool] ?? "도형";
+            const shapeClass = ["circle", "diamond", "pentagon", "hexagon", "octagon", "plus", "heart", "lightning", "star", "gear"].includes(tool)
+                ? `diagram-shape-${tool} w-32 h-32`
+                : `diagram-shape-${tool} w-40 h-28`;
 
             node.dataset.nodeKind = "shape";
             node.dataset.shapeType = tool;
@@ -2175,7 +2435,10 @@ function initializeDiagramPage() {
         return node;
     };
 
-    const placeNodeAtPoint = (node, point) => {
+    const placeNodeAtPoint = (node, point, { recordHistory = true } = {}) => {
+        if (recordHistory) {
+            saveHistory();
+        }
         diagramStage.appendChild(node);
         const offsetLeft = node.offsetWidth / 2;
         const offsetTop = node.offsetHeight / 2;
@@ -2191,7 +2454,7 @@ function initializeDiagramPage() {
             return;
         }
         const point = getStagePoint(event);
-        const node = createNodeMarkup(activeTool);
+        const node = createNodeMarkup(activeTool === "shape" ? selectedShapeInsertTool() : activeTool);
         placeNodeAtPoint(node, point);
         activeTool = "select";
         syncToolButtons();
@@ -2207,12 +2470,77 @@ function initializeDiagramPage() {
         applyScale();
     });
 
+    const closeShapeMenu = () => {
+        shapeMenu?.classList.add("hidden");
+    };
+
+    const isShapeMenuOpen = () => Boolean(shapeMenu && !shapeMenu.classList.contains("hidden"));
+
+    const openShapeMenu = () => {
+        if (!(shapeMenu instanceof HTMLElement) || !(shapeToolButton instanceof HTMLElement)) {
+            return;
+        }
+        shapeMenuButtons.forEach((button) => {
+            const isActive = button.dataset.shapeTool === selectedShapeTool;
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+        });
+        shapeMenu.classList.remove("hidden");
+    };
+
     toolButtons.forEach((button) => {
         button.addEventListener("click", () => {
+            if (button === shapeToolButton) {
+                activeTool = "shape";
+                syncToolButtons();
+                if (isShapeMenuOpen()) {
+                    closeShapeMenu();
+                } else {
+                    openShapeMenu();
+                }
+                return;
+            }
+            closeShapeMenu();
             activeTool = button.dataset.diagramTool ?? "select";
             syncToolButtons();
         });
     });
+
+    shapeMenuButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            selectedShapeTool = button.dataset.shapeTool || "rectangle";
+            activeTool = "shape";
+            closeShapeMenu();
+            syncShapeToolButton();
+            syncToolButtons();
+        });
+    });
+
+    syncShapeToolButton();
+
+    document.addEventListener("pointerdown", (event) => {
+        if (!(event.target instanceof HTMLElement)) {
+            return;
+        }
+        if (event.target.closest("#diagram-shape-menu, #diagram-shape-tool")) {
+            return;
+        }
+        closeShapeMenu();
+    });
+
+    propertiesPanel?.addEventListener("pointerdown", (event) => {
+        if (event.target instanceof HTMLElement && event.target.closest("button, input, select")) {
+            beginPropertyEditHistory();
+            if (event.target.closest("button")) {
+                window.setTimeout(endPropertyEditHistory, 0);
+            }
+        }
+    }, true);
+
+    propertiesPanel?.addEventListener("beforeinput", beginPropertyEditHistory, true);
+    propertiesPanel?.addEventListener("focusout", endPropertyEditHistory, true);
+    propertiesPanel?.addEventListener("change", endPropertyEditHistory, true);
 
     let isPanning = false;
     let isSelecting = false;
@@ -2241,7 +2569,9 @@ function initializeDiagramPage() {
         }
         if (isDrawingNodeTool(activeTool) && event.button === 0) {
             const point = getStagePoint(event);
-            const node = createNodeMarkup(activeTool);
+            const tool = activeTool === "shape" ? selectedShapeInsertTool() : activeTool;
+            const node = createNodeMarkup(tool);
+            saveHistory();
             node.classList.add("diagram-node-drawing");
             diagramStage.appendChild(node);
             syncDrawingShape(node, point, point);
@@ -2291,6 +2621,9 @@ function initializeDiagramPage() {
             const point = getStagePoint(event);
             const deltaX = point.x - lineDrag.start.x;
             const deltaY = point.y - lineDrag.start.y;
+            if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) {
+                lineDrag.changed = true;
+            }
             if (lineDrag.mode === "endpoint-start" || lineDrag.mode === "endpoint-end") {
                 const originNode = diagramRoot.querySelector(`[data-node-key="${lineDrag.originNodeKey}"]`);
                 if (!lineDrag.hasLeftOriginNode && originNode instanceof HTMLElement) {
@@ -2354,6 +2687,7 @@ function initializeDiagramPage() {
 
         if (isFrameResizing && selectedNode && frameResizeStartBox) {
             resizeNodeFromCorner(selectedNode, frameResizeCorner, frameResizeStartBox, getStagePoint(event));
+            frameResizeChanged = true;
             if (selectedNode.dataset.nodeKind !== "group-box") {
                 syncNodeGroupMembership(selectedNode);
             } else {
@@ -2372,6 +2706,7 @@ function initializeDiagramPage() {
             if (event.shiftKey) degrees = Math.round(degrees / 15) * 15;
             node.dataset.rotation = String((degrees % 360 + 360) % 360);
             node.style.transform = `rotate(${getNodeRotation(node)}deg)`;
+            frameRotation.changed = true;
             updateLinePaths();
             syncSelectionFrame();
             return;
@@ -2410,6 +2745,7 @@ function initializeDiagramPage() {
 
     window.addEventListener("mouseup", (event) => {
         if (lineDrag) {
+            const completedLineDrag = lineDrag;
             if (
                 (lineDrag.mode === "endpoint-start" || lineDrag.mode === "endpoint-end")
             ) {
@@ -2467,6 +2803,9 @@ function initializeDiagramPage() {
                     lineDrag.line.dataset.lineOffsetY = "0";
                 }
             }
+            if (completedLineDrag.changed && completedLineDrag.historyState) {
+                pushHistoryState(completedLineDrag.historyState);
+            }
             lineDrag = null;
             clearLineConnectTargets();
             document.body.style.userSelect = "";
@@ -2475,13 +2814,21 @@ function initializeDiagramPage() {
         }
 
         if (isFrameResizing) {
+            if (frameResizeChanged && frameResizeHistoryState) {
+                pushHistoryState(frameResizeHistoryState);
+            }
             isFrameResizing = false;
             frameResizeStartBox = null;
+            frameResizeHistoryState = null;
+            frameResizeChanged = false;
             document.body.style.userSelect = "";
             syncSelectionFrame();
         }
 
         if (frameRotation) {
+            if (frameRotation.changed && frameRotation.historyState) {
+                pushHistoryState(frameRotation.historyState);
+            }
             frameRotation = null;
             selectionFrame?.querySelector("[data-node-rotate-handle]")?.classList.remove("is-rotating");
             document.body.style.userSelect = "";
@@ -2494,7 +2841,7 @@ function initializeDiagramPage() {
                 node.classList.remove("diagram-node-drawing");
                 node.style.width = "";
                 node.style.height = "";
-                placeNodeAtPoint(node, start);
+                placeNodeAtPoint(node, start, { recordHistory: false });
             } else {
                 node.classList.remove("diagram-node-drawing");
                 bindNodeInteractions(node);
@@ -2561,22 +2908,38 @@ function initializeDiagramPage() {
         applyScale();
     }, { passive: false });
 
-    window.addEventListener("keydown", (event) => {
-        const activeNodes = selectedNodes.length ? selectedNodes : (selectedNode ? [selectedNode] : []);
-        if (!activeNodes.length && !selectedLine) {
-            return;
+    const handleDiagramShortcut = (event) => {
+        if (isTypingTarget(event.target)) {
+            return false;
         }
-        if (event.target instanceof HTMLElement) {
-            const tagName = event.target.tagName.toLowerCase();
-            if (tagName === "input" || tagName === "textarea" || event.target.isContentEditable) {
-                return;
-            }
+        const activeNodes = selectedNodes.length ? selectedNodes : (selectedNode ? [selectedNode] : []);
+
+        if (isCopyKeyEvent(event) && activeNodes.length) {
+            event.preventDefault();
+            copySelectedNodes();
+            return true;
+        }
+
+        if ((event.ctrlKey || event.metaKey) && (event.key?.toLowerCase() === "z" || event.code === "KeyZ")) {
+            event.preventDefault();
+            undoLastHistory();
+            return true;
+        }
+
+        if (isPasteKeyEvent(event) && nodeClipboard.length) {
+            event.preventDefault();
+            pasteCopiedNodes();
+            return true;
+        }
+
+        if (!activeNodes.length && !selectedLine) {
+            return false;
         }
 
         if (event.key === "Delete" || event.key === "Backspace") {
             event.preventDefault();
             deleteSelectedNodes();
-            return;
+            return true;
         }
 
         const step = event.shiftKey ? 10 : 2;
@@ -2592,11 +2955,33 @@ function initializeDiagramPage() {
         } else if (event.key === "ArrowRight") {
             deltaX = step;
         } else {
-            return;
+            return false;
         }
 
         event.preventDefault();
+        saveHistory();
         moveNodesByDelta(activeNodes, deltaX, deltaY);
+        return true;
+    };
+
+    document.addEventListener("keydown", handleDiagramShortcut, true);
+
+    document.addEventListener("copy", (event) => {
+        if (isTypingTarget(event.target)) {
+            return;
+        }
+        if (copySelectedNodes()) {
+            event.preventDefault();
+        }
+    });
+
+    document.addEventListener("paste", (event) => {
+        if (isTypingTarget(event.target)) {
+            return;
+        }
+        if (pasteCopiedNodes()) {
+            event.preventDefault();
+        }
     });
 
     getNodes().forEach((node) => {

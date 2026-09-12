@@ -1082,37 +1082,166 @@
     border-radius: 6px;
 }
 
+.diagram-shape-rounded-rectangle {
+    border-radius: 16px;
+}
+
+.diagram-shape-ellipse {
+    aspect-ratio: auto;
+    border-radius: 50%;
+}
+
 .diagram-shape-circle {
     aspect-ratio: 1 / 1;
     border-radius: 9999px;
 }
 
-.diagram-shape-diamond {
+.diagram-shape-diamond,
+.diagram-shape-triangle,
+.diagram-shape-right-triangle,
+.diagram-shape-pentagon,
+.diagram-shape-hexagon,
+.diagram-shape-octagon,
+.diagram-shape-plus,
+.diagram-shape-heart,
+.diagram-shape-lightning,
+.diagram-shape-cloud,
+.diagram-shape-document,
+.diagram-shape-star,
+.diagram-shape-gear,
+.diagram-shape-speech,
+.diagram-shape-database {
     border: 0 !important;
     border-radius: 6px;
     background: transparent !important;
-    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 
 .diagram-shape-diamond::before,
-.diagram-shape-diamond::after {
+.diagram-shape-diamond::after,
+.diagram-shape-triangle::before,
+.diagram-shape-triangle::after,
+.diagram-shape-right-triangle::before,
+.diagram-shape-right-triangle::after,
+.diagram-shape-pentagon::before,
+.diagram-shape-pentagon::after,
+.diagram-shape-hexagon::before,
+.diagram-shape-hexagon::after,
+.diagram-shape-octagon::before,
+.diagram-shape-octagon::after,
+.diagram-shape-plus::before,
+.diagram-shape-plus::after,
+.diagram-shape-heart::before,
+.diagram-shape-heart::after,
+.diagram-shape-lightning::before,
+.diagram-shape-lightning::after,
+.diagram-shape-cloud::before,
+.diagram-shape-cloud::after,
+.diagram-shape-document::before,
+.diagram-shape-document::after,
+.diagram-shape-star::before,
+.diagram-shape-star::after,
+.diagram-shape-gear::before,
+.diagram-shape-gear::after,
+.diagram-shape-speech::before,
+.diagram-shape-speech::after,
+.diagram-shape-database::before,
+.diagram-shape-database::after {
     position: absolute;
     content: "";
     pointer-events: none;
-    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 
-.diagram-shape-diamond::before {
+.diagram-shape-diamond::before,
+.diagram-shape-triangle::before,
+.diagram-shape-right-triangle::before,
+.diagram-shape-pentagon::before,
+.diagram-shape-hexagon::before,
+.diagram-shape-octagon::before,
+.diagram-shape-plus::before,
+.diagram-shape-heart::before,
+.diagram-shape-lightning::before,
+.diagram-shape-cloud::before,
+.diagram-shape-document::before,
+.diagram-shape-star::before,
+.diagram-shape-gear::before,
+.diagram-shape-speech::before,
+.diagram-shape-database::before {
     inset: 0;
     background: var(--diagram-node-stroke-color, #c6c6cd);
 }
 
-.diagram-shape-diamond::after {
+.diagram-shape-diamond::after,
+.diagram-shape-triangle::after,
+.diagram-shape-right-triangle::after,
+.diagram-shape-pentagon::after,
+.diagram-shape-hexagon::after,
+.diagram-shape-octagon::after,
+.diagram-shape-plus::after,
+.diagram-shape-heart::after,
+.diagram-shape-lightning::after,
+.diagram-shape-cloud::after,
+.diagram-shape-document::after,
+.diagram-shape-star::after,
+.diagram-shape-gear::after,
+.diagram-shape-speech::after,
+.diagram-shape-database::after {
     inset: var(--diagram-node-stroke-width, 2px);
     background: var(--diagram-node-fill-color, #ffffff);
 }
 
-.diagram-shape-diamond > * {
+.diagram-shape-diamond::before,
+.diagram-shape-diamond::after { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+.diagram-shape-triangle::before,
+.diagram-shape-triangle::after { clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
+.diagram-shape-right-triangle::before { clip-path: polygon(0 0, 100% 100%, 0 100%); }
+.diagram-shape-right-triangle::after {
+    inset: 0;
+    clip-path: polygon(
+        var(--diagram-node-stroke-width, 2px) calc(var(--diagram-node-stroke-width, 2px) + 2px),
+        calc(100% - var(--diagram-node-stroke-width, 2px) - 2px) calc(100% - var(--diagram-node-stroke-width, 2px)),
+        var(--diagram-node-stroke-width, 2px) calc(100% - var(--diagram-node-stroke-width, 2px))
+    );
+}
+.diagram-shape-pentagon::before,
+.diagram-shape-pentagon::after { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
+.diagram-shape-hexagon::before,
+.diagram-shape-hexagon::after { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
+.diagram-shape-octagon::before,
+.diagram-shape-octagon::after { clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); }
+.diagram-shape-plus::before,
+.diagram-shape-plus::after { clip-path: polygon(35% 0%, 65% 0%, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0% 65%, 0% 35%, 35% 35%); }
+.diagram-shape-heart::before,
+.diagram-shape-heart::after { clip-path: polygon(50% 100%, 12% 62%, 4% 35%, 12% 12%, 35% 8%, 50% 28%, 65% 8%, 88% 12%, 96% 35%, 88% 62%); }
+.diagram-shape-lightning::before,
+.diagram-shape-lightning::after { clip-path: polygon(60% 0%, 18% 52%, 48% 52%, 35% 100%, 82% 40%, 54% 40%); }
+.diagram-shape-cloud::before,
+.diagram-shape-cloud::after { clip-path: ellipse(48% 34% at 50% 60%); border-radius: 999px; }
+.diagram-shape-document::before,
+.diagram-shape-document::after { clip-path: polygon(0 0, 72% 0, 100% 28%, 100% 100%, 0 100%); }
+.diagram-shape-star::before,
+.diagram-shape-star::after { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 56%, 79% 91%, 50% 70%, 21% 91%, 32% 56%, 2% 35%, 39% 35%); }
+.diagram-shape-gear::before,
+.diagram-shape-gear::after { clip-path: polygon(44% 0%, 56% 0%, 61% 18%, 74% 8%, 83% 17%, 73% 31%, 100% 38%, 100% 52%, 74% 58%, 84% 73%, 74% 83%, 60% 73%, 55% 100%, 43% 100%, 38% 73%, 25% 83%, 15% 73%, 25% 58%, 0% 52%, 0% 38%, 26% 31%, 16% 17%, 25% 8%, 39% 18%); }
+.diagram-shape-speech::before,
+.diagram-shape-speech::after { clip-path: polygon(0 0, 100% 0, 100% 72%, 44% 72%, 22% 100%, 24% 72%, 0 72%); }
+.diagram-shape-database::before,
+.diagram-shape-database::after { clip-path: ellipse(46% 50% at 50% 50%); border-radius: 999px; }
+
+.diagram-shape-diamond > *,
+.diagram-shape-triangle > *,
+.diagram-shape-right-triangle > *,
+.diagram-shape-pentagon > *,
+.diagram-shape-hexagon > *,
+.diagram-shape-octagon > *,
+.diagram-shape-plus > *,
+.diagram-shape-heart > *,
+.diagram-shape-lightning > *,
+.diagram-shape-cloud > *,
+.diagram-shape-document > *,
+.diagram-shape-star > *,
+.diagram-shape-gear > *,
+.diagram-shape-speech > *,
+.diagram-shape-database > * {
     z-index: 1;
 }
 
@@ -1250,6 +1379,79 @@
 .diagram-node-selection-frame > .diagram-node-resize-handle {
     opacity: 1;
     pointer-events: auto;
+}
+
+#diagram-main-toolbar {
+    position: absolute;
+}
+
+.diagram-shape-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    z-index: 45;
+    display: grid;
+    grid-template-columns: repeat(7, 40px);
+    gap: 4px;
+    width: max-content;
+    padding: 8px;
+    border: 1px solid rgba(199, 201, 211, 0.7);
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 16px 28px rgba(15, 23, 42, 0.12);
+}
+
+.diagram-shape-menu.hidden {
+    display: none;
+}
+
+.diagram-shape-menu button {
+    position: relative;
+    display: grid;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #45464d;
+    font-size: 0;
+    line-height: 0;
+}
+
+.diagram-shape-menu svg {
+    width: 28px;
+    height: 28px;
+}
+
+.diagram-shape-menu button:hover,
+.diagram-shape-menu button.active {
+    background: rgba(0, 99, 153, 0.1);
+    color: #006399;
+}
+
+#diagram-shape-tool svg {
+    display: block;
+}
+
+.diagram-shape-tool-button {
+    position: relative;
+}
+
+.diagram-shape-tool-button::after {
+    position: absolute;
+    left: 50%;
+    bottom: 2px;
+    width: 0;
+    height: 0;
+    border-top: 4px solid currentColor;
+    border-right: 4px solid transparent;
+    border-left: 4px solid transparent;
+    content: "";
+    opacity: 0.75;
+    transform: translateX(-50%);
 }
 
 .diagram-canvas {
