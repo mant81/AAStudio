@@ -32,6 +32,9 @@ function initializeDiagramPage() {
     const shapeToolButton = document.getElementById("diagram-shape-tool");
     const shapeMenu = document.getElementById("diagram-shape-menu");
     const shapeMenuButtons = Array.from(diagramRoot.querySelectorAll("[data-shape-tool]"));
+    const lineToolButton = document.getElementById("diagram-line-tool");
+    const lineMenu = document.getElementById("diagram-line-menu");
+    const lineMenuButtons = Array.from(diagramRoot.querySelectorAll("[data-line-preset]"));
     const toolButtons = Array.from(diagramRoot.querySelectorAll("[data-diagram-tool]"));
     const selectedNodeName = document.getElementById("diagram-selected-node-name");
     const selectedNodeType = document.getElementById("diagram-selected-node-type");
@@ -66,7 +69,7 @@ function initializeDiagramPage() {
     const nodeOpacityInput = document.getElementById("diagram-node-opacity-input");
     const nodeOpacityValue = document.getElementById("diagram-node-opacity-value");
     const strokeStyleButtons = Array.from(diagramRoot.querySelectorAll("[data-stroke-style]"));
-    const lineTypeButtons = Array.from(diagramRoot.querySelectorAll("[data-line-type]"));
+    let lineTypeButtons = Array.from(diagramRoot.querySelectorAll("[data-line-type]"));
     const lineDashButtons = Array.from(diagramRoot.querySelectorAll("[data-line-dash]"));
     const lineColorValue = document.getElementById("diagram-line-color-value");
     const lineColorButtons = Array.from(diagramRoot.querySelectorAll("[data-line-color]"));
@@ -114,6 +117,7 @@ function initializeDiagramPage() {
     let nodeClipboard = [];
     let pasteOffset = 0;
     let selectedShapeTool = "rectangle";
+    let selectedLinePreset = "straight-arrow";
     const lineHitPaths = new WeakMap();
     const lineHandleGroups = new WeakMap();
     const lineBadges = new WeakMap();
@@ -432,6 +436,39 @@ function initializeDiagramPage() {
 
     const selectedShapeButton = () => shapeMenuButtons.find((button) => button.dataset.shapeTool === selectedShapeTool);
 
+    const selectedLinePresetButton = () => lineMenuButtons.find((button) => button.dataset.linePreset === selectedLinePreset) ?? lineMenuButtons[0];
+
+    const applySelectedLinePreset = (line) => {
+        const source = selectedLinePresetButton();
+        const lineType = source?.dataset.lineTypePreset || "straight";
+        line.dataset.lineType = lineType;
+        line.dataset.lineStartArrow = source?.dataset.lineStartArrowPreset || "none";
+        line.dataset.lineEndArrow = source?.dataset.lineEndArrowPreset || "triangle";
+        line.dataset.lineDash = "solid";
+        line.dataset.lineColor = line.dataset.lineColor || "#1E1E1E";
+        line.dataset.lineAnimated = "false";
+        line.dataset.lineControlX = lineType === "curve" ? "0" : (line.dataset.lineControlX || "0");
+        line.dataset.lineControlY = lineType === "curve" ? "-80" : (line.dataset.lineControlY || "0");
+    };
+
+    const ensureLineTypeOptions = () => {
+        if (lineTypeButtons.some((button) => button.dataset.lineType === "elbow")) {
+            return;
+        }
+        const referenceButton = lineTypeButtons.find((button) => button.dataset.lineType === "straight") ?? lineTypeButtons[0];
+        const container = referenceButton?.parentElement;
+        if (!(container instanceof HTMLElement)) {
+            return;
+        }
+        const button = document.createElement("button");
+        button.className = referenceButton.className;
+        button.dataset.lineType = "elbow";
+        button.type = "button";
+        button.textContent = "꺾은선";
+        container.appendChild(button);
+        lineTypeButtons = Array.from(diagramRoot.querySelectorAll("[data-line-type]"));
+    };
+
     const syncShapeToolButton = () => {
         if (!(shapeToolButton instanceof HTMLElement)) {
             return;
@@ -644,6 +681,7 @@ function initializeDiagramPage() {
 
     const isSelectionTool = () => activeTool === "select";
     const isCanvasMoveTool = () => activeTool === "move";
+    const isConnectorTool = () => activeTool === "connector";
 
     const closeIconPicker = ({ restore = true } = {}) => {
         if (restore && iconLibraryNode && originalIconSnapshot) {
@@ -1259,6 +1297,7 @@ function initializeDiagramPage() {
         line.dataset.lineStartArrow = startArrow;
         line.dataset.lineEndArrow = endArrow;
         line.dataset.lineAnimationDirection = animationDirection;
+        line.setAttribute("fill", "none");
         line.setAttribute("stroke", color);
         const startMarker = lineArrowMarker(startArrow);
         const endMarker = lineArrowMarker(endArrow);
@@ -2072,8 +2111,10 @@ function initializeDiagramPage() {
             const toNode = diagramRoot.querySelector(`[data-node-key="${toKey}"]`);
             const hitPath = lineHitPaths.get(path);
             const handleGroup = lineHandleGroups.get(path);
+            const hasFreeStart = path.dataset.freeStartX !== undefined && path.dataset.freeStartY !== undefined;
+            const hasFreeEnd = path.dataset.freeEndX !== undefined && path.dataset.freeEndY !== undefined;
 
-            if (!(fromNode instanceof HTMLElement) || !(toNode instanceof HTMLElement)) {
+            if ((!hasFreeStart && !(fromNode instanceof HTMLElement)) || (!hasFreeEnd && !(toNode instanceof HTMLElement))) {
                 path.removeAttribute("d");
                 path.style.display = "none";
                 hitPath?.removeAttribute("d");
@@ -2096,12 +2137,16 @@ function initializeDiagramPage() {
 
             const lineOffsetX = Number(path.dataset.lineOffsetX ?? 0);
             const lineOffsetY = Number(path.dataset.lineOffsetY ?? 0);
-            const baseStart = getAnchorPoint(fromNode, path.dataset.fromAnchor || "bottom");
-            const baseEnd = getAnchorPoint(toNode, path.dataset.toAnchor || "top");
-            const start = path.dataset.freeStartX !== undefined && path.dataset.freeStartY !== undefined
+            const baseStart = fromNode instanceof HTMLElement
+                ? getAnchorPoint(fromNode, path.dataset.fromAnchor || "bottom")
+                : { x: Number(path.dataset.freeStartX ?? 0), y: Number(path.dataset.freeStartY ?? 0) };
+            const baseEnd = toNode instanceof HTMLElement
+                ? getAnchorPoint(toNode, path.dataset.toAnchor || "top")
+                : { x: Number(path.dataset.freeEndX ?? 0), y: Number(path.dataset.freeEndY ?? 0) };
+            const start = hasFreeStart
                 ? { x: Number(path.dataset.freeStartX), y: Number(path.dataset.freeStartY) }
                 : { x: baseStart.x + lineOffsetX, y: baseStart.y + lineOffsetY };
-            const end = path.dataset.freeEndX !== undefined && path.dataset.freeEndY !== undefined
+            const end = hasFreeEnd
                 ? { x: Number(path.dataset.freeEndX), y: Number(path.dataset.freeEndY) }
                 : { x: baseEnd.x + lineOffsetX, y: baseEnd.y + lineOffsetY };
             if (lineDrag?.line === path && lineDrag.point) {
@@ -2124,6 +2169,8 @@ function initializeDiagramPage() {
             let pathValue = "";
             if (path.dataset.lineType === "straight") {
                 pathValue = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+            } else if (path.dataset.lineType === "elbow") {
+                pathValue = `M ${start.x} ${start.y} H ${middle.x} V ${end.y} H ${end.x}`;
             } else {
                 const controlX = middle.x * 2 - (start.x + end.x) / 2;
                 const controlY = middle.y * 2 - (start.y + end.y) / 2;
@@ -2177,6 +2224,31 @@ function initializeDiagramPage() {
         applyNodeAppearance(element);
         applyNodeIconPosition(element);
         syncNodeGroupMembership(element);
+
+        element.addEventListener("pointerenter", (event) => {
+            if (!isConnectorTool() || lineDrag || drawingLine) {
+                return;
+            }
+            const point = getStagePoint(event);
+            const anchorHit = getClosestAnchorHit(element, point);
+            showLineConnectPoints(element, anchorHit.anchor);
+        });
+
+        element.addEventListener("pointermove", (event) => {
+            if (!isConnectorTool() || lineDrag || drawingLine) {
+                return;
+            }
+            const point = getStagePoint(event);
+            const anchorHit = getClosestAnchorHit(element, point);
+            showLineConnectPoints(element, anchorHit.anchor);
+        });
+
+        element.addEventListener("pointerleave", () => {
+            if (!isConnectorTool() || lineDrag || drawingLine) {
+                return;
+            }
+            clearLineConnectTargets();
+        });
 
         element.addEventListener("click", (event) => {
             event.stopPropagation();
@@ -2488,7 +2560,13 @@ function initializeDiagramPage() {
         shapeMenu?.classList.add("hidden");
     };
 
+    const closeLineMenu = () => {
+        lineMenu?.classList.add("hidden");
+    };
+
     const isShapeMenuOpen = () => Boolean(shapeMenu && !shapeMenu.classList.contains("hidden"));
+
+    const isLineMenuOpen = () => Boolean(lineMenu && !lineMenu.classList.contains("hidden"));
 
     const openShapeMenu = () => {
         if (!(shapeMenu instanceof HTMLElement) || !(shapeToolButton instanceof HTMLElement)) {
@@ -2502,11 +2580,24 @@ function initializeDiagramPage() {
         shapeMenu.classList.remove("hidden");
     };
 
+    const openLineMenu = () => {
+        if (!(lineMenu instanceof HTMLElement) || !(lineToolButton instanceof HTMLElement)) {
+            return;
+        }
+        lineMenuButtons.forEach((button) => {
+            const isActive = button.dataset.linePreset === selectedLinePreset;
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+        });
+        lineMenu.classList.remove("hidden");
+    };
+
     toolButtons.forEach((button) => {
         button.addEventListener("click", () => {
             if (button === shapeToolButton) {
                 activeTool = "shape";
                 syncToolButtons();
+                closeLineMenu();
                 if (isShapeMenuOpen()) {
                     closeShapeMenu();
                 } else {
@@ -2514,7 +2605,19 @@ function initializeDiagramPage() {
                 }
                 return;
             }
+            if (button === lineToolButton) {
+                activeTool = "connector";
+                syncToolButtons();
+                closeShapeMenu();
+                if (isLineMenuOpen()) {
+                    closeLineMenu();
+                } else {
+                    openLineMenu();
+                }
+                return;
+            }
             closeShapeMenu();
+            closeLineMenu();
             activeTool = button.dataset.diagramTool ?? "select";
             syncToolButtons();
         });
@@ -2526,7 +2629,18 @@ function initializeDiagramPage() {
             selectedShapeTool = button.dataset.shapeTool || "rectangle";
             activeTool = "shape";
             closeShapeMenu();
+            closeLineMenu();
             syncShapeToolButton();
+            syncToolButtons();
+        });
+    });
+
+    lineMenuButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            selectedLinePreset = button.dataset.linePreset || "straight-arrow";
+            activeTool = "connector";
+            closeLineMenu();
             syncToolButtons();
         });
     });
@@ -2541,6 +2655,16 @@ function initializeDiagramPage() {
             return;
         }
         closeShapeMenu();
+    });
+
+    document.addEventListener("pointerdown", (event) => {
+        if (!(event.target instanceof HTMLElement)) {
+            return;
+        }
+        if (event.target.closest("#diagram-line-menu, #diagram-line-tool")) {
+            return;
+        }
+        closeLineMenu();
     });
 
     propertiesPanel?.addEventListener("pointerdown", (event) => {
@@ -2563,6 +2687,7 @@ function initializeDiagramPage() {
     let selectionMoved = false;
     let suppressCanvasClick = false;
     let drawingShape = null;
+    let drawingLine = null;
     let suppressShapeClick = false;
     let startX = 0;
     let startY = 0;
@@ -2578,7 +2703,7 @@ function initializeDiagramPage() {
     };
 
     zoomLayer.addEventListener("mousedown", (event) => {
-        if (event.target instanceof HTMLElement && event.target.closest("[data-diagram-node]") && !isCanvasMoveTool()) {
+        if (event.target instanceof HTMLElement && event.target.closest("[data-diagram-node]") && !isCanvasMoveTool() && !isConnectorTool()) {
             return;
         }
         if (isDrawingNodeTool(activeTool) && event.button === 0) {
@@ -2596,6 +2721,55 @@ function initializeDiagramPage() {
                 moved: false
             };
             clearSelectedNode();
+            event.preventDefault();
+            return;
+        }
+        if (activeTool === "connector" && event.button === 0) {
+            const svg = diagramStage.querySelector("svg");
+            if (!(svg instanceof SVGElement)) {
+                return;
+            }
+            const point = getStagePoint(event);
+            const sourceNode = event.target instanceof HTMLElement
+                ? event.target.closest("[data-diagram-node]")
+                : null;
+            const sourceAnchorHit = sourceNode instanceof HTMLElement
+                ? getClosestAnchorHit(sourceNode, point)
+                : null;
+            const startPoint = sourceAnchorHit?.anchorPoint ?? point;
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            saveHistory();
+            line.dataset.lineFrom = sourceNode instanceof HTMLElement ? (sourceNode.dataset.nodeKey ?? "") : "";
+            line.dataset.lineTo = "";
+            if (sourceNode instanceof HTMLElement && sourceAnchorHit) {
+                line.dataset.fromAnchor = sourceAnchorHit.anchor;
+            } else {
+                line.dataset.freeStartX = String(startPoint.x);
+                line.dataset.freeStartY = String(startPoint.y);
+            }
+            line.dataset.freeEndX = String(startPoint.x);
+            line.dataset.freeEndY = String(startPoint.y);
+            line.dataset.lineOffsetX = "0";
+            line.dataset.lineOffsetY = "0";
+            line.dataset.lineControlX = "0";
+            line.dataset.lineControlY = "0";
+            applySelectedLinePreset(line);
+            svg.appendChild(line);
+            linePaths.push(line);
+            bindLineInteractions(line);
+            setSelectedLine(line);
+            drawingLine = {
+                line,
+                start: startPoint,
+                sourceNodeKey: sourceNode instanceof HTMLElement ? (sourceNode.dataset.nodeKey ?? "") : "",
+                targetNode: null,
+                targetAnchor: "",
+                moved: false
+            };
+            if (sourceNode instanceof HTMLElement && sourceAnchorHit) {
+                showLineConnectPoints(sourceNode, sourceAnchorHit.anchor);
+            }
+            updateLinePaths();
             event.preventDefault();
             return;
         }
@@ -2681,7 +2855,9 @@ function initializeDiagramPage() {
             } else if (lineDrag.mode === "control") {
                 lineDrag.line.dataset.lineControlX = String(lineDrag.controlX + deltaX);
                 lineDrag.line.dataset.lineControlY = String(lineDrag.controlY + deltaY);
-                lineDrag.line.dataset.lineType = "curve";
+                if (lineDrag.line.dataset.lineType !== "elbow") {
+                    lineDrag.line.dataset.lineType = "curve";
+                }
             } else {
                 lineDrag.line.dataset.lineOffsetX = String(lineDrag.offsetX + deltaX);
                 lineDrag.line.dataset.lineOffsetY = String(lineDrag.offsetY + deltaY);
@@ -2734,6 +2910,33 @@ function initializeDiagramPage() {
             if (drawingShape.tool === "group-box") {
                 syncGroupedNodeHighlights(drawingShape.node);
             }
+            return;
+        }
+
+        if (drawingLine) {
+            const currentPoint = getStagePoint(event);
+            const targetNode = findNodeAtPoint(currentPoint, drawingLine.sourceNodeKey ? [drawingLine.sourceNodeKey] : []);
+            const anchorHit = targetNode ? getClosestAnchorHit(targetNode, currentPoint) : null;
+            const shouldAttach = Boolean(targetNode && anchorHit && anchorHit.distance <= lineConnectAnchorAttachRadius);
+            const endPoint = shouldAttach && anchorHit ? anchorHit.anchorPoint : currentPoint;
+            drawingLine.targetNode = shouldAttach ? targetNode : null;
+            drawingLine.targetAnchor = shouldAttach && anchorHit ? anchorHit.anchor : "";
+            drawingLine.line.dataset.freeEndX = String(endPoint.x);
+            drawingLine.line.dataset.freeEndY = String(endPoint.y);
+            drawingLine.moved = Math.hypot(currentPoint.x - drawingLine.start.x, currentPoint.y - drawingLine.start.y) > 4;
+            clearLineConnectTargets();
+            if (targetNode && anchorHit) {
+                showLineConnectPoints(targetNode, anchorHit.anchor);
+            }
+            if (drawingLine.line.dataset.lineType === "curve") {
+                const deltaX = endPoint.x - drawingLine.start.x;
+                const deltaY = endPoint.y - drawingLine.start.y;
+                const length = Math.max(1, Math.hypot(deltaX, deltaY));
+                const bend = Math.max(32, Math.min(120, length * 0.25));
+                drawingLine.line.dataset.lineControlX = String(-deltaY / length * bend);
+                drawingLine.line.dataset.lineControlY = String(deltaX / length * bend);
+            }
+            updateLinePaths();
             return;
         }
 
@@ -2875,6 +3078,34 @@ function initializeDiagramPage() {
             suppressShapeClick = true;
             activeTool = "select";
             syncToolButtons();
+        }
+
+        if (drawingLine) {
+            const { line, moved } = drawingLine;
+            if (!moved) {
+                lineHitPaths.get(line)?.remove();
+                lineHandleGroups.get(line)?.remove();
+                lineBadges.get(line)?.remove();
+                line.remove();
+                linePaths = linePaths.filter((item) => item !== line);
+                clearSelectedLine();
+            } else {
+                if (drawingLine.targetNode && drawingLine.targetAnchor) {
+                    line.dataset.lineTo = drawingLine.targetNode.dataset.nodeKey ?? "";
+                    line.dataset.toAnchor = drawingLine.targetAnchor;
+                    delete line.dataset.freeEndX;
+                    delete line.dataset.freeEndY;
+                    line.dataset.lineOffsetX = "0";
+                    line.dataset.lineOffsetY = "0";
+                }
+                setSelectedLine(line);
+            }
+            drawingLine = null;
+            suppressCanvasClick = true;
+            activeTool = "select";
+            syncToolButtons();
+            clearLineConnectTargets();
+            updateLinePaths();
         }
 
         if (isSelecting) {
@@ -3099,6 +3330,8 @@ function initializeDiagramPage() {
         syncNodeBadge(selectedNode);
         updateSelectionPanel(selectedNode);
     });
+
+    ensureLineTypeOptions();
 
     lineTypeButtons.forEach((button) => {
         button.addEventListener("click", () => {

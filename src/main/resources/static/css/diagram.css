@@ -1567,15 +1567,63 @@
     color: #006399;
 }
 
+.diagram-line-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 118px;
+    z-index: 45;
+    display: grid;
+    grid-template-columns: repeat(8, 30px);
+    gap: 4px;
+    width: max-content;
+    padding: 8px 10px;
+    border: 1px solid rgba(199, 201, 211, 0.72);
+    border-radius: 2px;
+    background: #ffffff;
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+}
+
+.diagram-line-menu.hidden {
+    display: none;
+}
+
+.diagram-line-menu button {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #1f2933;
+    line-height: 0;
+}
+
+.diagram-line-menu svg {
+    width: 25px;
+    height: 25px;
+    overflow: visible;
+}
+
+.diagram-line-menu button:hover,
+.diagram-line-menu button.active {
+    background: rgba(0, 99, 153, 0.1);
+    color: #006399;
+}
+
 #diagram-shape-tool svg {
     display: block;
 }
 
-.diagram-shape-tool-button {
+.diagram-shape-tool-button,
+.diagram-line-tool-button {
     position: relative;
 }
 
-.diagram-shape-tool-button::after {
+.diagram-shape-tool-button::after,
+.diagram-line-tool-button::after {
     position: absolute;
     left: 50%;
     bottom: 2px;

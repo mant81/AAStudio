@@ -217,9 +217,35 @@
                         <svg aria-hidden="true" viewBox="0 0 40 40"><ellipse cx="20" cy="12" rx="11" ry="4" fill="none" stroke="currentColor" stroke-width="2"></ellipse><path d="M9 12V28C9 30.2 14 32 20 32S31 30.2 31 28V12M9 20C9 22.2 14 24 20 24S31 22.2 31 20" fill="none" stroke="currentColor" stroke-width="2"></path></svg>
                     </button>
                 </div>
-                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="connector" title="Line" type="button">
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors diagram-line-tool-button" data-diagram-tool="connector" id="diagram-line-tool" title="Line" type="button">
                     <span class="material-symbols-outlined text-[20px]">conversion_path</span>
                 </button>
+                <div class="diagram-line-menu hidden" id="diagram-line-menu">
+                    <button type="button" data-line-preset="straight" data-line-type-preset="straight" data-line-start-arrow-preset="none" data-line-end-arrow-preset="none" aria-label="직선" title="직선">
+                        <svg aria-hidden="true" viewBox="0 0 40 40"><path d="M9 28 31 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg>
+                    </button>
+                    <button type="button" data-line-preset="straight-arrow" data-line-type-preset="straight" data-line-start-arrow-preset="none" data-line-end-arrow-preset="triangle" aria-label="화살표" title="화살표">
+                        <svg aria-hidden="true" viewBox="0 0 40 40"><path d="M9 28 29 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M24 11H30V17" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    </button>
+                    <button type="button" data-line-preset="straight-double" data-line-type-preset="straight" data-line-start-arrow-preset="triangle" data-line-end-arrow-preset="triangle" aria-label="양방향 화살표" title="양방향 화살표">
+                        <svg aria-hidden="true" viewBox="0 0 40 40"><path d="M11 29 29 11" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M10 23V30H17M30 17V10H23" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    </button>
+                    <button type="button" data-line-preset="curve" data-line-type-preset="curve" data-line-start-arrow-preset="none" data-line-end-arrow-preset="none" aria-label="곡선" title="곡선">
+                        <svg aria-hidden="true" viewBox="0 0 40 40"><path d="M12 28Q7 14 24 14H31" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg>
+                    </button>
+                    <button type="button" data-line-preset="curve-arrow" data-line-type-preset="curve" data-line-start-arrow-preset="none" data-line-end-arrow-preset="triangle" aria-label="곡선 화살표" title="곡선 화살표">
+                        <svg aria-hidden="true" viewBox="0 0 40 40"><path d="M12 28Q7 14 24 14H29" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M25 10 31 14 25 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    </button>
+                    <button type="button" data-line-preset="curve-double" data-line-type-preset="curve" data-line-start-arrow-preset="triangle" data-line-end-arrow-preset="triangle" aria-label="양방향 곡선 화살표" title="양방향 곡선 화살표">
+                        <svg aria-hidden="true" viewBox="0 0 40 40"><path d="M12 28Q7 14 24 14H29" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M11 22 12 29 18 25M25 10 31 14 25 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    </button>
+                    <button type="button" data-line-preset="elbow" data-line-type-preset="elbow" data-line-start-arrow-preset="none" data-line-end-arrow-preset="none" aria-label="꺾은 선" title="꺾은 선">
+                        <svg aria-hidden="true" viewBox="0 0 40 40"><path d="M12 12V27H29" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    </button>
+                    <button type="button" data-line-preset="elbow-arrow" data-line-type-preset="elbow" data-line-start-arrow-preset="none" data-line-end-arrow-preset="triangle" aria-label="꺾은 화살표" title="꺾은 화살표">
+                        <svg aria-hidden="true" viewBox="0 0 40 40"><path d="M12 12V27H28" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M24 23 30 27 24 31" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    </button>
+                </div>
                 <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="text" title="Text" type="button">
                     <span class="material-symbols-outlined text-[20px]">text_fields</span>
                 </button>
