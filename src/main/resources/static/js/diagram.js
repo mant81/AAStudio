@@ -122,7 +122,7 @@ function initializeDiagramPage() {
     let selectedLinePreset = "straight-arrow";
     const lineStyleDefaults = {
         dash: "solid",
-        color: "#1E1E1E",
+        color: "#7C839B",
         width: "2",
         animated: "false",
         animationDirection: "forward",
@@ -2068,6 +2068,7 @@ function initializeDiagramPage() {
     let frameRotation = null;
 
     window.addEventListener("blur", () => {
+        closeToolMenus();
         if (!frameRotation && !isFrameResizing && !lineDrag) return;
         frameRotation = null;
         isFrameResizing = false;
@@ -2599,7 +2600,7 @@ function initializeDiagramPage() {
             return;
         }
         const point = getStagePoint(event);
-        const node = createNodeMarkup(activeTool === "shape" ? selectedShapeInsertTool() : activeTool);
+        const node = createNodeMarkup(isShapeTool(activeTool) ? activeTool : (activeTool === "shape" ? selectedShapeInsertTool() : activeTool));
         placeNodeAtPoint(node, point);
         activeTool = "select";
         syncToolButtons();
@@ -2622,6 +2623,17 @@ function initializeDiagramPage() {
     const closeLineMenu = () => {
         lineMenu?.classList.add("hidden");
     };
+
+    const closeToolMenus = () => {
+        closeShapeMenu();
+        closeLineMenu();
+    };
+
+    const isShapeMenuTarget = (target) => target instanceof HTMLElement
+        && Boolean(target.closest("#diagram-shape-menu, #diagram-shape-tool"));
+
+    const isLineMenuTarget = (target) => target instanceof HTMLElement
+        && Boolean(target.closest("#diagram-line-menu, #diagram-line-tool"));
 
     const isShapeMenuOpen = () => Boolean(shapeMenu && !shapeMenu.classList.contains("hidden"));
 
@@ -2683,52 +2695,81 @@ function initializeDiagramPage() {
         });
     });
 
+    const selectShapeMenuButton = (button) => {
+        selectedShapeTool = button.dataset.shapeTool || "rectangle";
+        activeTool = "shape";
+        closeShapeMenu();
+        closeLineMenu();
+        syncShapeToolButton();
+        syncToolButtons();
+    };
+
+    const selectLineMenuButton = (button) => {
+        selectedLinePreset = button.dataset.linePreset || "straight-arrow";
+        lineStyleDefaults.startArrow = button.dataset.lineStartArrowPreset || "none";
+        lineStyleDefaults.endArrow = button.dataset.lineEndArrowPreset || "triangle";
+        activeTool = "connector";
+        clearSelectedNode();
+        closeLineMenu();
+        syncToolButtons();
+    };
+
     shapeMenuButtons.forEach((button) => {
-        button.addEventListener("click", (event) => {
+        button.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
             event.stopPropagation();
-            selectedShapeTool = button.dataset.shapeTool || "rectangle";
-            activeTool = "shape";
-            closeShapeMenu();
-            closeLineMenu();
-            syncShapeToolButton();
-            syncToolButtons();
+            selectShapeMenuButton(button);
+        });
+        button.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
         });
     });
 
     lineMenuButtons.forEach((button) => {
-        button.addEventListener("click", (event) => {
+        button.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
             event.stopPropagation();
-            selectedLinePreset = button.dataset.linePreset || "straight-arrow";
-            lineStyleDefaults.startArrow = button.dataset.lineStartArrowPreset || "none";
-            lineStyleDefaults.endArrow = button.dataset.lineEndArrowPreset || "triangle";
-            activeTool = "connector";
-            clearSelectedNode();
-            closeLineMenu();
-            syncToolButtons();
+            selectLineMenuButton(button);
+        });
+        button.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
         });
     });
 
     syncShapeToolButton();
 
     document.addEventListener("pointerdown", (event) => {
-        if (!(event.target instanceof HTMLElement)) {
-            return;
-        }
-        if (event.target.closest("#diagram-shape-menu, #diagram-shape-tool")) {
+        if (isShapeMenuTarget(event.target)) {
             return;
         }
         closeShapeMenu();
     });
 
     document.addEventListener("pointerdown", (event) => {
-        if (!(event.target instanceof HTMLElement)) {
-            return;
-        }
-        if (event.target.closest("#diagram-line-menu, #diagram-line-tool")) {
+        if (isLineMenuTarget(event.target)) {
             return;
         }
         closeLineMenu();
     });
+
+    document.addEventListener("focusin", (event) => {
+        if (!isShapeMenuTarget(event.target)) {
+            closeShapeMenu();
+        }
+        if (!isLineMenuTarget(event.target)) {
+            closeLineMenu();
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || (!isShapeMenuOpen() && !isLineMenuOpen())) {
+            return;
+        }
+        event.preventDefault();
+        closeToolMenus();
+    }, true);
 
     propertiesPanel?.addEventListener("pointerdown", (event) => {
         if (event.target instanceof HTMLElement && event.target.closest("button, input, select")) {
@@ -2771,7 +2812,7 @@ function initializeDiagramPage() {
         }
         if (isDrawingNodeTool(activeTool) && event.button === 0) {
             const point = getStagePoint(event);
-            const tool = activeTool === "shape" ? selectedShapeInsertTool() : activeTool;
+            const tool = isShapeTool(activeTool) ? activeTool : (activeTool === "shape" ? selectedShapeInsertTool() : activeTool);
             const node = createNodeMarkup(tool);
             saveHistory();
             node.classList.add("diagram-node-drawing");
