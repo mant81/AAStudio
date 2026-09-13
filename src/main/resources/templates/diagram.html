@@ -491,9 +491,6 @@
                         <button class="diagram-property-tab"
                                 data-property-tab="icon"
                                 type="button">아이콘</button>
-                        <button class="diagram-property-tab"
-                                data-property-tab="line"
-                                type="button">선</button>
                     </div>
                 </div>
                 <div class="p-4 border-b border-outline-variant/50 space-y-4"
@@ -884,6 +881,19 @@
                                 <input id="diagram-line-color-picker" type="color" value="#7C839B">
                                 <span class="material-symbols-outlined">palette</span>
                             </label>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-label-md text-label-md text-on-surface" for="diagram-line-width-input">선 굵기</label>
+                        <div class="flex items-center gap-3">
+                            <input class="flex-1 h-1 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-secondary"
+                                   id="diagram-line-width-input"
+                                   max="7"
+                                   min="1"
+                                   type="range"
+                                   value="2">
+                            <span class="font-code-sm text-code-sm text-on-surface bg-surface px-2 py-1 rounded w-10 text-center border border-outline-variant/50"
+                                  id="diagram-line-width-value">2px</span>
                         </div>
                     </div>
                     <div class="space-y-2">

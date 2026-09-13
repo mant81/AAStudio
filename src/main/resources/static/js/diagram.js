@@ -74,6 +74,8 @@ function initializeDiagramPage() {
     const lineColorValue = document.getElementById("diagram-line-color-value");
     const lineColorButtons = Array.from(diagramRoot.querySelectorAll("[data-line-color]"));
     const lineColorPicker = document.getElementById("diagram-line-color-picker");
+    const lineWidthInput = document.getElementById("diagram-line-width-input");
+    const lineWidthValue = document.getElementById("diagram-line-width-value");
     const lineAnimatedInput = document.getElementById("diagram-line-animated");
     const lineStartArrowButtons = Array.from(diagramRoot.querySelectorAll("[data-line-start-arrow]"));
     const lineEndArrowButtons = Array.from(diagramRoot.querySelectorAll("[data-line-end-arrow]"));
@@ -118,6 +120,32 @@ function initializeDiagramPage() {
     let pasteOffset = 0;
     let selectedShapeTool = "rectangle";
     let selectedLinePreset = "straight-arrow";
+    const lineStyleDefaults = {
+        dash: "solid",
+        color: "#1E1E1E",
+        width: "2",
+        animated: "false",
+        animationDirection: "forward",
+        startArrow: "none",
+        endArrow: "triangle",
+        badgeText: "",
+        badgeColor: "#006399"
+    };
+
+    const rememberLineStyleDefaults = (line) => {
+        if (!line) {
+            return;
+        }
+        lineStyleDefaults.dash = line.dataset.lineDash ?? lineStyleDefaults.dash;
+        lineStyleDefaults.color = line.dataset.lineColor ?? lineStyleDefaults.color;
+        lineStyleDefaults.width = line.dataset.lineWidth ?? lineStyleDefaults.width;
+        lineStyleDefaults.animated = line.dataset.lineAnimated ?? lineStyleDefaults.animated;
+        lineStyleDefaults.animationDirection = line.dataset.lineAnimationDirection ?? lineStyleDefaults.animationDirection;
+        lineStyleDefaults.startArrow = line.dataset.lineStartArrow ?? lineStyleDefaults.startArrow;
+        lineStyleDefaults.endArrow = line.dataset.lineEndArrow ?? lineStyleDefaults.endArrow;
+        lineStyleDefaults.badgeText = line.dataset.lineBadgeText ?? lineStyleDefaults.badgeText;
+        lineStyleDefaults.badgeColor = line.dataset.lineBadgeColor ?? lineStyleDefaults.badgeColor;
+    };
     const lineHitPaths = new WeakMap();
     const lineHandleGroups = new WeakMap();
     const lineBadges = new WeakMap();
@@ -442,11 +470,15 @@ function initializeDiagramPage() {
         const source = selectedLinePresetButton();
         const lineType = source?.dataset.lineTypePreset || "straight";
         line.dataset.lineType = lineType;
-        line.dataset.lineStartArrow = source?.dataset.lineStartArrowPreset || "none";
-        line.dataset.lineEndArrow = source?.dataset.lineEndArrowPreset || "triangle";
-        line.dataset.lineDash = "solid";
-        line.dataset.lineColor = line.dataset.lineColor || "#1E1E1E";
-        line.dataset.lineAnimated = "false";
+        line.dataset.lineStartArrow = lineStyleDefaults.startArrow || source?.dataset.lineStartArrowPreset || "none";
+        line.dataset.lineEndArrow = lineStyleDefaults.endArrow || source?.dataset.lineEndArrowPreset || "triangle";
+        line.dataset.lineDash = lineStyleDefaults.dash;
+        line.dataset.lineColor = lineStyleDefaults.color;
+        line.dataset.lineWidth = lineStyleDefaults.width;
+        line.dataset.lineAnimated = lineStyleDefaults.animated;
+        line.dataset.lineAnimationDirection = lineStyleDefaults.animationDirection;
+        line.dataset.lineBadgeText = lineStyleDefaults.badgeText;
+        line.dataset.lineBadgeColor = lineStyleDefaults.badgeColor;
         line.dataset.lineControlX = lineType === "curve" ? "0" : (line.dataset.lineControlX || "0");
         line.dataset.lineControlY = lineType === "curve" ? "-80" : (line.dataset.lineControlY || "0");
     };
@@ -1288,17 +1320,20 @@ function initializeDiagramPage() {
     const applyLineAppearance = (line) => {
         const color = line.dataset.lineColor ?? line.getAttribute("stroke") ?? "#7C839B";
         const dash = line.dataset.lineDash ?? (line.getAttribute("stroke-dasharray") ? "small" : "solid");
+        const width = String(Math.max(1, Math.min(7, Number(line.dataset.lineWidth ?? line.getAttribute("stroke-width") ?? "2") || 2)));
         const animated = line.dataset.lineAnimated === "true";
         const startArrow = line.dataset.lineStartArrow ?? "none";
         const endArrow = line.dataset.lineEndArrow ?? (line.getAttribute("marker-end") ? "triangle" : "none");
         const animationDirection = line.dataset.lineAnimationDirection ?? "forward";
         line.dataset.lineColor = color;
         line.dataset.lineDash = dash;
+        line.dataset.lineWidth = width;
         line.dataset.lineStartArrow = startArrow;
         line.dataset.lineEndArrow = endArrow;
         line.dataset.lineAnimationDirection = animationDirection;
         line.setAttribute("fill", "none");
         line.setAttribute("stroke", color);
+        line.setAttribute("stroke-width", width);
         const startMarker = lineArrowMarker(startArrow);
         const endMarker = lineArrowMarker(endArrow);
         if (startMarker) {
@@ -1326,6 +1361,7 @@ function initializeDiagramPage() {
         const type = line.dataset.lineType ?? "curve";
         const dash = line.dataset.lineDash ?? (line.getAttribute("stroke-dasharray") ? "small" : "solid");
         const color = line.dataset.lineColor ?? line.getAttribute("stroke") ?? "#7C839B";
+        const width = String(Math.max(1, Math.min(7, Number(line.dataset.lineWidth ?? line.getAttribute("stroke-width") ?? "2") || 2)));
         const animated = line.dataset.lineAnimated === "true";
         const startArrow = line.dataset.lineStartArrow ?? "none";
         const endArrow = line.dataset.lineEndArrow ?? (line.getAttribute("marker-end") ? "triangle" : "none");
@@ -1356,6 +1392,12 @@ function initializeDiagramPage() {
         }
         if (lineColorPicker instanceof HTMLInputElement) {
             lineColorPicker.value = color;
+        }
+        if (lineWidthInput instanceof HTMLInputElement) {
+            lineWidthInput.value = width;
+        }
+        if (lineWidthValue) {
+            lineWidthValue.textContent = `${width}px`;
         }
         if (lineAnimatedInput instanceof HTMLInputElement) {
             lineAnimatedInput.checked = animated;
@@ -1409,6 +1451,7 @@ function initializeDiagramPage() {
         selectedLine?.ownerSVGElement?.style.removeProperty("z-index");
         selectedLine?.classList.remove("diagram-line-selected");
         selectedLine = null;
+        clearLineConnectTargets();
     };
 
     const bringSelectedLineControlsToFront = (line) => {
@@ -1493,7 +1536,10 @@ function initializeDiagramPage() {
         bringSelectedLineControlsToFront(line);
         linePaths.forEach((path) => path.classList.toggle("diagram-line-selected", path === line));
         applyLineAppearance(line);
+        rememberLineStyleDefaults(line);
         updateLinePaths();
+        clearLineConnectTargets();
+        showSelectedLineConnectPoints(line);
         updateLineSelectionPanel(line);
         if (selectedNodeType) {
             selectedNodeType.textContent = "Selected Line";
@@ -1526,6 +1572,18 @@ function initializeDiagramPage() {
             }
             point.classList.toggle("diagram-line-connect-point-active", anchor === activeAnchor);
         });
+    };
+
+    const showSelectedLineConnectPoints = (line) => {
+        const nodes = getNodes();
+        const fromNode = nodes.find((node) => node.dataset.nodeKey === line.dataset.lineFrom);
+        const toNode = nodes.find((node) => node.dataset.nodeKey === line.dataset.lineTo);
+        if (fromNode instanceof HTMLElement) {
+            showLineConnectPoints(fromNode, line.dataset.fromAnchor ?? "");
+        }
+        if (toNode instanceof HTMLElement && toNode !== fromNode) {
+            showLineConnectPoints(toNode, line.dataset.toAnchor ?? "");
+        }
     };
 
     const findNodeAtPoint = (point, excludedNodeKeys = []) => {
@@ -1612,6 +1670,7 @@ function initializeDiagramPage() {
         line.dataset.lineType = line.dataset.lineType ?? "curve";
         line.dataset.lineDash = line.dataset.lineDash ?? (line.getAttribute("stroke-dasharray") ? "small" : "solid");
         line.dataset.lineColor = line.dataset.lineColor ?? line.getAttribute("stroke") ?? "#7C839B";
+        line.dataset.lineWidth = String(Math.max(1, Math.min(7, Number(line.dataset.lineWidth ?? line.getAttribute("stroke-width") ?? "2") || 2)));
         line.dataset.lineAnimated = line.dataset.lineAnimated ?? "false";
         line.dataset.lineStartArrow = line.dataset.lineStartArrow ?? "none";
         line.dataset.lineEndArrow = line.dataset.lineEndArrow ?? (line.getAttribute("marker-end") ? "triangle" : "none");
@@ -2607,6 +2666,7 @@ function initializeDiagramPage() {
             }
             if (button === lineToolButton) {
                 activeTool = "connector";
+                clearSelectedNode();
                 syncToolButtons();
                 closeShapeMenu();
                 if (isLineMenuOpen()) {
@@ -2639,7 +2699,10 @@ function initializeDiagramPage() {
         button.addEventListener("click", (event) => {
             event.stopPropagation();
             selectedLinePreset = button.dataset.linePreset || "straight-arrow";
+            lineStyleDefaults.startArrow = button.dataset.lineStartArrowPreset || "none";
+            lineStyleDefaults.endArrow = button.dataset.lineEndArrowPreset || "triangle";
             activeTool = "connector";
+            clearSelectedNode();
             closeLineMenu();
             syncToolButtons();
         });
@@ -3027,6 +3090,9 @@ function initializeDiagramPage() {
             clearLineConnectTargets();
             document.body.style.userSelect = "";
             updateLinePaths();
+            if (selectedLine) {
+                showSelectedLineConnectPoints(selectedLine);
+            }
             suppressCanvasClick = true;
         }
 
@@ -3106,6 +3172,9 @@ function initializeDiagramPage() {
             syncToolButtons();
             clearLineConnectTargets();
             updateLinePaths();
+            if (selectedLine) {
+                showSelectedLineConnectPoints(selectedLine);
+            }
         }
 
         if (isSelecting) {
@@ -3350,6 +3419,7 @@ function initializeDiagramPage() {
                 return;
             }
             selectedLine.dataset.lineDash = button.dataset.lineDash;
+            lineStyleDefaults.dash = button.dataset.lineDash;
             applyLineAppearance(selectedLine);
             updateLineSelectionPanel(selectedLine);
         });
@@ -3361,6 +3431,7 @@ function initializeDiagramPage() {
                 return;
             }
             selectedLine.dataset.lineColor = button.dataset.lineColor;
+            lineStyleDefaults.color = button.dataset.lineColor;
             applyLineAppearance(selectedLine);
             updateLineSelectionPanel(selectedLine);
         });
@@ -3371,8 +3442,21 @@ function initializeDiagramPage() {
             return;
         }
         selectedLine.dataset.lineColor = lineColorPicker.value;
+        lineStyleDefaults.color = lineColorPicker.value;
         applyLineAppearance(selectedLine);
         updateLineSelectionPanel(selectedLine);
+    });
+
+    lineWidthInput?.addEventListener("input", () => {
+        if (!selectedLine || !(lineWidthInput instanceof HTMLInputElement)) {
+            return;
+        }
+        selectedLine.dataset.lineWidth = lineWidthInput.value;
+        lineStyleDefaults.width = lineWidthInput.value;
+        applyLineAppearance(selectedLine);
+        if (lineWidthValue) {
+            lineWidthValue.textContent = `${lineWidthInput.value}px`;
+        }
     });
 
     lineAnimatedInput?.addEventListener("change", () => {
@@ -3380,6 +3464,7 @@ function initializeDiagramPage() {
             return;
         }
         selectedLine.dataset.lineAnimated = String(lineAnimatedInput.checked);
+        lineStyleDefaults.animated = selectedLine.dataset.lineAnimated;
         applyLineAppearance(selectedLine);
     });
 
@@ -3389,6 +3474,7 @@ function initializeDiagramPage() {
                 return;
             }
             selectedLine.dataset.lineStartArrow = button.dataset.lineStartArrow;
+            rememberLineStyleDefaults(selectedLine);
             applyLineAppearance(selectedLine);
             updateLineSelectionPanel(selectedLine);
         });
@@ -3400,6 +3486,7 @@ function initializeDiagramPage() {
                 return;
             }
             selectedLine.dataset.lineEndArrow = button.dataset.lineEndArrow;
+            rememberLineStyleDefaults(selectedLine);
             applyLineAppearance(selectedLine);
             updateLineSelectionPanel(selectedLine);
         });
@@ -3416,6 +3503,8 @@ function initializeDiagramPage() {
                 selectedLine.dataset.lineAnimated = "true";
                 selectedLine.dataset.lineAnimationDirection = button.dataset.lineAnimationDirection;
             }
+            lineStyleDefaults.animated = selectedLine.dataset.lineAnimated;
+            lineStyleDefaults.animationDirection = selectedLine.dataset.lineAnimationDirection ?? "forward";
             applyLineAppearance(selectedLine);
             updateLineSelectionPanel(selectedLine);
         });
@@ -3426,6 +3515,7 @@ function initializeDiagramPage() {
             return;
         }
         selectedLine.dataset.lineBadgeText = lineBadgeInput.value.trim();
+        lineStyleDefaults.badgeText = selectedLine.dataset.lineBadgeText;
         updateLinePaths();
         updateLineSelectionPanel(selectedLine);
     });
@@ -3436,6 +3526,7 @@ function initializeDiagramPage() {
                 return;
             }
             selectedLine.dataset.lineBadgeColor = button.dataset.lineBadgeColor;
+            lineStyleDefaults.badgeColor = button.dataset.lineBadgeColor;
             updateLinePaths();
             updateLineSelectionPanel(selectedLine);
         });
@@ -3446,6 +3537,7 @@ function initializeDiagramPage() {
             return;
         }
         selectedLine.dataset.lineBadgeColor = lineBadgeColorPicker.value;
+        lineStyleDefaults.badgeColor = lineBadgeColorPicker.value;
         updateLinePaths();
         updateLineSelectionPanel(selectedLine);
     });
