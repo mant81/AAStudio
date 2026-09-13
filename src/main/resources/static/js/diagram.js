@@ -1701,11 +1701,21 @@ function initializeDiagramPage() {
         node.style.setProperty("--diagram-node-fill-color", visibleFillColor);
         node.style.setProperty("--diagram-node-stroke-color", visibleStrokeColor);
         node.style.setProperty("--diagram-node-stroke-width", hasVisibleStroke ? `${strokeWidth}px` : "0px");
-        node.style.backgroundColor = visibleFillColor;
-        node.style.borderWidth = hasVisibleStroke ? `${strokeWidth}px` : "0px";
-        node.style.borderColor = visibleStrokeColor;
-        node.style.borderStyle = hasVisibleStroke ? strokeStyle : "solid";
-        node.style.boxShadow = hasVisibleStroke && nodeOpacity > 0 ? "" : "none";
+        const usesCssShape = node.dataset.nodeKind === "shape"
+            && node.dataset.shapeType
+            && !["rectangle", "rounded-rectangle", "ellipse", "circle"].includes(node.dataset.shapeType);
+        if (usesCssShape) {
+            node.style.backgroundColor = "transparent";
+            node.style.borderWidth = "0px";
+            node.style.borderColor = "transparent";
+            node.style.borderStyle = "solid";
+        } else {
+            node.style.backgroundColor = visibleFillColor;
+            node.style.borderWidth = hasVisibleStroke ? `${strokeWidth}px` : "0px";
+            node.style.borderColor = visibleStrokeColor;
+            node.style.borderStyle = hasVisibleStroke ? strokeStyle : "solid";
+        }
+        node.style.boxShadow = usesCssShape || !hasVisibleStroke || nodeOpacity <= 0 ? "none" : "";
         node.style.opacity = "";
     };
 
@@ -2339,12 +2349,16 @@ function initializeDiagramPage() {
                 cloud: "구름",
                 document: "문서",
                 star: "별",
-                gear: "톱니",
+                gear: "태양",
                 speech: "말풍선",
                 database: "데이터베이스"
             };
             const title = shapeLabels[tool] ?? "도형";
-            const shapeClass = ["circle", "diamond", "pentagon", "hexagon", "octagon", "plus", "heart", "lightning", "star", "gear"].includes(tool)
+            const shapeClass = tool === "cloud"
+                ? `diagram-shape-${tool} w-32 h-20`
+                : tool === "star"
+                ? `diagram-shape-${tool} w-28 h-28`
+                : ["circle", "diamond", "pentagon", "hexagon", "octagon", "plus", "heart", "lightning", "star", "gear"].includes(tool)
                 ? `diagram-shape-${tool} w-32 h-32`
                 : `diagram-shape-${tool} w-40 h-28`;
 
