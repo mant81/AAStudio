@@ -46,6 +46,7 @@ function initializeDiagramPage() {
     const propertyTabs = Array.from(diagramRoot.querySelectorAll("[data-property-tab]"));
     const propertyPanels = Array.from(diagramRoot.querySelectorAll("[data-property-panel]"));
     const nodeLabelInput = document.getElementById("diagram-node-label-input");
+    const textLabelInput = document.getElementById("diagram-text-label-input");
     const nodeBadgeInput = document.getElementById("diagram-node-badge-input");
     const badgePositionButtons = Array.from(diagramRoot.querySelectorAll("[data-badge-position]"));
     const badgeColorValue = document.getElementById("diagram-badge-color-value");
@@ -58,6 +59,7 @@ function initializeDiagramPage() {
     const textFontFamilyInput = document.getElementById("diagram-text-font-family");
     const textFontSizeInput = document.getElementById("diagram-text-font-size");
     const textFontSizeValue = document.getElementById("diagram-text-font-size-value");
+    const defaultTextFontFamily = "'Nanum Gothic', sans-serif";
     const fillColorValue = document.getElementById("diagram-fill-color-value");
     const fillColorButtons = Array.from(diagramRoot.querySelectorAll("[data-fill-color]"));
     const fillColorPicker = document.getElementById("diagram-fill-color-picker");
@@ -118,6 +120,7 @@ function initializeDiagramPage() {
     let selectedLine = null;
     let nodeClipboard = [];
     let pasteOffset = 0;
+    let activeTextSelectionRange = null;
     let selectedShapeTool = "rectangle";
     let selectedLinePreset = "straight-arrow";
     const lineStyleDefaults = {
@@ -1100,7 +1103,7 @@ function initializeDiagramPage() {
 
     const applyNodeTextAppearance = (node) => {
         const textColor = node.dataset.textColor ?? "";
-        const textFontFamily = node.dataset.textFontFamily ?? "";
+        const textFontFamily = node.dataset.textFontFamily || defaultTextFontFamily;
         const textFontSize = node.dataset.textFontSize ?? "";
         node.querySelectorAll("[data-node-title]").forEach((element) => {
             if (!(element instanceof HTMLElement)) {
@@ -1110,15 +1113,126 @@ function initializeDiagramPage() {
             element.style.fontFamily = textFontFamily;
             element.style.fontSize = textFontSize ? `${textFontSize}px` : "";
         });
+        resizeTextObjectGuide(node);
+    };
+
+    const getSelectedTextTitleElement = () => {
+        if (!selectedNode || selectedNode.dataset.nodeKind !== "text") {
+            return null;
+        }
+        const titleElement = selectedNode.querySelector("[data-node-title]");
+        return titleElement instanceof HTMLElement ? titleElement : null;
+    };
+
+    const isRangeInsideElement = (range, element) => {
+        const startNode = range.startContainer;
+        const endNode = range.endContainer;
+        return element.contains(startNode) && element.contains(endNode);
+    };
+
+    const rememberActiveTextSelection = () => {
+        const titleElement = getSelectedTextTitleElement();
+        const selection = window.getSelection();
+        if (!titleElement || !selection || selection.rangeCount === 0 || selection.isCollapsed) {
+            return;
+        }
+        const range = selection.getRangeAt(0);
+        if (!isRangeInsideElement(range, titleElement)) {
+            return;
+        }
+        activeTextSelectionRange = range.cloneRange();
+    };
+
+    const restoreActiveTextSelection = () => {
+        const titleElement = getSelectedTextTitleElement();
+        if (!titleElement || !activeTextSelectionRange || !isRangeInsideElement(activeTextSelectionRange, titleElement)) {
+            return false;
+        }
+        const selection = window.getSelection();
+        if (!selection) {
+            return false;
+        }
+        selection.removeAllRanges();
+        selection.addRange(activeTextSelectionRange);
+        return true;
+    };
+
+    const applyTextColor = (color) => {
+        if (!selectedNode) {
+            return;
+        }
+
+        const titleElement = getSelectedTextTitleElement();
+        if (titleElement && restoreActiveTextSelection()) {
+            titleElement.focus({ preventScroll: true });
+            restoreActiveTextSelection();
+            document.execCommand("styleWithCSS", false, "true");
+            document.execCommand("foreColor", false, color);
+            syncTextObjectContent(selectedNode);
+            activeTextSelectionRange = null;
+            window.getSelection()?.removeAllRanges();
+            updateSelectionPanel(selectedNode);
+            return;
+        }
+
+        selectedNode.dataset.textColor = color;
+        applyNodeTextAppearance(selectedNode);
+        updateSelectionPanel(selectedNode);
+    };
+
+    const resizeTextObjectGuide = (node) => {
+        if (node.dataset.nodeKind !== "text") {
+            return;
+        }
+        const textElement = node.querySelector("[data-node-title]");
+        if (!(textElement instanceof HTMLElement)) {
+            return;
+        }
+        const minWidth = 80;
+        const maxWidth = 420;
+        const horizontalPadding = 16;
+        const verticalPadding = 8;
+
+        textElement.style.width = "max-content";
+        node.style.width = "auto";
+        node.style.height = "auto";
+
+        const naturalWidth = Math.ceil(textElement.scrollWidth) + horizontalPadding;
+        const nextWidth = Math.max(minWidth, Math.min(maxWidth, naturalWidth));
+        textElement.style.width = naturalWidth > maxWidth ? `${maxWidth - horizontalPadding}px` : "max-content";
+        node.style.width = `${nextWidth}px`;
+        node.style.height = `${Math.max(34, Math.ceil(textElement.scrollHeight) + verticalPadding)}px`;
+        syncSelectionFrame();
+    };
+
+    const syncTextObjectContent = (node) => {
+        if (node.dataset.nodeKind !== "text") {
+            return;
+        }
+        const titleElement = node.querySelector("[data-node-title]");
+        if (!(titleElement instanceof HTMLElement)) {
+            return;
+        }
+        node.dataset.textContent = titleElement.innerText;
+        resizeTextObjectGuide(node);
+        if (selectedNode === node && textLabelInput instanceof HTMLTextAreaElement) {
+            textLabelInput.value = node.dataset.textContent;
+        }
+        if (selectedNode === node && selectedNodeName) {
+            selectedNodeName.textContent = node.dataset.textContent.trim() || "텍스트";
+        }
+        updateLinePaths();
     };
 
     const updateSelectionPanel = (node) => {
-        const title = node.querySelector("[data-node-title]")?.textContent?.trim() ?? "";
+        const title = node.dataset.nodeKind === "text"
+            ? (node.querySelector("[data-node-title]")?.innerText.trim() ?? "")
+            : (node.querySelector("[data-node-title]")?.textContent?.trim() ?? "");
         const badgeText = node.dataset.nodeBadgeText ?? "";
         const badgePosition = node.dataset.nodeBadgePosition ?? "right";
         const badgeColor = node.dataset.nodeBadgeColor ?? "#006399";
         const textColor = node.dataset.textColor ?? "";
-        const textFontFamily = node.dataset.textFontFamily ?? "";
+        const textFontFamily = node.dataset.textFontFamily || defaultTextFontFamily;
         const textFontSize = node.dataset.textFontSize ?? "20";
         const fillColor = node.dataset.fillColor ?? "#CDE5FF";
         const strokeColor = node.dataset.strokeColor ?? "#C6C6CD";
@@ -1127,10 +1241,10 @@ function initializeDiagramPage() {
         const nodeOpacity = node.dataset.nodeOpacity ?? "100";
         const nodeKind = node.dataset.nodeKind ?? "node";
         const icon = nodeIconState(node);
-        const panelTypeLabel = nodeKind === "group-box" ? "Selected Group" : "Selected Node";
+        const panelTypeLabel = nodeKind === "group-box" ? "Selected Group" : (nodeKind === "text" ? "Selected Text" : "Selected Node");
         const panelIcon = icon.name
             ? icon
-            : { category: "default", set: "material", name: nodeKind === "group-box" ? "" : "block", label: "아이콘 없음" };
+            : { category: "default", set: "material", name: nodeKind === "group-box" ? "" : (nodeKind === "text" ? "text_fields" : "block"), label: "아이콘 없음" };
         if (selectedNodeName) {
             selectedNodeName.textContent = title;
         }
@@ -1153,8 +1267,13 @@ function initializeDiagramPage() {
             button.classList.toggle("active", isActive);
             button.setAttribute("aria-pressed", String(isActive));
         });
-        if (nodeLabelInput) {
+        if (nodeLabelInput instanceof HTMLInputElement) {
             nodeLabelInput.value = title;
+            nodeLabelInput.classList.toggle("hidden", nodeKind === "text");
+        }
+        if (textLabelInput instanceof HTMLTextAreaElement) {
+            textLabelInput.value = title;
+            textLabelInput.classList.toggle("hidden", nodeKind !== "text");
         }
         if (nodeBadgeInput) {
             nodeBadgeInput.value = badgeText;
@@ -1520,6 +1639,11 @@ function initializeDiagramPage() {
     };
 
     const clearSelectedNode = () => {
+        if (document.activeElement instanceof HTMLElement && document.activeElement.isContentEditable) {
+            document.activeElement.blur();
+        }
+        window.getSelection()?.removeAllRanges();
+        activeTextSelectionRange = null;
         selectedNodes = [];
         selectedNode = null;
         clearSelectedLine();
@@ -2274,7 +2398,7 @@ function initializeDiagramPage() {
         element.dataset.strokeStyle = element.dataset.strokeStyle ?? "solid";
         element.dataset.nodeOpacity = element.dataset.nodeOpacity ?? "100";
         element.dataset.textColor = element.dataset.textColor ?? "";
-        element.dataset.textFontFamily = element.dataset.textFontFamily ?? "";
+        element.dataset.textFontFamily = element.dataset.textFontFamily || defaultTextFontFamily;
         element.dataset.textFontSize = element.dataset.textFontSize ?? "20";
         element.dataset.nodeBadgeText = element.dataset.nodeBadgeText ?? (element.querySelector("[data-node-badge]")?.textContent?.trim() ?? "");
         element.dataset.nodeBadgePosition = element.dataset.nodeBadgePosition ?? "right";
@@ -2325,6 +2449,33 @@ function initializeDiagramPage() {
             setSelectedNode(element);
         });
 
+        element.querySelectorAll("[contenteditable]").forEach((editable) => {
+            const clearEditableFocus = () => {
+                if (editable instanceof HTMLElement) {
+                    editable.blur();
+                }
+                window.getSelection()?.removeAllRanges();
+            };
+            editable.addEventListener("input", () => syncTextObjectContent(element));
+            editable.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") {
+                    event.preventDefault();
+                    clearEditableFocus();
+                }
+                event.stopPropagation();
+            });
+            editable.addEventListener("keyup", rememberActiveTextSelection);
+            editable.addEventListener("mouseup", rememberActiveTextSelection);
+            editable.addEventListener("selectionchange", rememberActiveTextSelection);
+            editable.addEventListener("focusout", clearEditableFocus);
+            editable.addEventListener("mousedown", (event) => {
+                if (element.dataset.nodeKind === "text") {
+                    setSelectedNode(element);
+                    event.stopPropagation();
+                }
+            });
+        });
+
         let isDragging = false;
         let hasDragged = false;
         let startX = 0;
@@ -2339,6 +2490,9 @@ function initializeDiagramPage() {
                 return;
             }
             if (event.target instanceof HTMLElement && event.target.closest("[data-node-resize-handle]")) {
+                return;
+            }
+            if (element.dataset.nodeKind === "text" && event.target instanceof HTMLElement && event.target.closest("[contenteditable]")) {
                 return;
             }
             isDragging = true;
@@ -2503,7 +2657,7 @@ function initializeDiagramPage() {
             node.dataset.strokeStyle = "solid";
             node.dataset.nodeOpacity = "100";
             node.dataset.textColor = "";
-            node.dataset.textFontFamily = "";
+            node.dataset.textFontFamily = defaultTextFontFamily;
             node.dataset.textFontSize = "20";
             node.className = `absolute ${shapeClass} bg-surface-white border border-outline-variant shadow-sm cursor-move z-10`;
             syncShapeClass(node);
@@ -2523,10 +2677,24 @@ function initializeDiagramPage() {
         let extraClass = "";
 
         if (tool === "text") {
-            icon = "text_fields";
-            title = "Text Block";
-            subtitle = "Editable";
-            widthClass = "w-56";
+            node.dataset.nodeKind = "text";
+            node.dataset.nodeIcon = "";
+            node.dataset.nodeIconSet = "";
+            node.dataset.fillColor = "transparent";
+            node.dataset.strokeColor = "transparent";
+            node.dataset.strokeWidth = "0";
+            node.dataset.strokeStyle = "solid";
+            node.dataset.nodeOpacity = "100";
+            node.dataset.textColor = "#191C1E";
+            node.dataset.textFontFamily = defaultTextFontFamily;
+            node.dataset.textFontSize = "24";
+            node.dataset.textContent = "텍스트";
+            node.className = "absolute min-w-[80px] w-56 min-h-[34px] px-2 py-1 cursor-move z-10 diagram-text-object";
+            node.innerHTML = `
+                <div class="font-title-md text-title-md text-on-surface whitespace-pre-wrap outline-none" contenteditable="true" spellcheck="false" data-node-title>텍스트</div>
+                <span class="hidden" data-node-subtitle></span>
+            `;
+            return node;
         } else if (tool === "image") {
             icon = "image";
             title = "Image Block";
@@ -2550,7 +2718,7 @@ function initializeDiagramPage() {
             node.dataset.strokeStyle = "dashed";
             node.dataset.nodeOpacity = "100";
             node.dataset.textColor = "";
-            node.dataset.textFontFamily = "";
+            node.dataset.textFontFamily = defaultTextFontFamily;
             node.dataset.textFontSize = "12";
             node.className = `absolute ${widthClass} ${shapeClass} ${extraClass} border p-0 cursor-move`;
             node.style.zIndex = "9";
@@ -2566,7 +2734,7 @@ function initializeDiagramPage() {
         node.dataset.nodeIcon = icon;
         node.dataset.nodeIconSet = "material";
         node.dataset.textColor = "";
-        node.dataset.textFontFamily = "";
+        node.dataset.textFontFamily = defaultTextFontFamily;
         node.dataset.textFontSize = tool === "text" ? "20" : "20";
         node.dataset.nodeOpacity = "100";
         node.dataset.nodeIconPosition = "top";
@@ -2586,6 +2754,7 @@ function initializeDiagramPage() {
             saveHistory();
         }
         diagramStage.appendChild(node);
+        resizeTextObjectGuide(node);
         const offsetLeft = node.offsetWidth / 2;
         const offsetTop = node.offsetHeight / 2;
         node.style.left = `${Math.max(24, point.x - offsetLeft)}px`;
@@ -2593,6 +2762,9 @@ function initializeDiagramPage() {
         bindNodeInteractions(node);
         syncNodeGroupMembership(node);
         setSelectedNode(node);
+        if (node.dataset.nodeKind === "text") {
+            window.setTimeout(() => node.querySelector("[contenteditable]")?.focus(), 0);
+        }
     };
 
     const createNodeAtPointer = (event) => {
@@ -2771,8 +2943,10 @@ function initializeDiagramPage() {
         closeToolMenus();
     }, true);
 
+    document.addEventListener("selectionchange", rememberActiveTextSelection);
+
     propertiesPanel?.addEventListener("pointerdown", (event) => {
-        if (event.target instanceof HTMLElement && event.target.closest("button, input, select")) {
+        if (event.target instanceof HTMLElement && event.target.closest("button, input, select, textarea")) {
             beginPropertyEditHistory();
             if (event.target.closest("button")) {
                 window.setTimeout(endPropertyEditHistory, 0);
@@ -3346,7 +3520,7 @@ function initializeDiagramPage() {
     linePaths.forEach(bindLineInteractions);
 
     nodeLabelInput?.addEventListener("input", () => {
-        if (!selectedNode) {
+        if (!selectedNode || selectedNode.dataset.nodeKind === "text") {
             return;
         }
         const titleElement = selectedNode.querySelector("[data-node-title]");
@@ -3359,24 +3533,38 @@ function initializeDiagramPage() {
         updateLinePaths();
     });
 
+    textLabelInput?.addEventListener("input", () => {
+        if (!selectedNode || selectedNode.dataset.nodeKind !== "text" || !(textLabelInput instanceof HTMLTextAreaElement)) {
+            return;
+        }
+        const titleElement = selectedNode.querySelector("[data-node-title]");
+        if (titleElement instanceof HTMLElement) {
+            titleElement.innerText = textLabelInput.value;
+            selectedNode.dataset.textContent = textLabelInput.value;
+            resizeTextObjectGuide(selectedNode);
+        }
+        if (selectedNodeName) {
+            selectedNodeName.textContent = textLabelInput.value.trim() || "텍스트";
+        }
+        updateLinePaths();
+    });
+
     textColorButtons.forEach((button) => {
+        button.addEventListener("pointerdown", rememberActiveTextSelection);
         button.addEventListener("click", () => {
             if (!selectedNode) {
                 return;
             }
-            selectedNode.dataset.textColor = button.dataset.textColor ?? "";
-            applyNodeTextAppearance(selectedNode);
-            updateSelectionPanel(selectedNode);
+            applyTextColor(button.dataset.textColor ?? "");
         });
     });
 
+    textColorPicker?.addEventListener("pointerdown", rememberActiveTextSelection);
     textColorPicker?.addEventListener("input", () => {
         if (!selectedNode || !(textColorPicker instanceof HTMLInputElement)) {
             return;
         }
-        selectedNode.dataset.textColor = textColorPicker.value;
-        applyNodeTextAppearance(selectedNode);
-        updateSelectionPanel(selectedNode);
+        applyTextColor(textColorPicker.value);
     });
 
     textFontFamilyInput?.addEventListener("change", () => {

@@ -246,7 +246,7 @@
                         <svg aria-hidden="true" viewBox="0 0 40 40"><path d="M12 12V27H28" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M24 23 30 27 24 31" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
                     </button>
                 </div>
-                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="text" title="Text" type="button">
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="text" aria-label="텍스트 상자" title="텍스트 상자" type="button">
                     <span class="material-symbols-outlined text-[20px]">text_fields</span>
                 </button>
                 <div class="w-[1px] h-6 bg-outline-variant/50 mx-1"></div>
@@ -497,24 +497,25 @@
                      data-property-panel="text">
                     <div class="space-y-2">
                         <label class="font-label-md text-label-md text-on-surface">제목</label>
-                        <input class="w-full px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-body-md text-body-md transition-all" id="diagram-node-label-input" type="text" value="Order Service">
+                        <input class="w-full px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-body-md text-body-md transition-all"
+                               id="diagram-node-label-input"
+                               type="text"
+                               value="Order Service">
+                        <textarea class="hidden w-full min-h-[88px] resize-y px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-body-md text-body-md transition-all"
+                                  id="diagram-text-label-input"
+                                  rows="3">텍스트</textarea>
                     </div>
                     <div class="space-y-2">
                         <label class="font-label-md text-label-md text-on-surface flex justify-between">
-                            텍스트 색상 <span class="text-on-surface-variant font-code-sm uppercase" id="diagram-text-color-value">Default</span>
+                            텍스트 색상 <span class="text-on-surface-variant font-code-sm uppercase" id="diagram-text-color-value">#191C1E</span>
                         </label>
                         <div class="diagram-color-row">
                             <button class="diagram-color-swatch border-2 border-secondary hover:scale-110 transition-transform relative"
-                                    data-text-color=""
-                                    style="background-color: transparent;"
-                                    title="Default text color"
-                                    type="button">
-                                <span class="material-symbols-outlined text-[16px] text-secondary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
-                            </button>
-                            <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
                                     data-text-color="#191C1E"
                                     style="background-color: #191C1E;"
-                                    type="button"></button>
+                                    type="button">
+                                <span class="material-symbols-outlined text-[16px] text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
+                            </button>
                             <button class="diagram-color-swatch border border-outline-variant hover:scale-110 transition-transform"
                                     data-text-color="#006399"
                                     style="background-color: #006399;"
@@ -535,6 +536,10 @@
                                     data-text-color="#76777D"
                                     style="background-color: #76777D;"
                                     type="button"></button>
+                            <button class="diagram-color-swatch bg-surface-white border border-outline-variant hover:scale-110 transition-transform"
+                                    data-text-color="#FFFFFF"
+                                    style="background-color: #FFFFFF;"
+                                    type="button"></button>
                             <label class="diagram-color-picker" title="Custom text color">
                                 <input id="diagram-text-color-picker" type="color" value="#191C1E">
                                 <span class="material-symbols-outlined">palette</span>
@@ -545,7 +550,7 @@
                         <label class="font-label-md text-label-md text-on-surface">글꼴</label>
                         <select class="w-full px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-body-md text-body-md transition-all"
                                 id="diagram-text-font-family">
-                            <option value="">기본</option>
+                            <option style="font-family: 'Nanum Gothic', sans-serif;" value="'Nanum Gothic', sans-serif">Nanum Gothic</option>
                             <option style="font-family: Inter, sans-serif;" value="Inter, sans-serif">Inter</option>
                             <option style="font-family: Geist, sans-serif;" value="Geist, sans-serif">Geist</option>
                             <option style="font-family: 'IBM Plex Sans KR', sans-serif;" value="'IBM Plex Sans KR', sans-serif">IBM Plex Sans KR</option>

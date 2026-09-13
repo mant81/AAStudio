@@ -13,6 +13,28 @@
     box-shadow: 0 10px 24px rgba(0, 99, 153, 0.16) !important;
 }
 
+.diagram-text-object {
+    background: transparent !important;
+    border: 1px dashed transparent !important;
+    box-shadow: none !important;
+}
+
+.diagram-text-object:hover,
+.diagram-text-object.diagram-node-selected {
+    border-color: rgba(0, 99, 153, 0.45) !important;
+}
+
+.diagram-text-object [contenteditable] {
+    display: inline-block;
+    min-height: 28px;
+    cursor: text;
+    font-family: "Nanum Gothic", sans-serif;
+    font-weight: 400;
+    line-height: 1.25;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .diagram-node-grouped-highlight {
     outline: 2px solid rgba(16, 185, 129, 0.45);
     outline-offset: 2px;

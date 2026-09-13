@@ -5,6 +5,14 @@
     src: url("materialsymbolsoutlined-v369-kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHOem.ttf") format("truetype");
 }
 
+@font-face {
+    font-family: "Nanum Gothic";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("NanumGothic.woff2") format("woff2");
+}
+
 .material-symbols-outlined {
     direction: ltr;
     display: inline-block;
