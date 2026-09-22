@@ -26,6 +26,23 @@ function initializeDiagramPage() {
     const spaceGroups = Array.from(diagramRoot.querySelectorAll("[data-space-group]"));
     const zoomLayer = document.getElementById("zoom-layer");
     const diagramStage = document.getElementById("diagram-stage");
+    const penLayer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    penLayer.classList.add("diagram-pen-layer");
+    penLayer.setAttribute("aria-hidden", "true");
+    diagramStage?.appendChild(penLayer);
+    const toolOptionsPanel = document.getElementById("diagram-tool-options-panel");
+    const penOptionsPanel = diagramRoot.querySelector('[data-tool-options="pen"]');
+    const eraserOptionsPanel = diagramRoot.querySelector('[data-tool-options="eraser"]');
+    const penColorInput = document.getElementById("diagram-pen-color");
+    const penColorButtons = Array.from(diagramRoot.querySelectorAll("[data-pen-color]"));
+    const penWidthInput = document.getElementById("diagram-pen-width");
+    const penWidthValue = document.getElementById("diagram-pen-width-value");
+    const penOpacityInput = document.getElementById("diagram-pen-opacity");
+    const penOpacityValue = document.getElementById("diagram-pen-opacity-value");
+    const eraserSizeInput = document.getElementById("diagram-eraser-size");
+    const eraserSizeValue = document.getElementById("diagram-eraser-size-value");
+    const eraserSizePreview = document.getElementById("diagram-eraser-size-preview");
+    const eraserPresetButtons = Array.from(diagramRoot.querySelectorAll("[data-eraser-preset]"));
     const zoomInButton = document.getElementById("diagram-zoom-in");
     const zoomOutButton = document.getElementById("diagram-zoom-out");
     const zoomValue = document.getElementById("diagram-zoom-value");
@@ -120,6 +137,8 @@ function initializeDiagramPage() {
 
     let currentScale = 1;
     let activeTool = "select";
+    const penSettings = { color: "#7C839B", width: "2", opacity: "100" };
+    const eraserSettings = { size: "16" };
     let selectedNode = null;
     let selectedNodes = [];
     let selectedLine = null;
@@ -412,8 +431,9 @@ function initializeDiagramPage() {
         linePaths.forEach((line) => line.remove());
         linePaths = [];
 
-        const svg = diagramStage.querySelector("svg");
         state.lines?.forEach((markup) => {
+            const isFreehand = markup.includes('data-line-type="freehand"');
+            const svg = isFreehand ? penLayer : diagramStage.querySelector("svg");
             if (!(svg instanceof SVGElement)) {
                 return;
             }
@@ -708,6 +728,15 @@ function initializeDiagramPage() {
         }
     };
 
+    const getEraserCursor = () => {
+        const diameter = Math.max(4, Math.min(24, Number(eraserSettings.size) || 16));
+        const padding = 4;
+        const viewport = diameter + padding * 2;
+        const center = viewport / 2;
+        const cursorSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${viewport}" height="${viewport}" viewBox="0 0 ${viewport} ${viewport}"><circle cx="${center}" cy="${center}" r="${diameter / 2}" fill="rgba(255,255,255,0.42)" stroke="#006399" stroke-width="1.5"/></svg>`;
+        return `url("data:image/svg+xml,${encodeURIComponent(cursorSvg)}") ${center} ${center}, crosshair`;
+    };
+
     const syncToolButtons = () => {
         toolButtons.forEach((button) => {
             const isActive = button.dataset.diagramTool === activeTool
@@ -716,12 +745,32 @@ function initializeDiagramPage() {
             button.classList.toggle("bg-secondary/10", isActive);
             button.classList.toggle("text-on-surface-variant", !isActive);
         });
-        zoomLayer.style.cursor = activeTool === "move" ? "grab" : (activeTool === "select" ? "default" : "copy");
+        zoomLayer.classList.toggle("diagram-pen-mode", activeTool === "pen");
+        zoomLayer.classList.toggle("diagram-eraser-mode", activeTool === "eraser");
+        toolOptionsPanel?.classList.toggle("hidden", !["pen", "eraser"].includes(activeTool));
+        penOptionsPanel?.classList.toggle("hidden", activeTool !== "pen");
+        penOptionsPanel?.classList.toggle("flex", activeTool === "pen");
+        eraserOptionsPanel?.classList.toggle("hidden", activeTool !== "eraser");
+        eraserOptionsPanel?.classList.toggle("flex", activeTool === "eraser");
+        if (penColorInput instanceof HTMLInputElement) penColorInput.value = penSettings.color;
+        penColorButtons.forEach((button) => button.classList.toggle("active", button.dataset.penColor?.toUpperCase() === penSettings.color.toUpperCase()));
+        if (penWidthInput instanceof HTMLInputElement) penWidthInput.value = penSettings.width;
+        if (penWidthValue) penWidthValue.textContent = `${penSettings.width}px`;
+        if (penOpacityInput instanceof HTMLInputElement) penOpacityInput.value = penSettings.opacity;
+        if (penOpacityValue) penOpacityValue.textContent = `${penSettings.opacity}%`;
+        if (eraserSizeInput instanceof HTMLInputElement) eraserSizeInput.value = eraserSettings.size;
+        if (eraserSizeValue) eraserSizeValue.textContent = `${eraserSettings.size}px`;
+        eraserSizePreview?.style.setProperty("--eraser-dot-size", `${eraserSettings.size}px`);
+        eraserPresetButtons.forEach((button) => button.classList.toggle("active", button.dataset.eraserPreset === String(eraserSettings.size)));
+        zoomLayer.style.cursor = activeTool === "eraser"
+            ? getEraserCursor()
+            : (activeTool === "move" ? "grab" : (activeTool === "select" ? "default" : "copy"));
     };
 
     const isSelectionTool = () => activeTool === "select";
     const isCanvasMoveTool = () => activeTool === "move";
     const isConnectorTool = () => activeTool === "connector";
+    const isEraserTool = () => activeTool === "eraser";
 
     const closeIconPicker = ({ restore = true } = {}) => {
         if (restore && iconLibraryNode && originalIconSnapshot) {
@@ -1684,6 +1733,10 @@ function initializeDiagramPage() {
         applyLineAppearance(line);
         rememberLineStyleDefaults(line);
         updateLinePaths();
+        if (line.dataset.lineType === "freehand") {
+            setPropertiesPanelVisible(false);
+            return;
+        }
         clearLineConnectTargets();
         showSelectedLineConnectPoints(line);
         updateLineSelectionPanel(line);
@@ -1813,6 +1866,23 @@ function initializeDiagramPage() {
     };
 
     const bindLineInteractions = (line) => {
+        if (line.dataset.lineType === "freehand") {
+            line.classList.add("diagram-line-path", "diagram-freehand-path");
+            line.addEventListener("click", (event) => {
+                if (!isSelectionTool()) return;
+                event.preventDefault();
+                event.stopPropagation();
+                setSelectedLine(line);
+            });
+            line.addEventListener("mousedown", (event) => {
+                if (!isSelectionTool()) return;
+                event.preventDefault();
+                event.stopPropagation();
+                setSelectedLine(line);
+            });
+            applyLineAppearance(line);
+            return;
+        }
         line.dataset.lineType = line.dataset.lineType ?? "curve";
         line.dataset.lineDash = line.dataset.lineDash ?? (line.getAttribute("stroke-dasharray") ? "small" : "solid");
         line.dataset.lineColor = line.dataset.lineColor ?? line.getAttribute("stroke") ?? "#7C839B";
@@ -2321,6 +2391,11 @@ function initializeDiagramPage() {
 
     const updateLinePaths = () => {
         linePaths.forEach((path) => {
+            if (path.dataset.lineType === "freehand") {
+                path.style.display = "";
+                applyLineAppearance(path);
+                return;
+            }
             const fromKey = path.dataset.lineFrom;
             const toKey = path.dataset.lineTo;
             const fromNode = diagramRoot.querySelector(`[data-node-key="${fromKey}"]`);
@@ -2468,6 +2543,10 @@ function initializeDiagramPage() {
 
         element.addEventListener("click", (event) => {
             event.stopPropagation();
+            if (activeTool === "pen" || isEraserTool()) {
+                event.preventDefault();
+                return;
+            }
             if (skipClickSelection) {
                 skipClickSelection = false;
                 event.preventDefault();
@@ -2501,6 +2580,14 @@ function initializeDiagramPage() {
             editable.addEventListener("selectionchange", rememberActiveTextSelection);
             editable.addEventListener("focusout", clearEditableFocus);
             editable.addEventListener("mousedown", (event) => {
+                if (activeTool === "pen" || isEraserTool()) {
+                    if (isEraserTool()) {
+                        eraseAtTarget(event.target);
+                    }
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
                 if (element.dataset.nodeKind === "text") {
                     setSelectedNode(element);
                     event.stopPropagation();
@@ -2869,6 +2956,13 @@ function initializeDiagramPage() {
 
     toolButtons.forEach((button) => {
         button.addEventListener("click", () => {
+            const requestedTool = button.dataset.diagramTool ?? "select";
+            if (requestedTool === "pen" && activeTool === "pen") {
+                activeTool = "select";
+                clearSelectedNode();
+                syncToolButtons();
+                return;
+            }
             if (button === shapeToolButton) {
                 activeTool = "shape";
                 syncToolButtons();
@@ -2895,8 +2989,63 @@ function initializeDiagramPage() {
             closeShapeMenu();
             closeLineMenu();
             activeTool = button.dataset.diagramTool ?? "select";
+            if (activeTool === "pen" || activeTool === "eraser") {
+                clearSelectedNode();
+            }
             syncToolButtons();
         });
+    });
+
+    const applyPenSettingsToSelection = () => {
+        if (!selectedLine || selectedLine.dataset.lineType !== "freehand") {
+            return;
+        }
+        selectedLine.dataset.lineColor = penSettings.color;
+        selectedLine.dataset.lineWidth = penSettings.width;
+        selectedLine.dataset.lineOpacity = penSettings.opacity;
+        selectedLine.setAttribute("stroke-opacity", String(Number(penSettings.opacity) / 100));
+        applyLineAppearance(selectedLine);
+    };
+
+    penColorInput?.addEventListener("input", () => {
+        if (!(penColorInput instanceof HTMLInputElement)) return;
+        penSettings.color = penColorInput.value;
+        penColorButtons.forEach((button) => button.classList.toggle("active", button.dataset.penColor?.toUpperCase() === penSettings.color.toUpperCase()));
+        applyPenSettingsToSelection();
+    });
+    penColorButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!button.dataset.penColor) return;
+            penSettings.color = button.dataset.penColor;
+            if (penColorInput instanceof HTMLInputElement) penColorInput.value = penSettings.color;
+            penColorButtons.forEach((item) => item.classList.toggle("active", item === button));
+            applyPenSettingsToSelection();
+        });
+    });
+    penWidthInput?.addEventListener("input", () => {
+        if (!(penWidthInput instanceof HTMLInputElement)) return;
+        penSettings.width = penWidthInput.value;
+        if (penWidthValue) penWidthValue.textContent = `${penSettings.width}px`;
+        applyPenSettingsToSelection();
+    });
+    penOpacityInput?.addEventListener("input", () => {
+        if (!(penOpacityInput instanceof HTMLInputElement)) return;
+        penSettings.opacity = penOpacityInput.value;
+        if (penOpacityValue) penOpacityValue.textContent = `${penSettings.opacity}%`;
+        applyPenSettingsToSelection();
+    });
+    eraserPresetButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            eraserSettings.size = button.dataset.eraserPreset || "16";
+            syncToolButtons();
+        });
+    });
+    eraserSizeInput?.addEventListener("input", () => {
+        if (!(eraserSizeInput instanceof HTMLInputElement)) return;
+        eraserSettings.size = eraserSizeInput.value;
+        if (eraserSizeValue) eraserSizeValue.textContent = `${eraserSettings.size}px`;
+        eraserSizePreview?.style.setProperty("--eraser-dot-size", `${eraserSettings.size}px`);
+        syncToolButtons();
     });
 
     const selectShapeMenuButton = (button) => {
@@ -2968,7 +3117,22 @@ function initializeDiagramPage() {
     });
 
     document.addEventListener("keydown", (event) => {
-        if (event.key !== "Escape" || (!isShapeMenuOpen() && !isLineMenuOpen())) {
+        if (event.key !== "Escape") {
+            return;
+        }
+        if (activeTool === "pen" || activeTool === "eraser") {
+            event.preventDefault();
+            if (drawingPen) {
+                drawingPen.path.remove();
+                linePaths = linePaths.filter((item) => item !== drawingPen.path);
+                drawingPen = null;
+            }
+            activeTool = "select";
+            clearSelectedNode();
+            syncToolButtons();
+            return;
+        }
+        if (!isShapeMenuOpen() && !isLineMenuOpen()) {
             return;
         }
         event.preventDefault();
@@ -2998,6 +3162,7 @@ function initializeDiagramPage() {
     let suppressCanvasClick = false;
     let drawingShape = null;
     let drawingLine = null;
+    let drawingPen = null;
     let suppressShapeClick = false;
     let startX = 0;
     let startY = 0;
@@ -3012,8 +3177,70 @@ function initializeDiagramPage() {
         node.style.height = `${height}px`;
     };
 
+    const freehandPathData = (points) => {
+        if (points.length < 2) {
+            return points.length ? `M ${points[0].x} ${points[0].y}` : "";
+        }
+        let path = `M ${points[0].x} ${points[0].y}`;
+        for (let index = 1; index < points.length - 1; index += 1) {
+            const current = points[index];
+            const next = points[index + 1];
+            const middleX = (current.x + next.x) / 2;
+            const middleY = (current.y + next.y) / 2;
+            path += ` Q ${current.x} ${current.y} ${middleX} ${middleY}`;
+        }
+        const last = points[points.length - 1];
+        path += ` L ${last.x} ${last.y}`;
+        return path;
+    };
+
+    const isLineInsideEraser = (line, point, radius) => {
+        if (!(line instanceof SVGPathElement) || !point || !line.isConnected) {
+            return false;
+        }
+        const length = line.getTotalLength();
+        if (!Number.isFinite(length) || length <= 0) {
+            return false;
+        }
+        const sampleCount = Math.max(12, Math.ceil(length / 12));
+        for (let index = 0; index <= sampleCount; index += 1) {
+            const sample = line.getPointAtLength(length * index / sampleCount);
+            if (Math.hypot(sample.x - point.x, sample.y - point.y) <= radius) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    const eraseAtTarget = (target, event) => {
+        if (!(target instanceof Element)) {
+            return false;
+        }
+        const point = event ? getStagePoint(event) : null;
+        const radius = Math.max(4, Number(eraserSettings.size) / 2);
+        const line = point
+            ? [...linePaths].reverse().find((item) => isLineInsideEraser(item, point, radius))
+            : null;
+        const element = line;
+        if (!(element instanceof Element)) {
+            return false;
+        }
+        saveHistory();
+        lineHitPaths.get(element)?.remove();
+        lineHandleGroups.get(element)?.remove();
+        lineBadges.get(element)?.remove();
+        lineBadges.delete(element);
+        element.remove();
+        linePaths = linePaths.filter((item) => item !== element);
+        if (selectedNode === element || selectedLine === element) {
+            clearSelectedNode();
+        }
+        updateLinePaths();
+        return true;
+    };
+
     zoomLayer.addEventListener("mousedown", (event) => {
-        if (event.target instanceof HTMLElement && event.target.closest("[data-diagram-node]") && !isCanvasMoveTool() && !isConnectorTool()) {
+        if (event.target instanceof HTMLElement && event.target.closest("[data-diagram-node]") && !isCanvasMoveTool() && !isConnectorTool() && !isEraserTool()) {
             return;
         }
         if (isDrawingNodeTool(activeTool) && event.button === 0) {
@@ -3080,6 +3307,38 @@ function initializeDiagramPage() {
                 showLineConnectPoints(sourceNode, sourceAnchorHit.anchor);
             }
             updateLinePaths();
+            event.preventDefault();
+            return;
+        }
+        if (isEraserTool() && event.button === 0) {
+            eraseAtTarget(event.target, event);
+            event.preventDefault();
+            return;
+        }
+        if (activeTool === "pen" && event.button === 0) {
+            const svg = penLayer;
+            if (!(svg instanceof SVGElement)) {
+                return;
+            }
+            const point = getStagePoint(event);
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            saveHistory();
+            path.dataset.lineType = "freehand";
+            path.dataset.lineColor = penSettings.color;
+            path.dataset.lineWidth = penSettings.width;
+            path.dataset.lineOpacity = penSettings.opacity;
+            path.dataset.lineDash = "solid";
+            path.dataset.lineAnimated = "false";
+            path.dataset.lineStartArrow = "none";
+            path.dataset.lineEndArrow = "none";
+            path.dataset.lineBadgeText = "";
+            path.dataset.lineBadgeColor = "#006399";
+            path.setAttribute("stroke-opacity", String(Number(penSettings.opacity) / 100));
+            path.setAttribute("d", `M ${point.x} ${point.y}`);
+            svg.appendChild(path);
+            linePaths.push(path);
+            bindLineInteractions(path);
+            drawingPen = { path, points: [point], moved: false };
             event.preventDefault();
             return;
         }
@@ -3247,6 +3506,17 @@ function initializeDiagramPage() {
                 drawingLine.line.dataset.lineControlY = String(deltaX / length * bend);
             }
             updateLinePaths();
+            return;
+        }
+
+        if (drawingPen) {
+            const currentPoint = getStagePoint(event);
+            const previousPoint = drawingPen.points[drawingPen.points.length - 1];
+            if (Math.hypot(currentPoint.x - previousPoint.x, currentPoint.y - previousPoint.y) > 2) {
+                drawingPen.points.push(currentPoint);
+                drawingPen.moved = drawingPen.points.length > 2;
+                drawingPen.path.setAttribute("d", freehandPathData(drawingPen.points));
+            }
             return;
         }
 
@@ -3424,6 +3694,18 @@ function initializeDiagramPage() {
             }
         }
 
+        if (drawingPen) {
+            const { path, moved } = drawingPen;
+            if (!moved) {
+                path.remove();
+                linePaths = linePaths.filter((item) => item !== path);
+                clearSelectedLine();
+            }
+            drawingPen = null;
+            suppressCanvasClick = true;
+            syncToolButtons();
+        }
+
         if (isSelecting) {
             if (!selectionMoved) {
                 clearSelectedNode();
@@ -3483,7 +3765,17 @@ function initializeDiagramPage() {
 
         if ((event.ctrlKey || event.metaKey) && (event.key?.toLowerCase() === "z" || event.code === "KeyZ")) {
             event.preventDefault();
-            undoLastHistory();
+            const restored = undoLastHistory();
+            if (restored) {
+                // Ctrl+Z during a stroke must not leave the drawing state pointing
+                // at the line that was just removed by history restoration.
+                drawingShape = null;
+                drawingLine = null;
+                drawingPen = null;
+                clearLineConnectTargets();
+                suppressCanvasClick = true;
+                syncToolButtons();
+            }
             return true;
         }
 

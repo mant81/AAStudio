@@ -268,6 +268,48 @@
                 </button>
             </div>
 
+            <div class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-20 min-w-[300px] bg-surface-white rounded-xl shadow-lg border border-outline-variant/30 p-3"
+                 id="diagram-tool-options-panel">
+                <div class="hidden items-center gap-3" data-tool-options="pen">
+                    <span class="material-symbols-outlined text-[20px] text-secondary">draw</span>
+                    <strong class="font-label-md text-label-md text-on-surface whitespace-nowrap">펜 옵션</strong>
+                    <div class="diagram-tool-option-field">
+                        <span>색상</span>
+                        <div class="diagram-tool-color-swatches">
+                            <button class="active" data-pen-color="#7C839B" style="--tool-color:#7C839B" title="#7C839B" type="button"></button>
+                            <button data-pen-color="#006399" style="--tool-color:#006399" title="#006399" type="button"></button>
+                            <button data-pen-color="#10B981" style="--tool-color:#10B981" title="#10B981" type="button"></button>
+                            <button data-pen-color="#8B5CF6" style="--tool-color:#8B5CF6" title="#8B5CF6" type="button"></button>
+                            <button data-pen-color="#F59E0B" style="--tool-color:#F59E0B" title="#F59E0B" type="button"></button>
+                            <label class="diagram-tool-color-picker diagram-color-picker" title="사용자 지정 색상">
+                                <input id="diagram-pen-color" type="color" value="#7C839B">
+                                <span class="material-symbols-outlined">palette</span>
+                            </label>
+                        </div>
+                    </div>
+                    <label class="diagram-tool-option-field">굵기
+                        <input id="diagram-pen-width" type="range" min="1" max="12" value="2">
+                        <span id="diagram-pen-width-value">2px</span>
+                    </label>
+                    <label class="diagram-tool-option-field">투명도
+                        <input id="diagram-pen-opacity" type="range" min="10" max="100" value="100">
+                        <span id="diagram-pen-opacity-value">100%</span>
+                    </label>
+                </div>
+                <div class="hidden items-center gap-3" data-tool-options="eraser">
+                    <span class="material-symbols-outlined text-[20px] text-secondary">ink_eraser</span>
+                    <strong class="font-label-md text-label-md text-on-surface whitespace-nowrap">지우개 옵션</strong>
+                    <div class="diagram-eraser-size-options" role="group" aria-label="선 지우개 크기">
+                        <button class="diagram-eraser-preset" data-eraser-preset="8" title="소" aria-label="소" type="button"><span style="--eraser-dot-size:8px"></span></button>
+                        <button class="diagram-eraser-preset active" data-eraser-preset="16" title="중" aria-label="중" type="button"><span style="--eraser-dot-size:16px"></span></button>
+                        <button class="diagram-eraser-preset" data-eraser-preset="24" title="대" aria-label="대" type="button"><span style="--eraser-dot-size:24px"></span></button>
+                        <span class="diagram-eraser-size-preview" id="diagram-eraser-size-preview" aria-hidden="true"></span>
+                        <input id="diagram-eraser-size" type="range" min="4" max="24" value="16" aria-label="선 지우개 크기">
+                        <span id="diagram-eraser-size-value">16px</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="absolute bottom-4 right-4 bg-surface-white rounded-xl shadow-md border border-outline-variant/30 flex items-center p-1 z-20">
                 <button class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" id="diagram-zoom-out" type="button">
                     <span class="material-symbols-outlined text-[18px]">remove</span>

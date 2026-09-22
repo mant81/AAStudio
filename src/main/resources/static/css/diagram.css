@@ -127,6 +127,181 @@
     transform: translateY(-50%);
 }
 
+.diagram-freehand-path {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.diagram-pen-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 15;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.diagram-pen-layer .diagram-freehand-path {
+    pointer-events: stroke;
+}
+
+.diagram-tool-option-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #45464d;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.diagram-tool-option-field input[type="range"] {
+    width: 68px;
+    accent-color: #006399;
+}
+
+.diagram-tool-option-field input[type="color"] {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid #c6c6cd;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.diagram-tool-color-swatches {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.diagram-tool-color-swatches button,
+.diagram-tool-color-picker {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid #c6c6cd;
+    border-radius: 999px;
+    background: var(--tool-color, #ffffff);
+    cursor: pointer;
+}
+
+.diagram-tool-color-swatches button.active {
+    outline: 2px solid #006399;
+    outline-offset: 1px;
+}
+
+.diagram-tool-color-picker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ffffff;
+    background: conic-gradient(#ef4444, #f59e0b, #10b981, #006399, #8b5cf6, #ef4444);
+    box-shadow: 0 0 0 1px #c6c6cd;
+}
+
+.diagram-tool-color-picker input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.diagram-tool-option-toggle {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid #c6c6cd;
+    border-radius: 7px;
+    background: #f2f4f6;
+}
+
+.diagram-tool-option-toggle button {
+    padding: 4px 7px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #45464d;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.diagram-tool-option-toggle button.active {
+    background: #ffffff;
+    color: #006399;
+    box-shadow: 0 1px 3px rgba(25, 28, 30, 0.12);
+}
+
+.diagram-eraser-size-options {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.diagram-eraser-size-options input[type="range"] {
+    width: 84px;
+    accent-color: #006399;
+}
+
+.diagram-eraser-preset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid #c6c6cd;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #76777d;
+    cursor: pointer;
+}
+
+.diagram-eraser-preset.active {
+    border-color: #006399;
+    background: #e8f3fb;
+    color: #006399;
+    box-shadow: 0 0 0 1px #006399;
+}
+
+.diagram-eraser-preset span {
+    display: block;
+    width: var(--eraser-dot-size);
+    height: var(--eraser-dot-size);
+    border-radius: 999px;
+    background: currentColor;
+}
+
+.diagram-eraser-size-preview {
+    display: inline-block;
+    width: var(--eraser-dot-size, 16px);
+    height: var(--eraser-dot-size, 16px);
+    min-width: var(--eraser-dot-size, 16px);
+    border: 1px solid #006399;
+    border-radius: 999px;
+    background: rgba(0, 99, 153, 0.14);
+}
+
+.diagram-pen-mode [data-diagram-node] {
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+.diagram-pen-mode {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 19l1.5-5.5L16.8 3.2a2.1 2.1 0 013 3L9.5 16.5 5 19z' fill='%23ffffff' stroke='%23006399' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M15 5l4 4' stroke='%23006399' stroke-width='1.6'/%3E%3C/svg%3E") 3 21, crosshair !important;
+}
+
+.diagram-pen-mode .diagram-line-path,
+.diagram-pen-mode .diagram-line-hit-path {
+    cursor: inherit !important;
+    pointer-events: none !important;
+}
+
+.diagram-pen-mode [data-diagram-node] [contenteditable] {
+    cursor: crosshair !important;
+}
+
 .diagram-align-button {
     display: inline-flex;
     align-items: center;
