@@ -785,14 +785,24 @@ function initializeDiagramPage() {
         if (iconElement instanceof HTMLElement) {
             return iconElement;
         }
-        if (node.dataset.nodeKind !== "shape") {
+        if (!["shape", "text"].includes(node.dataset.nodeKind)) {
             return null;
         }
 
         iconElement = document.createElement("span");
-        iconElement.className = "material-symbols-outlined diagram-shape-icon";
+        iconElement.className = node.dataset.nodeKind === "shape"
+            ? "material-symbols-outlined diagram-shape-icon hidden"
+            : "material-symbols-outlined diagram-text-icon hidden";
         iconElement.dataset.nodeIconElement = "";
-        node.prepend(iconElement);
+        if (node.dataset.nodeKind === "text") {
+            const iconWrap = document.createElement("span");
+            iconWrap.className = "diagram-text-icon-wrap hidden";
+            iconWrap.dataset.nodeIconWrap = "";
+            iconWrap.appendChild(iconElement);
+            node.prepend(iconWrap);
+        } else {
+            node.prepend(iconElement);
+        }
         return iconElement;
     };
 
@@ -1588,22 +1598,28 @@ function initializeDiagramPage() {
         });
     };
 
-    const setPropertyTabsForSelection = (selectionType) => {
+    const setPropertyTabsForSelection = (selectionType, nodeKind = "node") => {
         propertyTabs.forEach((button) => {
             const isLineTab = button.dataset.propertyTab === "line";
-            button.classList.toggle("hidden", selectionType === "line" ? !isLineTab : isLineTab);
+            const isIconTab = button.dataset.propertyTab === "icon";
+            const hideIconTab = selectionType !== "line" && nodeKind === "text" && isIconTab;
+            button.classList.toggle("hidden", selectionType === "line"
+                ? !isLineTab
+                : isLineTab || hideIconTab);
         });
         if (propertyTabsContainer instanceof HTMLElement) {
             propertyTabsContainer.style.gridTemplateColumns = selectionType === "line"
                 ? "minmax(0, 1fr)"
-                : "repeat(4, minmax(0, 1fr))";
+                : nodeKind === "text"
+                    ? "repeat(3, minmax(0, 1fr))"
+                    : "repeat(4, minmax(0, 1fr))";
         }
     };
 
     const setSelectedNodes = (nodes) => {
         clearSelectedLine();
-        setPropertyTabsForSelection("node");
         const uniqueNodes = nodes.filter((node, index, list) => list.indexOf(node) === index);
+        setPropertyTabsForSelection("node", uniqueNodes.length === 1 ? uniqueNodes[0].dataset.nodeKind : "node");
         if (iconLibraryNode && (uniqueNodes.length !== 1 || uniqueNodes[0] !== iconLibraryNode)) {
             closeIconPicker();
         }
@@ -1932,10 +1948,20 @@ function initializeDiagramPage() {
             node.style.borderColor = "transparent";
             node.style.borderStyle = "solid";
         } else {
-            node.style.backgroundColor = visibleFillColor;
-            node.style.borderWidth = hasVisibleStroke ? `${strokeWidth}px` : "0px";
-            node.style.borderColor = visibleStrokeColor;
-            node.style.borderStyle = hasVisibleStroke ? strokeStyle : "solid";
+            const textObject = node.dataset.nodeKind === "text";
+            const borderWidth = hasVisibleStroke ? `${strokeWidth}px` : "0px";
+            const borderStyle = hasVisibleStroke ? strokeStyle : "solid";
+            if (textObject) {
+                node.style.setProperty("background-color", visibleFillColor, "important");
+                node.style.setProperty("border-width", borderWidth, "important");
+                node.style.setProperty("border-color", visibleStrokeColor, "important");
+                node.style.setProperty("border-style", borderStyle, "important");
+            } else {
+                node.style.backgroundColor = visibleFillColor;
+                node.style.borderWidth = borderWidth;
+                node.style.borderColor = visibleStrokeColor;
+                node.style.borderStyle = borderStyle;
+            }
         }
         node.style.boxShadow = usesCssShape || !hasVisibleStroke || nodeOpacity <= 0 ? "none" : "";
         node.style.opacity = "";

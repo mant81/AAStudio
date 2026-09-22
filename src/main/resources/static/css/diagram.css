@@ -14,14 +14,15 @@
 }
 
 .diagram-text-object {
-    background: transparent !important;
-    border: 1px dashed transparent !important;
+    background: var(--diagram-node-fill-color, transparent);
+    border-style: dashed;
+    border-color: var(--diagram-node-stroke-color, transparent);
     box-shadow: none !important;
 }
 
 .diagram-text-object:hover,
 .diagram-text-object.diagram-node-selected {
-    border-color: rgba(0, 99, 153, 0.45) !important;
+    border-color: var(--diagram-node-stroke-color, rgba(0, 99, 153, 0.45));
 }
 
 .diagram-text-object [contenteditable] {
@@ -33,6 +34,40 @@
     line-height: 1.25;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+.diagram-text-object.diagram-node-icon-top,
+.diagram-text-object.diagram-node-icon-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.diagram-text-object.diagram-node-icon-top {
+    flex-direction: column;
+    justify-content: center;
+}
+
+.diagram-text-object.diagram-node-icon-left {
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+.diagram-text-icon-wrap {
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    color: #45464d;
+}
+
+.diagram-text-icon-wrap:not(.hidden) {
+    display: inline-flex;
+}
+
+.diagram-text-icon {
+    font-size: 22px;
+    line-height: 1;
+    pointer-events: none;
 }
 
 .diagram-node-grouped-highlight {
