@@ -45,6 +45,11 @@ function initializeDiagramPage() {
     const propertyTabsContainer = diagramRoot.querySelector(".diagram-property-tabs");
     const propertyTabs = Array.from(diagramRoot.querySelectorAll("[data-property-tab]"));
     const propertyPanels = Array.from(diagramRoot.querySelectorAll("[data-property-panel]"));
+    const lineBadgePropertyPanel = diagramRoot.querySelector('[data-property-panel="line-badge"]');
+    ["diagram-line-badge-input", "diagram-line-badge-color-picker"]
+        .map((id) => document.getElementById(id)?.closest(".space-y-2"))
+        .filter((field) => field instanceof HTMLElement)
+        .forEach((field) => lineBadgePropertyPanel?.appendChild(field));
     const nodeLabelInput = document.getElementById("diagram-node-label-input");
     const textLabelInput = document.getElementById("diagram-text-label-input");
     const nodeBadgeInput = document.getElementById("diagram-node-badge-input");
@@ -1601,15 +1606,16 @@ function initializeDiagramPage() {
     const setPropertyTabsForSelection = (selectionType, nodeKind = "node") => {
         propertyTabs.forEach((button) => {
             const isLineTab = button.dataset.propertyTab === "line";
+            const isLineBadgeTab = button.dataset.propertyTab === "line-badge";
             const isIconTab = button.dataset.propertyTab === "icon";
             const hideIconTab = selectionType !== "line" && nodeKind === "text" && isIconTab;
             button.classList.toggle("hidden", selectionType === "line"
-                ? !isLineTab
+                ? !isLineTab && !isLineBadgeTab
                 : isLineTab || hideIconTab);
         });
         if (propertyTabsContainer instanceof HTMLElement) {
             propertyTabsContainer.style.gridTemplateColumns = selectionType === "line"
-                ? "minmax(0, 1fr)"
+                ? "repeat(2, minmax(0, 1fr))"
                 : nodeKind === "text"
                     ? "repeat(3, minmax(0, 1fr))"
                     : "repeat(4, minmax(0, 1fr))";
