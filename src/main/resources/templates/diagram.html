@@ -266,6 +266,7 @@
                 <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="image" title="Attach Image" type="button">
                     <span class="material-symbols-outlined text-[20px]">image</span>
                 </button>
+                <input id="diagram-image-input" type="file" accept="image/*" hidden>
             </div>
 
             <div class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-20 min-w-[300px] bg-surface-white rounded-xl shadow-lg border border-outline-variant/30 p-3"
@@ -276,13 +277,13 @@
                     <div class="diagram-tool-option-field">
                         <span>색상</span>
                         <div class="diagram-tool-color-swatches">
-                            <button class="active" data-pen-color="#7C839B" style="--tool-color:#7C839B" title="#7C839B" type="button"></button>
+                            <button class="active" data-pen-color="#FF0000" style="--tool-color:#FF0000" title="#FF0000" type="button"></button>
                             <button data-pen-color="#006399" style="--tool-color:#006399" title="#006399" type="button"></button>
                             <button data-pen-color="#10B981" style="--tool-color:#10B981" title="#10B981" type="button"></button>
                             <button data-pen-color="#8B5CF6" style="--tool-color:#8B5CF6" title="#8B5CF6" type="button"></button>
                             <button data-pen-color="#F59E0B" style="--tool-color:#F59E0B" title="#F59E0B" type="button"></button>
                             <label class="diagram-tool-color-picker diagram-color-picker" title="사용자 지정 색상">
-                                <input id="diagram-pen-color" type="color" value="#7C839B">
+                                <input id="diagram-pen-color" type="color" value="#FF0000">
                                 <span class="material-symbols-outlined">palette</span>
                             </label>
                         </div>
@@ -300,12 +301,8 @@
                     <span class="material-symbols-outlined text-[20px] text-secondary">ink_eraser</span>
                     <strong class="font-label-md text-label-md text-on-surface whitespace-nowrap">지우개 옵션</strong>
                     <div class="diagram-eraser-size-options" role="group" aria-label="선 지우개 크기">
-                        <button class="diagram-eraser-preset" data-eraser-preset="8" title="소" aria-label="소" type="button"><span style="--eraser-dot-size:8px"></span></button>
-                        <button class="diagram-eraser-preset active" data-eraser-preset="16" title="중" aria-label="중" type="button"><span style="--eraser-dot-size:16px"></span></button>
-                        <button class="diagram-eraser-preset" data-eraser-preset="24" title="대" aria-label="대" type="button"><span style="--eraser-dot-size:24px"></span></button>
-                        <span class="diagram-eraser-size-preview" id="diagram-eraser-size-preview" aria-hidden="true"></span>
-                        <input id="diagram-eraser-size" type="range" min="4" max="24" value="16" aria-label="선 지우개 크기">
-                        <span id="diagram-eraser-size-value">16px</span>
+                        <input id="diagram-eraser-size" type="range" min="8" max="48" value="32" aria-label="선 지우개 크기">
+                        <span id="diagram-eraser-size-value">32px</span>
                     </div>
                 </div>
             </div>

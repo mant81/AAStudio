@@ -36,6 +36,19 @@
     word-break: break-word;
 }
 
+.diagram-image-node {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.diagram-image-node [data-node-image] {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
 .diagram-text-object.diagram-node-icon-top,
 .diagram-text-object.diagram-node-icon-left {
     display: flex;
@@ -370,6 +383,30 @@
     pointer-events: stroke;
     stroke: rgba(0, 0, 0, 0.01);
     stroke-width: 28px;
+}
+
+#zoom-layer.diagram-eraser-mode [data-diagram-node],
+#zoom-layer.diagram-eraser-mode [data-diagram-node] *,
+#zoom-layer.diagram-eraser-mode .diagram-line-path,
+#zoom-layer.diagram-eraser-mode .diagram-line-hit-path {
+    cursor: inherit !important;
+}
+
+#zoom-layer.diagram-eraser-mode [data-diagram-node] {
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+#zoom-layer.diagram-eraser-mode .diagram-line-path,
+#zoom-layer.diagram-eraser-mode .diagram-line-hit-path {
+    pointer-events: none !important;
+}
+
+#zoom-layer.diagram-eraser-mode .diagram-line-handles,
+#zoom-layer.diagram-eraser-mode [data-node-resize-handle],
+#zoom-layer.diagram-eraser-mode [data-node-rotate-handle] {
+    pointer-events: none !important;
+    opacity: 0 !important;
 }
 
 .diagram-line-handles {

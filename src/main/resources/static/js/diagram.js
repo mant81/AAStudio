@@ -41,8 +41,7 @@ function initializeDiagramPage() {
     const penOpacityValue = document.getElementById("diagram-pen-opacity-value");
     const eraserSizeInput = document.getElementById("diagram-eraser-size");
     const eraserSizeValue = document.getElementById("diagram-eraser-size-value");
-    const eraserSizePreview = document.getElementById("diagram-eraser-size-preview");
-    const eraserPresetButtons = Array.from(diagramRoot.querySelectorAll("[data-eraser-preset]"));
+    const imageInput = document.getElementById("diagram-image-input");
     const zoomInButton = document.getElementById("diagram-zoom-in");
     const zoomOutButton = document.getElementById("diagram-zoom-out");
     const zoomValue = document.getElementById("diagram-zoom-value");
@@ -137,8 +136,8 @@ function initializeDiagramPage() {
 
     let currentScale = 1;
     let activeTool = "select";
-    const penSettings = { color: "#7C839B", width: "2", opacity: "100" };
-    const eraserSettings = { size: "16" };
+    const penSettings = { color: "#FF0000", width: "2", opacity: "100" };
+    const eraserSettings = { size: "32" };
     let selectedNode = null;
     let selectedNodes = [];
     let selectedLine = null;
@@ -729,7 +728,7 @@ function initializeDiagramPage() {
     };
 
     const getEraserCursor = () => {
-        const diameter = Math.max(4, Math.min(24, Number(eraserSettings.size) || 16));
+        const diameter = Math.max(8, Math.min(48, Number(eraserSettings.size) || 32));
         const padding = 4;
         const viewport = diameter + padding * 2;
         const center = viewport / 2;
@@ -760,8 +759,6 @@ function initializeDiagramPage() {
         if (penOpacityValue) penOpacityValue.textContent = `${penSettings.opacity}%`;
         if (eraserSizeInput instanceof HTMLInputElement) eraserSizeInput.value = eraserSettings.size;
         if (eraserSizeValue) eraserSizeValue.textContent = `${eraserSettings.size}px`;
-        eraserSizePreview?.style.setProperty("--eraser-dot-size", `${eraserSettings.size}px`);
-        eraserPresetButtons.forEach((button) => button.classList.toggle("active", button.dataset.eraserPreset === String(eraserSettings.size)));
         zoomLayer.style.cursor = activeTool === "eraser"
             ? getEraserCursor()
             : (activeTool === "move" ? "grab" : (activeTool === "select" ? "default" : "copy"));
@@ -1467,6 +1464,34 @@ function initializeDiagramPage() {
         return "";
     };
 
+    const freehandErasedRanges = (line) => {
+        try {
+            const ranges = JSON.parse(line.dataset.lineErasedRanges ?? "[]");
+            return Array.isArray(ranges)
+                ? ranges.filter((range) => Array.isArray(range) && range.length === 2 && range.every(Number.isFinite))
+                : [];
+        } catch {
+            return [];
+        }
+    };
+
+    const applyFreehandErasedRanges = (line) => {
+        const ranges = freehandErasedRanges(line);
+        if (!ranges.length) return false;
+        const length = line.getTotalLength();
+        let cursor = 0;
+        const dashArray = [];
+        ranges.forEach(([start, end]) => {
+            const safeStart = Math.max(cursor, Math.min(length, start));
+            const safeEnd = Math.max(safeStart, Math.min(length, end));
+            dashArray.push(safeStart - cursor, safeEnd - safeStart);
+            cursor = safeEnd;
+        });
+        dashArray.push(Math.max(0, length - cursor));
+        line.setAttribute("stroke-dasharray", dashArray.join(" "));
+        return true;
+    };
+
     const syncLineBadge = (line, point) => {
         const badgeText = (line.dataset.lineBadgeText ?? "").trim();
         const badgeColor = line.dataset.lineBadgeColor ?? "#006399";
@@ -1529,7 +1554,9 @@ function initializeDiagramPage() {
         } else {
             line.removeAttribute("marker-end");
         }
-        if (lineDashValue(dash)) {
+        if (line.dataset.lineType === "freehand" && applyFreehandErasedRanges(line)) {
+            // Keep the original path geometry while hiding only erased ranges.
+        } else if (lineDashValue(dash)) {
             line.setAttribute("stroke-dasharray", lineDashValue(dash));
         } else {
             line.removeAttribute("stroke-dasharray");
@@ -1672,6 +1699,9 @@ function initializeDiagramPage() {
     };
 
     const setSelectedNodes = (nodes) => {
+        if (activeTool === "pen" || isEraserTool()) {
+            return;
+        }
         clearSelectedLine();
         const uniqueNodes = nodes.filter((node, index, list) => list.indexOf(node) === index);
         setPropertyTabsForSelection("node", uniqueNodes.length === 1 ? uniqueNodes[0].dataset.nodeKind : "node");
@@ -1726,6 +1756,9 @@ function initializeDiagramPage() {
     };
 
     const setSelectedLine = (line) => {
+        if (activeTool === "pen" || isEraserTool()) {
+            return;
+        }
         clearSelectedNode();
         selectedLine = line;
         bringSelectedLineControlsToFront(line);
@@ -1879,6 +1912,16 @@ function initializeDiagramPage() {
                 event.preventDefault();
                 event.stopPropagation();
                 setSelectedLine(line);
+                lineDrag = {
+                    line,
+                    mode: "freehand-move",
+                    start: getStagePoint(event),
+                    offsetX: Number(line.dataset.lineOffsetX ?? 0),
+                    offsetY: Number(line.dataset.lineOffsetY ?? 0),
+                    historyState: captureDiagramState(),
+                    changed: false
+                };
+                document.body.style.userSelect = "none";
             });
             applyLineAppearance(line);
             return;
@@ -2736,6 +2779,23 @@ function initializeDiagramPage() {
         node.dataset.diagramNode = "";
         node.dataset.nodeKey = `generated-${tool}-${++nodeCounter}`;
 
+        if (tool === "image") {
+            node.dataset.nodeKind = "image";
+            node.dataset.imageSrc = "";
+            node.dataset.imageName = "";
+            node.dataset.fillColor = "#FFFFFF";
+            node.dataset.strokeColor = "#C6C6CD";
+            node.dataset.strokeWidth = "1";
+            node.dataset.strokeStyle = "solid";
+            node.dataset.nodeOpacity = "100";
+            node.dataset.textColor = "";
+            node.dataset.textFontFamily = defaultTextFontFamily;
+            node.dataset.textFontSize = "20";
+            node.className = "absolute w-64 h-48 overflow-hidden rounded-xl border border-outline-variant bg-surface-white shadow-md cursor-move diagram-image-node";
+            node.innerHTML = `<img data-node-image alt="" draggable="false">`;
+            return node;
+        }
+
         if (isShapeTool(tool)) {
             const shapeLabels = {
                 rectangle: "사각형",
@@ -2886,6 +2946,43 @@ function initializeDiagramPage() {
         }
     };
 
+    const syncImageNode = (node) => {
+        if (node.dataset.nodeKind !== "image") {
+            return;
+        }
+        const image = node.querySelector("[data-node-image]");
+        if (!(image instanceof HTMLImageElement)) {
+            return;
+        }
+        image.src = node.dataset.imageSrc || "";
+        image.alt = node.dataset.imageName || "첨부 이미지";
+    };
+
+    const attachImageBlob = (file) => {
+        if (!(file instanceof File) || !file.type.startsWith("image/")) {
+            return;
+        }
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+            if (typeof reader.result !== "string") {
+                return;
+            }
+            const node = createNodeMarkup("image");
+            node.dataset.imageSrc = reader.result;
+            node.dataset.imageName = file.name;
+            syncImageNode(node);
+            const bounds = zoomLayer.getBoundingClientRect();
+            const point = getStagePoint({
+                clientX: bounds.left + bounds.width / 2,
+                clientY: bounds.top + bounds.height / 2
+            });
+            placeNodeAtPoint(node, point);
+            activeTool = "select";
+            syncToolButtons();
+        });
+        reader.readAsDataURL(file);
+    };
+
     const createNodeAtPointer = (event) => {
         if (!isInsertNodeTool(activeTool)) {
             return;
@@ -2957,6 +3054,13 @@ function initializeDiagramPage() {
     toolButtons.forEach((button) => {
         button.addEventListener("click", () => {
             const requestedTool = button.dataset.diagramTool ?? "select";
+            if (requestedTool === "image") {
+                if (imageInput instanceof HTMLInputElement) {
+                    imageInput.value = "";
+                    imageInput.click();
+                }
+                return;
+            }
             if (requestedTool === "pen" && activeTool === "pen") {
                 activeTool = "select";
                 clearSelectedNode();
@@ -3034,18 +3138,16 @@ function initializeDiagramPage() {
         if (penOpacityValue) penOpacityValue.textContent = `${penSettings.opacity}%`;
         applyPenSettingsToSelection();
     });
-    eraserPresetButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-            eraserSettings.size = button.dataset.eraserPreset || "16";
-            syncToolButtons();
-        });
-    });
     eraserSizeInput?.addEventListener("input", () => {
         if (!(eraserSizeInput instanceof HTMLInputElement)) return;
         eraserSettings.size = eraserSizeInput.value;
         if (eraserSizeValue) eraserSizeValue.textContent = `${eraserSettings.size}px`;
-        eraserSizePreview?.style.setProperty("--eraser-dot-size", `${eraserSettings.size}px`);
         syncToolButtons();
+    });
+    imageInput?.addEventListener("change", () => {
+        if (!(imageInput instanceof HTMLInputElement)) return;
+        const [file] = Array.from(imageInput.files ?? []);
+        attachImageBlob(file);
     });
 
     const selectShapeMenuButton = (button) => {
@@ -3163,6 +3265,7 @@ function initializeDiagramPage() {
     let drawingShape = null;
     let drawingLine = null;
     let drawingPen = null;
+    let eraserHistorySaved = false;
     let suppressShapeClick = false;
     let startX = 0;
     let startY = 0;
@@ -3212,6 +3315,62 @@ function initializeDiagramPage() {
         return false;
     };
 
+    const removeLineElement = (element) => {
+        lineHitPaths.get(element)?.remove();
+        lineHandleGroups.get(element)?.remove();
+        lineBadges.get(element)?.remove();
+        lineBadges.delete(element);
+        element.remove();
+        linePaths = linePaths.filter((item) => item !== element);
+    };
+
+    const eraseFreehandAtPoint = (line, point, radius) => {
+        if (!(line instanceof SVGPathElement) || line.dataset.lineType !== "freehand") {
+            return false;
+        }
+        const length = line.getTotalLength();
+        if (!Number.isFinite(length) || length <= 0) {
+            return false;
+        }
+
+        const sampleCount = Math.max(24, Math.ceil(length / 4));
+        const sampleStep = length / sampleCount;
+        const newRanges = [];
+        let rangeStart = null;
+        for (let index = 0; index <= sampleCount; index += 1) {
+            const distance = length * index / sampleCount;
+            const sample = line.getPointAtLength(distance);
+            const isErased = Math.hypot(sample.x - point.x, sample.y - point.y) <= radius;
+            if (isErased && rangeStart === null) {
+                rangeStart = Math.max(0, distance - sampleStep / 2);
+            } else if (!isErased && rangeStart !== null) {
+                newRanges.push([rangeStart, Math.min(length, distance + sampleStep / 2)]);
+                rangeStart = null;
+            }
+        }
+        if (rangeStart !== null) {
+            newRanges.push([rangeStart, length]);
+        }
+        if (!newRanges.length) {
+            return false;
+        }
+
+        const ranges = [...freehandErasedRanges(line), ...newRanges]
+            .sort((left, right) => left[0] - right[0])
+            .reduce((merged, range) => {
+                const previous = merged[merged.length - 1];
+                if (previous && range[0] <= previous[1]) {
+                    previous[1] = Math.max(previous[1], range[1]);
+                } else {
+                    merged.push([...range]);
+                }
+                return merged;
+            }, []);
+        line.dataset.lineErasedRanges = JSON.stringify(ranges);
+        applyFreehandErasedRanges(line);
+        return true;
+    };
+
     const eraseAtTarget = (target, event) => {
         if (!(target instanceof Element)) {
             return false;
@@ -3225,15 +3384,25 @@ function initializeDiagramPage() {
         if (!(element instanceof Element)) {
             return false;
         }
-        saveHistory();
-        lineHitPaths.get(element)?.remove();
-        lineHandleGroups.get(element)?.remove();
-        lineBadges.get(element)?.remove();
-        lineBadges.delete(element);
-        element.remove();
-        linePaths = linePaths.filter((item) => item !== element);
-        if (selectedNode === element || selectedLine === element) {
-            clearSelectedNode();
+        const changed = element instanceof SVGPathElement && element.dataset.lineType === "freehand"
+            ? (() => {
+                if (!eraserHistorySaved) {
+                    saveHistory();
+                    eraserHistorySaved = true;
+                }
+                return eraseFreehandAtPoint(element, point, radius + Math.max(0, Number(element.dataset.lineWidth) || 0) / 2);
+            })()
+            : (() => {
+                if (!eraserHistorySaved) {
+                    saveHistory();
+                    eraserHistorySaved = true;
+                }
+                removeLineElement(element);
+                if (selectedNode === element || selectedLine === element) clearSelectedNode();
+                return true;
+            })();
+        if (!changed) {
+            return false;
         }
         updateLinePaths();
         return true;
@@ -3311,6 +3480,7 @@ function initializeDiagramPage() {
             return;
         }
         if (isEraserTool() && event.button === 0) {
+            eraserHistorySaved = false;
             eraseAtTarget(event.target, event);
             event.preventDefault();
             return;
@@ -3381,7 +3551,13 @@ function initializeDiagramPage() {
             if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) {
                 lineDrag.changed = true;
             }
-            if (lineDrag.mode === "endpoint-start" || lineDrag.mode === "endpoint-end") {
+            if (lineDrag.mode === "freehand-move") {
+                const offsetX = lineDrag.offsetX + deltaX;
+                const offsetY = lineDrag.offsetY + deltaY;
+                lineDrag.line.dataset.lineOffsetX = String(offsetX);
+                lineDrag.line.dataset.lineOffsetY = String(offsetY);
+                lineDrag.line.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            } else if (lineDrag.mode === "endpoint-start" || lineDrag.mode === "endpoint-end") {
                 const originNode = diagramRoot.querySelector(`[data-node-key="${lineDrag.originNodeKey}"]`);
                 if (!lineDrag.hasLeftOriginNode && originNode instanceof HTMLElement) {
                     const originAnchorPoint = getAnchorPoint(originNode, lineDrag.originAnchor);
@@ -3517,6 +3693,11 @@ function initializeDiagramPage() {
                 drawingPen.moved = drawingPen.points.length > 2;
                 drawingPen.path.setAttribute("d", freehandPathData(drawingPen.points));
             }
+            return;
+        }
+
+        if (isEraserTool() && (event.buttons & 1) === 1) {
+            eraseAtTarget(event.target, event);
             return;
         }
 
@@ -3719,6 +3900,7 @@ function initializeDiagramPage() {
         }
         isPanning = false;
         isTemporaryMoveActive = false;
+        eraserHistorySaved = false;
         syncToolButtons();
     });
 
