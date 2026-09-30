@@ -18,6 +18,9 @@
         && box.y + box.height <= area.y + area.height;
 
     const nodeMinimumSize = (nodeKind, shapeType) => {
+        if (nodeKind === "image") {
+            return { width: 24, height: 24 };
+        }
         if (nodeKind === "group-box") {
             return { width: 240, height: 120 };
         }

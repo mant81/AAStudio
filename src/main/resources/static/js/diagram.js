@@ -82,6 +82,7 @@ function initializeDiagramPage() {
     const textFontSizeValue = document.getElementById("diagram-text-font-size-value");
     const defaultTextFontFamily = "'Nanum Gothic', sans-serif";
     const fillColorValue = document.getElementById("diagram-fill-color-value");
+    const fillColorProperty = diagramRoot.querySelector('[data-property-panel="shape"] > div:first-child');
     const fillColorButtons = Array.from(diagramRoot.querySelectorAll("[data-fill-color]"));
     const fillColorPicker = document.getElementById("diagram-fill-color-picker");
     const strokeColorValue = document.getElementById("diagram-stroke-color-value");
@@ -1680,20 +1681,29 @@ function initializeDiagramPage() {
     };
 
     const setPropertyTabsForSelection = (selectionType, nodeKind = "node") => {
+        const restrictedNode = nodeKind === "shape" || nodeKind === "image";
         propertyTabs.forEach((button) => {
             const isLineTab = button.dataset.propertyTab === "line";
             const isLineBadgeTab = button.dataset.propertyTab === "line-badge";
             const isIconTab = button.dataset.propertyTab === "icon";
+            const isTextTab = button.dataset.propertyTab === "text";
+            const isBadgeTab = button.dataset.propertyTab === "badge";
+            const hideNodeContentTab = selectionType !== "line"
+                && restrictedNode
+                && (isTextTab || isBadgeTab || isIconTab);
             const hideIconTab = selectionType !== "line" && nodeKind === "text" && isIconTab;
             button.classList.toggle("hidden", selectionType === "line"
                 ? !isLineTab && !isLineBadgeTab
-                : isLineTab || hideIconTab);
+                : isLineTab || isLineBadgeTab || hideNodeContentTab || hideIconTab);
         });
+        fillColorProperty?.classList.toggle("hidden", selectionType !== "line" && restrictedNode);
         if (propertyTabsContainer instanceof HTMLElement) {
             propertyTabsContainer.style.gridTemplateColumns = selectionType === "line"
                 ? "repeat(2, minmax(0, 1fr))"
-                : nodeKind === "text"
-                    ? "repeat(3, minmax(0, 1fr))"
+                : restrictedNode
+                    ? "repeat(1, minmax(0, 1fr))"
+                    : nodeKind === "text"
+                        ? "repeat(3, minmax(0, 1fr))"
                     : "repeat(4, minmax(0, 1fr))";
         }
     };
@@ -1718,7 +1728,7 @@ function initializeDiagramPage() {
         if (uniqueNodes.length === 1) {
             syncGroupedNodeHighlights(uniqueNodes[0]);
             updateSelectionPanel(uniqueNodes[0]);
-            setActivePropertyTab(uniqueNodes[0].dataset.nodeKind === "shape" ? "shape" : "text");
+            setActivePropertyTab(["shape", "image"].includes(uniqueNodes[0].dataset.nodeKind) ? "shape" : "text");
             setPropertiesPanelVisible(true);
             syncSelectionFrame();
         } else {
@@ -2046,6 +2056,14 @@ function initializeDiagramPage() {
     };
 
     const applyNodeAppearance = (node) => {
+        if (node.dataset.nodeKind === "image") {
+            node.style.backgroundColor = "transparent";
+            node.style.borderWidth = "0px";
+            node.style.borderColor = "transparent";
+            node.style.borderStyle = "solid";
+            node.style.boxShadow = "none";
+            return;
+        }
         const fillColor = node.dataset.fillColor ?? "#CDE5FF";
         const strokeColor = node.dataset.strokeColor ?? (node.dataset.nodeKind === "group-box" ? "#8FD5B7" : "#C6C6CD");
         const strokeWidth = node.dataset.strokeWidth ?? "2";
@@ -2058,6 +2076,15 @@ function initializeDiagramPage() {
         node.style.setProperty("--diagram-node-fill-color", visibleFillColor);
         node.style.setProperty("--diagram-node-stroke-color", visibleStrokeColor);
         node.style.setProperty("--diagram-node-stroke-width", hasVisibleStroke ? `${strokeWidth}px` : "0px");
+        node.style.setProperty("--diagram-node-stroke-style", hasVisibleStroke ? strokeStyle : "solid");
+        node.style.setProperty(
+            "--diagram-node-stroke-pattern",
+            strokeStyle === "dashed"
+                ? `repeating-linear-gradient(90deg, ${visibleStrokeColor} 0 10px, transparent 10px 16px)`
+                : strokeStyle === "dotted"
+                    ? `radial-gradient(circle, ${visibleStrokeColor} 0 1.5px, transparent 1.6px) 0 0 / 6px 6px`
+                    : visibleStrokeColor
+        );
         const usesCssShape = node.dataset.nodeKind === "shape"
             && node.dataset.shapeType
             && !["rectangle", "rounded-rectangle", "ellipse", "circle"].includes(node.dataset.shapeType);
@@ -2065,7 +2092,7 @@ function initializeDiagramPage() {
             node.style.backgroundColor = "transparent";
             node.style.borderWidth = "0px";
             node.style.borderColor = "transparent";
-            node.style.borderStyle = "solid";
+            node.style.borderStyle = strokeStyle;
         } else {
             const textObject = node.dataset.nodeKind === "text";
             const borderWidth = hasVisibleStroke ? `${strokeWidth}px` : "0px";
@@ -2542,6 +2569,10 @@ function initializeDiagramPage() {
         element.style.left = `${element.offsetLeft}px`;
         element.style.top = `${element.offsetTop}px`;
         element.style.userSelect = "none";
+        if (element.dataset.nodeKind === "image") {
+            element.style.pointerEvents = "auto";
+            element.style.zIndex = element.style.zIndex || "10";
+        }
         element.dataset.fillColor = element.dataset.fillColor ?? (element.dataset.nodeKey === "order-service" ? "#CDE5FF" : "#FFFFFF");
         element.dataset.strokeColor = element.dataset.strokeColor ?? (element.dataset.nodeKind === "group-box" ? "#8FD5B7" : "#C6C6CD");
         element.dataset.strokeWidth = element.dataset.strokeWidth ?? (element.dataset.nodeKey === "order-service" ? "2" : "1");
@@ -2582,6 +2613,16 @@ function initializeDiagramPage() {
                 return;
             }
             clearLineConnectTargets();
+        });
+
+        element.addEventListener("pointerdown", (event) => {
+            if (element.dataset.nodeKind !== "image" || !isSelectionTool() || isEraserTool()) {
+                return;
+            }
+            if (event.button !== 0 || event.target instanceof HTMLElement && event.target.closest("[data-node-resize-handle]")) {
+                return;
+            }
+            setSelectedNode(element);
         });
 
         element.addEventListener("click", (event) => {
@@ -2791,7 +2832,7 @@ function initializeDiagramPage() {
             node.dataset.textColor = "";
             node.dataset.textFontFamily = defaultTextFontFamily;
             node.dataset.textFontSize = "20";
-            node.className = "absolute w-64 h-48 overflow-hidden rounded-xl border border-outline-variant bg-surface-white shadow-md cursor-move diagram-image-node";
+            node.className = "absolute w-64 h-48 overflow-hidden cursor-move diagram-image-node";
             node.innerHTML = `<img data-node-image alt="" draggable="false">`;
             return node;
         }
@@ -2946,6 +2987,58 @@ function initializeDiagramPage() {
         }
     };
 
+    const findEmptyNodePlacement = (node) => {
+        const stageWidth = diagramStage.clientWidth;
+        const stageHeight = diagramStage.clientHeight;
+        const nodeWidth = node.offsetWidth;
+        const nodeHeight = node.offsetHeight;
+        const padding = 24;
+        const step = 24;
+        const maxLeft = Math.max(padding, stageWidth - nodeWidth - padding);
+        const maxTop = Math.max(padding, stageHeight - nodeHeight - padding);
+        const center = { x: stageWidth / 2, y: stageHeight / 2 };
+        const existingNodes = getNodes().filter((item) => item !== node);
+        let best = null;
+        let bestDistance = Number.POSITIVE_INFINITY;
+
+        for (let top = padding; top <= maxTop; top += step) {
+            for (let left = padding; left <= maxLeft; left += step) {
+                const overlaps = existingNodes.some((item) => {
+                    const right = item.offsetLeft + item.offsetWidth;
+                    const bottom = item.offsetTop + item.offsetHeight;
+                    return left < right && left + nodeWidth > item.offsetLeft
+                        && top < bottom && top + nodeHeight > item.offsetTop;
+                });
+                if (overlaps) {
+                    continue;
+                }
+
+                const distance = Math.hypot(
+                    left + nodeWidth / 2 - center.x,
+                    top + nodeHeight / 2 - center.y
+                );
+                if (distance < bestDistance) {
+                    best = { x: left + nodeWidth / 2, y: top + nodeHeight / 2 };
+                    bestDistance = distance;
+                }
+            }
+        }
+
+        return best ?? { x: center.x, y: center.y };
+    };
+
+    const placeImageInEmptyArea = (node) => {
+        saveHistory();
+        diagramStage.appendChild(node);
+        resizeTextObjectGuide(node);
+        const point = findEmptyNodePlacement(node);
+        node.style.left = `${Math.max(24, point.x - node.offsetWidth / 2)}px`;
+        node.style.top = `${Math.max(24, point.y - node.offsetHeight / 2)}px`;
+        bindNodeInteractions(node);
+        syncNodeGroupMembership(node);
+        setSelectedNode(node);
+    };
+
     const syncImageNode = (node) => {
         if (node.dataset.nodeKind !== "image") {
             return;
@@ -2958,6 +3051,18 @@ function initializeDiagramPage() {
         image.alt = node.dataset.imageName || "첨부 이미지";
     };
 
+    zoomLayer.addEventListener("pointerdown", (event) => {
+        if (!isSelectionTool() || event.button !== 0) {
+            return;
+        }
+        const target = event.target instanceof Element
+            ? event.target.closest('[data-diagram-node][data-node-kind="image"]')
+            : null;
+        if (target instanceof HTMLElement) {
+            setSelectedNode(target);
+        }
+    }, true);
+
     const attachImageBlob = (file) => {
         if (!(file instanceof File) || !file.type.startsWith("image/")) {
             return;
@@ -2967,18 +3072,24 @@ function initializeDiagramPage() {
             if (typeof reader.result !== "string") {
                 return;
             }
-            const node = createNodeMarkup("image");
-            node.dataset.imageSrc = reader.result;
-            node.dataset.imageName = file.name;
-            syncImageNode(node);
-            const bounds = zoomLayer.getBoundingClientRect();
-            const point = getStagePoint({
-                clientX: bounds.left + bounds.width / 2,
-                clientY: bounds.top + bounds.height / 2
+            const sourceImage = new Image();
+            sourceImage.addEventListener("load", () => {
+                const node = createNodeMarkup("image");
+                const naturalWidth = Math.max(1, sourceImage.naturalWidth || sourceImage.width);
+                const naturalHeight = Math.max(1, sourceImage.naturalHeight || sourceImage.height);
+                const initialScale = naturalWidth > 300 ? 300 / naturalWidth : 1;
+                const width = Math.max(1, Math.round(naturalWidth * initialScale));
+                const height = Math.max(1, Math.round(naturalHeight * initialScale));
+                node.style.width = `${width}px`;
+                node.style.height = `${height}px`;
+                node.dataset.imageSrc = reader.result;
+                node.dataset.imageName = file.name;
+                syncImageNode(node);
+                placeImageInEmptyArea(node);
+                activeTool = "select";
+                syncToolButtons();
             });
-            placeNodeAtPoint(node, point);
-            activeTool = "select";
-            syncToolButtons();
+            sourceImage.src = reader.result;
         });
         reader.readAsDataURL(file);
     };
