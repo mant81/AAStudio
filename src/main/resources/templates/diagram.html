@@ -138,20 +138,20 @@
             <button class="absolute top-4 left-4 w-10 h-10 rounded-xl bg-surface-white border border-outline-variant/30 shadow-lg text-on-surface-variant hover:text-primary hover:bg-surface transition-colors z-20 flex items-center justify-center"
                     id="diagram-spaces-open"
                     onclick="if (window.openDiagramSpaces) window.openDiagramSpaces()"
-                    title="Open Spaces"
+                    title="공간 열기"
                     type="button">
                 <span class="material-symbols-outlined text-[20px] pointer-events-none">folder_open</span>
             </button>
             <div class="absolute top-4 left-1/2 -translate-x-1/2 bg-surface-white rounded-xl shadow-lg border border-outline-variant/30 p-1.5 flex items-center gap-1 z-20 backdrop-blur-md bg-opacity-90"
                  id="diagram-main-toolbar">
-                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="move" title="Move Canvas" type="button">
-                    <span class="material-symbols-outlined text-[20px]">pan_tool</span>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="move" title="캔버스 이동" type="button">
+                    <svg aria-hidden="true" class="diagram-toolbar-icon" viewBox="0 0 24 24"><path d="M8 11V6.5a1.5 1.5 0 0 1 3 0V11m0-1.5V5.5a1.5 1.5 0 0 1 3 0V11m0-1V7a1.5 1.5 0 0 1 3 0v5m0-.5V10a1.5 1.5 0 0 1 3 0v5.5c0 4.1-2.8 6.5-6.8 6.5h-.8c-2.2 0-3.6-1-4.8-2.7L4 16.7a1.6 1.6 0 0 1 2.6-1.8L8 16.5V11Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"></path></svg>
                 </button>
-                <button class="p-2 rounded-lg text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors" data-diagram-tool="select" title="Select" type="button">
-                    <span class="material-symbols-outlined text-[20px]">arrow_selector_tool</span>
+                <button class="p-2 rounded-lg text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors" data-diagram-tool="select" title="선택" type="button">
+                    <svg aria-hidden="true" class="diagram-toolbar-icon" viewBox="0 0 24 24"><path d="m5 3 13.2 10.8-6.1 1.1 3.6 5.5-2.4 1.5-3.6-5.5-3.6 5.1L5 3Z" fill="currentColor" stroke="currentColor" stroke-linejoin="round" stroke-width="1.1"></path></svg>
                 </button>
                 <div class="w-[1px] h-6 bg-outline-variant/50 mx-1"></div>
-                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors diagram-shape-tool-button" data-diagram-tool="shape" id="diagram-shape-tool" title="Shape" type="button">
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors diagram-shape-tool-button" data-diagram-tool="shape" id="diagram-shape-tool" title="도형" type="button">
                     <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 20 20">
                         <rect x="2.5" y="3" width="6" height="5" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"></rect>
                         <circle cx="14" cy="5.5" r="2.8" fill="none" stroke="currentColor" stroke-width="1.4"></circle>
@@ -217,8 +217,8 @@
                         <svg aria-hidden="true" viewBox="0 0 40 40"><ellipse cx="20" cy="12" rx="11" ry="4" fill="none" stroke="currentColor" stroke-width="2"></ellipse><path d="M9 12V28C9 30.2 14 32 20 32S31 30.2 31 28V12M9 20C9 22.2 14 24 20 24S31 22.2 31 20" fill="none" stroke="currentColor" stroke-width="2"></path></svg>
                     </button>
                 </div>
-                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors diagram-line-tool-button" data-diagram-tool="connector" id="diagram-line-tool" title="Line" type="button">
-                    <span class="material-symbols-outlined text-[20px]">conversion_path</span>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors diagram-line-tool-button" data-diagram-tool="connector" id="diagram-line-tool" title="선 연결" type="button">
+                    <span class="material-symbols-outlined diagram-toolbar-icon">conversion_path</span>
                 </button>
                 <div class="diagram-line-menu hidden" id="diagram-line-menu">
                     <button type="button" data-line-preset="straight" data-line-type-preset="straight" data-line-start-arrow-preset="none" data-line-end-arrow-preset="none" aria-label="직선" title="직선">
@@ -247,24 +247,24 @@
                     </button>
                 </div>
                 <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="text" aria-label="텍스트 상자" title="텍스트 상자" type="button">
-                    <span class="material-symbols-outlined text-[20px]">text_fields</span>
+                    <svg aria-hidden="true" class="diagram-toolbar-icon" viewBox="0 0 24 24"><path d="M5 5h14M12 5v14M8 19h8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path></svg>
                 </button>
                 <div class="w-[1px] h-6 bg-outline-variant/50 mx-1"></div>
-                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="pen" title="Pen" type="button">
-                    <span class="material-symbols-outlined text-[20px]">draw</span>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="pen" title="펜" type="button">
+                    <svg aria-hidden="true" class="diagram-toolbar-icon" viewBox="0 0 24 24"><path d="m4.5 19.5 1.7-5.2L16.8 3.7a2.1 2.1 0 0 1 3 3L9.2 17.3 4.5 19.5Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"></path><path d="m14.8 5.7 3.5 3.5M6.2 14.3l3.5 3.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7"></path></svg>
                 </button>
-                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="eraser" title="Eraser" type="button">
-                    <span class="material-symbols-outlined text-[20px]">ink_eraser</span>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="eraser" title="지우개" type="button">
+                    <svg aria-hidden="true" class="diagram-toolbar-icon" viewBox="0 0 24 24"><path d="m5 15 8.8-8.8a2.2 2.2 0 0 1 3.1 0l1.9 1.9a2.2 2.2 0 0 1 0 3.1L10 20H7l-2-2v-3Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.7"></path><path d="m8 12 4 4M5 20h9" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7"></path></svg>
                 </button>
                 <div class="w-[1px] h-6 bg-outline-variant/50 mx-1"></div>
-                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="group-box" title="Group Box" type="button">
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="group-box" title="그룹 상자" type="button">
                     <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 20 20">
                         <path d="M5 3.25V16.75M15 3.25V16.75M3.25 6H16.75M3.25 14H16.75" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.45"></path>
                         <path d="M5 6H15V14H5V6Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.45"></path>
                     </svg>
                 </button>
-                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="image" title="Attach Image" type="button">
-                    <span class="material-symbols-outlined text-[20px]">image</span>
+                <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="image" title="이미지 첨부" type="button">
+                    <svg aria-hidden="true" class="diagram-toolbar-icon" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"></rect><circle cx="9" cy="9" r="1.5" fill="currentColor"></circle><path d="m5.5 17 4.2-4.2 3 2.7 2.2-2.1 3.6 3.6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"></path></svg>
                 </button>
                 <input id="diagram-image-input" type="file" accept="image/*" hidden>
             </div>

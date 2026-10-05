@@ -1797,6 +1797,36 @@
 
 #diagram-main-toolbar {
     position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-sizing: border-box;
+}
+
+#diagram-main-toolbar > button[data-diagram-tool] {
+    display: inline-flex;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+}
+
+#diagram-main-toolbar > button[data-diagram-tool] > .diagram-toolbar-icon,
+#diagram-main-toolbar > button[data-diagram-tool] > svg {
+    display: block;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+}
+
+#diagram-main-toolbar > .w-\[1px\] {
+    flex: 0 0 1px;
+    height: 24px;
+    margin-right: 4px;
+    margin-left: 4px;
 }
 
 .diagram-shape-menu {

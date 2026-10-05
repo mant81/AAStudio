@@ -2057,11 +2057,22 @@ function initializeDiagramPage() {
 
     const applyNodeAppearance = (node) => {
         if (node.dataset.nodeKind === "image") {
-            node.style.backgroundColor = "transparent";
-            node.style.borderWidth = "0px";
-            node.style.borderColor = "transparent";
-            node.style.borderStyle = "solid";
+            const strokeColor = node.dataset.strokeColor ?? "#C6C6CD";
+            const strokeWidth = node.dataset.strokeWidth ?? "1";
+            const strokeStyle = node.dataset.strokeStyle ?? "solid";
+            const nodeOpacity = Math.max(0, Math.min(100, Number(node.dataset.nodeOpacity ?? "100")));
+            const hasVisibleStroke = strokeColor !== "transparent" && Number(strokeWidth) > 0;
+
+            node.style.setProperty("background-color", "transparent", "important");
+            node.style.setProperty("border-width", hasVisibleStroke ? `${strokeWidth}px` : "0px", "important");
+            node.style.setProperty(
+                "border-color",
+                hasVisibleStroke ? colorWithOpacity(strokeColor, nodeOpacity) : "transparent",
+                "important"
+            );
+            node.style.setProperty("border-style", hasVisibleStroke ? strokeStyle : "solid", "important");
             node.style.boxShadow = "none";
+            node.style.opacity = "";
             return;
         }
         const fillColor = node.dataset.fillColor ?? "#CDE5FF";
