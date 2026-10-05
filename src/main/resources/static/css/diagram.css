@@ -1803,6 +1803,11 @@
     box-sizing: border-box;
 }
 
+/* Diagram selection is now handled from the header picker. */
+#spaces-panel {
+    display: none !important;
+}
+
 #diagram-main-toolbar > button[data-diagram-tool] {
     display: inline-flex;
     flex: 0 0 36px;

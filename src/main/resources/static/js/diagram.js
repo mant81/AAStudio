@@ -12,7 +12,21 @@ function initializeDiagramPage() {
     const spacesPanel = document.getElementById("spaces-panel");
     const spacesToggle = document.getElementById("diagram-spaces-toggle");
     const spacesToggleIcon = document.getElementById("diagram-spaces-toggle-icon");
-    const spacesOpenButton = document.getElementById("diagram-spaces-open");
+    const currentDiagramButton = document.getElementById("diagram-current-button");
+    const currentDiagramName = document.getElementById("diagram-current-name");
+    const diagramMenu = document.getElementById("diagram-menu");
+    const diagramOptions = document.getElementById("diagram-options");
+    const diagramAddButton = document.getElementById("diagram-add-button");
+    const diagramAddModal = document.getElementById("diagram-add-modal");
+    const diagramAddForm = document.getElementById("diagram-add-form");
+    const diagramAddName = document.getElementById("diagram-add-name");
+    const diagramAddCancel = document.getElementById("diagram-add-cancel");
+    const diagramAddCancelSecondary = document.getElementById("diagram-add-cancel-secondary");
+    const importButton = document.getElementById("diagram-import-button");
+    const importInput = document.getElementById("diagram-import-input");
+    const exportButton = document.getElementById("diagram-export-button");
+    const exportMenu = document.getElementById("diagram-export-menu");
+    const exportOptions = Array.from(diagramRoot.querySelectorAll("[data-diagram-export]"));
     const spacesTexts = Array.from(diagramRoot.querySelectorAll("[data-spaces-text]"));
     const spacesAction = diagramRoot.querySelector("[data-spaces-action]");
     const spacesHeader = diagramRoot.querySelector("[data-spaces-header]");
@@ -216,6 +230,7 @@ function initializeDiagramPage() {
     let selectionFrame = null;
     let nodeCounter = diagramRoot.querySelectorAll("[data-diagram-node]").length;
     let diagramCounter = diagramRoot.querySelectorAll("[data-space-diagram]").length + 1;
+    let diagramRegistrationCounter = 0;
     let groupCounter = spaceGroups.length + 1;
     let activeIconCategory = "all";
     let activeIconGroup = "all";
@@ -386,6 +401,165 @@ function initializeDiagramPage() {
         nodeCounter
     });
 
+    const downloadBlob = (blob, filename) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+
+    const exportJson = () => {
+        const state = captureDiagramState();
+        downloadBlob(new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }), "diagram.json");
+    };
+
+    const arrayBufferToDataUrl = (buffer, mimeType) => {
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        const chunkSize = 0x8000;
+        for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+            binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+        }
+        return `data:${mimeType};base64,${btoa(binary)}`;
+    };
+
+    const collectExportStyles = async () => {
+        const styleBlocks = [];
+        for (const sheet of Array.from(document.styleSheets)) {
+            try {
+                const baseUrl = sheet.href || window.location.href;
+                let css = Array.from(sheet.cssRules, (rule) => rule.cssText).join("\n");
+                const urls = [...css.matchAll(/url\((['"]?)([^'")]+)\1\)/g)];
+                for (const [, quote, source] of urls) {
+                    if (/^(data:|https?:|blob:|#)/i.test(source)) {
+                        continue;
+                    }
+                    try {
+                        const absoluteUrl = new URL(source, baseUrl).href;
+                        if (/\.(woff2?|ttf|otf)(\?|$)/i.test(absoluteUrl)) {
+                            const response = await fetch(absoluteUrl);
+                            const buffer = await response.arrayBuffer();
+                            const mimeType = /woff2/i.test(absoluteUrl) ? "font/woff2" : /woff/i.test(absoluteUrl) ? "font/woff" : "font/ttf";
+                            css = css.replaceAll(`url(${quote}${source}${quote})`, `url(${arrayBufferToDataUrl(buffer, mimeType)})`);
+                        } else {
+                            css = css.replaceAll(`url(${quote}${source}${quote})`, `url(${absoluteUrl})`);
+                        }
+                    } catch {
+                        // Keep an unavailable asset unchanged; the rest of the export can still render.
+                    }
+                }
+                styleBlocks.push(css);
+            } catch {
+                // Cross-origin stylesheets may not expose cssRules.
+            }
+        }
+        return styleBlocks.join("\n");
+    };
+
+    const exportCanvasDataUrl = async (format) => {
+        if (!(diagramStage instanceof HTMLElement)) {
+            return null;
+        }
+        const nodeBounds = getNodes().reduce((bounds, node) => ({
+            width: Math.max(bounds.width, node.offsetLeft + node.offsetWidth + 32),
+            height: Math.max(bounds.height, node.offsetTop + node.offsetHeight + 32)
+        }), { width: 0, height: 0 });
+        const width = Math.max(diagramStage.scrollWidth, diagramStage.clientWidth, nodeBounds.width, 1);
+        const height = Math.max(diagramStage.scrollHeight, diagramStage.clientHeight, nodeBounds.height, 1);
+        const clone = diagramStage.cloneNode(true);
+        clone.style.transform = "none";
+        clone.style.left = "0px";
+        clone.style.top = "0px";
+        clone.style.margin = "0";
+        clone.style.width = `${width}px`;
+        clone.style.height = `${height}px`;
+        clone.classList.remove("left-1/2", "top-1/2", "-translate-x-1/2", "-translate-y-1/2");
+        clone.querySelectorAll(".diagram-node-selected, .diagram-node-selection-frame, .diagram-line-selected, .diagram-line-handles, .diagram-line-hit-path").forEach((element) => element.remove());
+        const markup = new XMLSerializer().serializeToString(clone);
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject width="100%" height="100%"><xhtml:style>${await collectExportStyles()}</xhtml:style><xhtml:div xmlns:xhtml="http://www.w3.org/1999/xhtml">${markup}</xhtml:div></foreignObject></svg>`;
+        const image = new Image();
+        image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+        await image.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, width, height);
+        context.drawImage(image, 0, 0);
+        return canvas;
+    };
+
+    const createPdfBlob = (canvas) => {
+        const jpegData = canvas.toDataURL("image/jpeg", 0.92).split(",")[1];
+        const imageBytes = Uint8Array.from(atob(jpegData), (character) => character.charCodeAt(0));
+        const encoder = new TextEncoder();
+        const chunks = [];
+        const offsets = [0];
+        let position = 0;
+        const append = (value) => {
+            const bytes = value instanceof Uint8Array ? value : encoder.encode(value);
+            chunks.push(bytes);
+            position += bytes.length;
+        };
+        const object = (number, body, stream = null) => {
+            offsets[number] = position;
+            append(`${number} 0 obj\n`);
+            if (stream) {
+                append(`${body}\nstream\n`);
+                append(stream);
+                append("\nendstream\nendobj\n");
+            } else {
+                append(`${body}\nendobj\n`);
+            }
+        };
+
+        append("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+        object(1, "<< /Type /Catalog /Pages 2 0 R >>");
+        object(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+        object(3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${canvas.width} ${canvas.height}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`);
+        object(4, `<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBytes.length} >>`, imageBytes);
+        const content = encoder.encode(`q\n${canvas.width} 0 0 ${canvas.height} 0 0 cm\n/Im0 Do\nQ\n`);
+        object(5, `<< /Length ${content.length} >>`, content);
+        const xrefPosition = position;
+        append(`xref\n0 6\n0000000000 65535 f \n`);
+        for (let index = 1; index <= 5; index += 1) {
+            append(`${String(offsets[index]).padStart(10, "0")} 00000 n \n`);
+        }
+        append(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefPosition}\n%%EOF`);
+        return new Blob(chunks, { type: "application/pdf" });
+    };
+
+    const exportFilename = (extension) => {
+        const name = currentDiagramName?.textContent?.trim() || "diagram";
+        return `${name.replace(/[\\/:*?"<>|]/g, "-")}.${extension}`;
+    };
+
+    const exportImage = async (format) => {
+        if (format === "json") {
+            exportJson();
+            return;
+        }
+        try {
+            const canvas = await exportCanvasDataUrl(format);
+            if (!(canvas instanceof HTMLCanvasElement)) {
+                return;
+            }
+            if (format === "pdf") {
+                downloadBlob(createPdfBlob(canvas), exportFilename("pdf"));
+                return;
+            }
+            const dataUrl = canvas.toDataURL(format === "jpg" ? "image/jpeg" : "image/png", 0.92);
+            const response = await fetch(dataUrl);
+            downloadBlob(await response.blob(), exportFilename(format));
+        } catch (error) {
+            console.error("Failed to export diagram", error);
+            window.alert("다이어그램 내보내기에 실패했습니다.");
+        }
+    };
+
     const createLineFromMarkup = (markup) => {
         const parsed = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${markup}</svg>`, "image/svg+xml");
         const source = parsed.querySelector("path");
@@ -472,6 +646,47 @@ function initializeDiagramPage() {
         const previousState = historyStack.pop();
         return restoreDiagramState(previousState);
     };
+
+    importButton?.addEventListener("click", () => importInput?.click());
+    importInput?.addEventListener("change", async () => {
+        const file = importInput.files?.[0];
+        if (!file) {
+            return;
+        }
+        try {
+            const state = JSON.parse(await file.text());
+            if (!Array.isArray(state.nodes) || !Array.isArray(state.lines)) {
+                throw new Error("Invalid diagram JSON");
+            }
+            saveHistory();
+            restoreDiagramState(state);
+        } catch (error) {
+            console.error("Failed to import diagram JSON", error);
+            window.alert("다이어그램 JSON 파일을 불러오지 못했습니다.");
+        } finally {
+            importInput.value = "";
+        }
+    });
+
+    exportButton?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const isOpen = exportMenu?.classList.toggle("hidden") === false;
+        exportButton.setAttribute("aria-expanded", String(isOpen));
+    });
+    exportOptions.forEach((option) => {
+        option.addEventListener("click", async () => {
+            exportMenu?.classList.add("hidden");
+            exportButton?.setAttribute("aria-expanded", "false");
+            await exportImage(option.dataset.diagramExport);
+        });
+    });
+    document.addEventListener("click", (event) => {
+        if (!(event.target instanceof Node) || exportMenu?.contains(event.target) || exportButton?.contains(event.target)) {
+            return;
+        }
+        exportMenu?.classList.add("hidden");
+        exportButton?.setAttribute("aria-expanded", "false");
+    });
 
     let propertyEditHistoryState = null;
     const beginPropertyEditHistory = () => {
@@ -595,9 +810,6 @@ function initializeDiagramPage() {
             spacesFooter.classList.toggle("px-4", !hidden);
             spacesFooter.classList.toggle("px-2", hidden);
         }
-        if (spacesOpenButton instanceof HTMLElement) {
-            spacesOpenButton.classList.toggle("hidden", !hidden);
-        }
         if (spacesToggleIcon instanceof HTMLElement) {
             spacesToggleIcon.textContent = "chevron_left";
         }
@@ -611,23 +823,18 @@ function initializeDiagramPage() {
         setSpacesHidden(true);
     });
 
-    spacesOpenButton?.addEventListener("click", () => {
-        setSpacesHidden(false);
-    });
-
     document.addEventListener("click", (event) => {
         if (!(event.target instanceof HTMLElement)) {
             return;
         }
 
-        const clickedOpenButton = event.target.closest("#diagram-spaces-open");
         const clickedSidebarSpaces = event.target.closest("[data-open-diagram-spaces]");
-        if (!clickedOpenButton && !clickedSidebarSpaces) {
+        if (!clickedSidebarSpaces) {
             return;
         }
 
         const isDiagramPage = window.location.pathname.replace(/\/$/, "") === "/diagram";
-        if (clickedSidebarSpaces && !isDiagramPage) {
+        if (!isDiagramPage) {
             return;
         }
 
@@ -649,9 +856,56 @@ function initializeDiagramPage() {
             item.classList.toggle("text-secondary", isActive);
             item.classList.toggle("text-on-surface-variant", !isActive);
         });
+        if (button instanceof HTMLElement && currentDiagramName instanceof HTMLElement) {
+            currentDiagramName.textContent = button.querySelector("[data-spaces-text]")?.textContent?.trim() || "다이어그램 없음";
+            currentDiagramName.title = currentDiagramName.textContent;
+            renderDiagramOptions();
+        }
     };
 
+    const renderDiagramOptions = () => {
+        if (!(diagramOptions instanceof HTMLElement)) {
+            return;
+        }
+        diagramOptions.replaceChildren();
+        Array.from(diagramRoot.querySelectorAll("[data-space-diagram]"))
+            .sort((left, right) => Number(left.dataset.diagramOrder) - Number(right.dataset.diagramOrder))
+            .forEach((diagram) => {
+            const name = diagram.querySelector("[data-spaces-text]")?.textContent?.trim() || "이름 없는 다이어그램";
+            const option = document.createElement("button");
+            option.className = "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-on-surface-variant hover:bg-surface-variant transition-colors";
+            option.dataset.diagramOption = "";
+            option.type = "button";
+            option.innerHTML = '<span class="material-symbols-outlined text-[17px]">account_tree</span><span class="truncate"></span>';
+            option.querySelector("span:last-child").textContent = name;
+            option.addEventListener("click", () => {
+                if (diagram instanceof HTMLElement) {
+                    setActiveDiagramButton(diagram);
+                }
+                diagramMenu?.classList.add("hidden");
+                currentDiagramButton?.setAttribute("aria-expanded", "false");
+            });
+                diagramOptions.appendChild(option);
+            });
+    };
+
+    currentDiagramButton?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        renderDiagramOptions();
+        const isOpen = diagramMenu?.classList.toggle("hidden") === false;
+        currentDiagramButton.setAttribute("aria-expanded", String(isOpen));
+    });
+
+    document.addEventListener("click", (event) => {
+        if (!(event.target instanceof Node) || diagramMenu?.contains(event.target) || currentDiagramButton?.contains(event.target)) {
+            return;
+        }
+        diagramMenu?.classList.add("hidden");
+        currentDiagramButton?.setAttribute("aria-expanded", "false");
+    });
+
     const bindDiagramButton = (button) => {
+        button.dataset.diagramOrder ??= String(++diagramRegistrationCounter);
         button.addEventListener("click", () => {
             setActiveDiagramButton(button);
         });
@@ -686,6 +940,49 @@ function initializeDiagramPage() {
         }
         return button;
     };
+
+    const closeDiagramAddModal = () => {
+        diagramAddModal?.classList.add("hidden");
+        diagramAddModal?.classList.remove("flex");
+    };
+
+    const openDiagramAddModal = () => {
+        diagramAddModal?.classList.remove("hidden");
+        diagramAddModal?.classList.add("flex");
+        if (diagramAddName instanceof HTMLInputElement) {
+            diagramAddName.value = "";
+            diagramAddName.focus();
+        }
+    };
+
+    diagramAddButton?.addEventListener("click", openDiagramAddModal);
+    diagramAddCancel?.addEventListener("click", closeDiagramAddModal);
+    diagramAddCancelSecondary?.addEventListener("click", closeDiagramAddModal);
+    diagramAddModal?.addEventListener("click", (event) => {
+        if (event.target === diagramAddModal) {
+            closeDiagramAddModal();
+        }
+    });
+    diagramAddForm?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (!(diagramAddName instanceof HTMLInputElement)) {
+            return;
+        }
+        const activeDiagram = diagramRoot.querySelector("[data-space-diagram].bg-secondary\\/10");
+        const group = activeDiagram?.closest("[data-space-group]")
+            ?? diagramRoot.querySelector("[data-space-group]");
+        const children = group?.querySelector("[data-spaces-children]");
+        if (!(children instanceof HTMLElement)) {
+            closeDiagramAddModal();
+            return;
+        }
+        const name = diagramAddName.value.trim() || `새 다이어그램 ${diagramCounter++}`;
+        const newButton = createDiagramButton(name, true);
+        newButton.classList.remove("text-on-surface-variant", "hover:bg-surface-variant/50");
+        children.appendChild(newButton);
+        setActiveDiagramButton(newButton);
+        closeDiagramAddModal();
+    });
 
     const bindGroupInteractions = (group) => {
         if (group.dataset.bound === "true") {
@@ -4511,7 +4808,7 @@ function initializeDiagramPage() {
                     </button>
                     <button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-variant/60 rounded-lg transition-colors"
                             data-group-add-diagram
-                            title="Add diagram"
+                            title="다이어그램 추가"
                             type="button">
                         <span class="material-symbols-outlined text-[18px]">add</span>
                     </button>

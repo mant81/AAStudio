@@ -1,0 +1,218 @@
+{
+  ".vscode/settings.json": {
+    "mtime": 1790861777.747177,
+    "seen": 1791202753.885475,
+    "ast_hash": "0bdccf3f74ca242511bb4114b3b44bfd",
+    "semantic_hash": ""
+  },
+  "pom.xml": {
+    "mtime": 1790861777.7516913,
+    "seen": 1791202753.8854795,
+    "ast_hash": "a75ce4b193729b67467268e2fb67221e",
+    "semantic_hash": ""
+  },
+  "src/main/java/com/aastudio/core/AastudioCoreApplication.java": {
+    "mtime": 1790861777.7537346,
+    "seen": 1791202753.885481,
+    "ast_hash": "0954cc9a57184bd66f030ad0547db295",
+    "semantic_hash": ""
+  },
+  "src/main/java/com/aastudio/core/dashboard/mapper/DashboardMapper.java": {
+    "mtime": 1790861777.7547336,
+    "seen": 1791202753.8854825,
+    "ast_hash": "9c96755d0d4f6d68e0009cb4cc957c35",
+    "semantic_hash": ""
+  },
+  "src/main/java/com/aastudio/core/dashboard/service/DashboardService.java": {
+    "mtime": 1790861777.7547336,
+    "seen": 1791202753.8854837,
+    "ast_hash": "bc5b5d480fba03c5b8558be7d01785e0",
+    "semantic_hash": ""
+  },
+  "src/main/java/com/aastudio/core/web/LayoutModelFactory.java": {
+    "mtime": 1790861777.7547336,
+    "seen": 1791202753.8854847,
+    "ast_hash": "efd44a6e057cd63c63cd31f74beedff9",
+    "semantic_hash": ""
+  },
+  "src/main/java/com/aastudio/core/web/ViewController.java": {
+    "mtime": 1790861777.7547336,
+    "seen": 1791202753.885486,
+    "ast_hash": "0a5e2ff5c20a01ec16f305182ad32dd0",
+    "semantic_hash": ""
+  },
+  "src/main/resources/static/js/app.js": {
+    "mtime": 1790861777.757758,
+    "seen": 1791202753.8854866,
+    "ast_hash": "a42fe9b5a29de610332e7038f507c570",
+    "semantic_hash": ""
+  },
+  "src/main/resources/static/js/diagram-logic.js": {
+    "mtime": 1790861777.758755,
+    "seen": 1791202753.8854876,
+    "ast_hash": "cfbd5d61e06316f5deb606a94640270b",
+    "semantic_hash": ""
+  },
+  "src/main/resources/static/js/diagram.js": {
+    "mtime": 1791202619.8588965,
+    "seen": 1791202753.8854887,
+    "ast_hash": "b59a308ef4846f2213f936a5bad3a9e7",
+    "semantic_hash": ""
+  },
+  "AGENTS.md": {
+    "mtime": 1791201397.874672,
+    "seen": 1791202753.8854897,
+    "ast_hash": "8de6c511e4b8d49f2dfa6cc803bdb244",
+    "semantic_hash": ""
+  },
+  "DESIGN.md": {
+    "mtime": 1790861777.7481747,
+    "seen": 1791202753.8854907,
+    "ast_hash": "8f839bc808cd49785d245f9985f7f91e",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1790861777.7481747,
+    "seen": 1791202753.8854926,
+    "ast_hash": "344ef16cf88cac313c8e0630df9d15bf",
+    "semantic_hash": ""
+  },
+  "api.html": {
+    "mtime": 1790861777.7491734,
+    "seen": 1791202753.8854933,
+    "ast_hash": "c2c1e40e4a79595496384952a70456af",
+    "semantic_hash": ""
+  },
+  "dashboard.html": {
+    "mtime": 1790861777.7491734,
+    "seen": 1791202753.8854942,
+    "ast_hash": "fb6707901e614f76cba823cd5288ac25",
+    "semantic_hash": ""
+  },
+  "db_modeling.html": {
+    "mtime": 1790861777.7491734,
+    "seen": 1791202753.8854952,
+    "ast_hash": "dc2e52c4f5ccdee34706ea8c4b4962dd",
+    "semantic_hash": ""
+  },
+  "diagram.html": {
+    "mtime": 1790861777.7506764,
+    "seen": 1791202753.8854961,
+    "ast_hash": "d6201b9bc336027f85f8c27fba3f825e",
+    "semantic_hash": ""
+  },
+  "docs/development-guide.md": {
+    "mtime": 1791201378.100845,
+    "seen": 1791202753.885497,
+    "ast_hash": "3c3987e896d91aa4a929783b8caafaaa",
+    "semantic_hash": ""
+  },
+  "docs/prd.md": {
+    "mtime": 1790861777.751166,
+    "seen": 1791202753.885498,
+    "ast_hash": "3e3bdbc3c30d1c7ba6c1d1946585c36b",
+    "semantic_hash": ""
+  },
+  "docs/working_history/2026-09-28-pen-default-color.md": {
+    "mtime": 1790861777.7516913,
+    "seen": 1791202753.8854988,
+    "ast_hash": "82e20eb66dc696a97892e535e0611164",
+    "semantic_hash": ""
+  },
+  "docs/working_history/2026-10-05-group-picker.md": {
+    "mtime": 1791202621.6662824,
+    "seen": 1791202753.8855,
+    "ast_hash": "05403b75435fba52723f8583e267425a",
+    "semantic_hash": ""
+  },
+  "docs/working_history/2026-10-05-image-border.md": {
+    "mtime": 1791201543.643263,
+    "seen": 1791202753.885501,
+    "ast_hash": "7979473adb36bd146a2fac56a2390b56",
+    "semantic_hash": ""
+  },
+  "docs/working_history/2026-10-05-local-development-criteria.md": {
+    "mtime": 1791201418.6059394,
+    "seen": 1791202753.8855019,
+    "ast_hash": "4a2b8c2b4550b53c44e46c20e729b1de",
+    "semantic_hash": ""
+  },
+  "docs/working_history/2026-10-05-toolbar-icon-alignment.md": {
+    "mtime": 1791202258.2414787,
+    "seen": 1791202753.885503,
+    "ast_hash": "0c0d193b137ffe31a9065a9ddf8fa78b",
+    "semantic_hash": ""
+  },
+  "docs/working_history/README.md": {
+    "mtime": 1790861777.7516913,
+    "seen": 1791202753.885504,
+    "ast_hash": "c18b46e45c253586b41012e6b5cd12dc",
+    "semantic_hash": ""
+  },
+  "setting.html": {
+    "mtime": 1790861777.752735,
+    "seen": 1791202753.8855047,
+    "ast_hash": "7e2767a6079bceb32d35897cb53e7533",
+    "semantic_hash": ""
+  },
+  "src/main/resources/application.yml": {
+    "mtime": 1790861777.755735,
+    "seen": 1791202753.8855057,
+    "ast_hash": "273cde41dc1e26a1d2e8864104066bf9",
+    "semantic_hash": ""
+  },
+  "src/main/resources/templates/api.html": {
+    "mtime": 1790861777.9206214,
+    "seen": 1791202753.8855069,
+    "ast_hash": "f13e4e79d2ff617effd249bc46cd8e92",
+    "semantic_hash": ""
+  },
+  "src/main/resources/templates/dashboard.html": {
+    "mtime": 1790861777.9206214,
+    "seen": 1791202753.8855078,
+    "ast_hash": "9d54396ac9323fd41e1635652eaeb87e",
+    "semantic_hash": ""
+  },
+  "src/main/resources/templates/db-modeling.html": {
+    "mtime": 1790861777.9215672,
+    "seen": 1791202753.8855085,
+    "ast_hash": "497efa781b0f612e82f6f453d09ef889",
+    "semantic_hash": ""
+  },
+  "src/main/resources/templates/diagram.html": {
+    "mtime": 1791202577.8399222,
+    "seen": 1791202753.8855095,
+    "ast_hash": "eb083a2f9eb1c97ef993041c8e7f7d57",
+    "semantic_hash": ""
+  },
+  "src/main/resources/templates/fragments/layout.html": {
+    "mtime": 1790861777.922619,
+    "seen": 1791202753.8855104,
+    "ast_hash": "a8369a03d92c5385bd555b02bdacd9a2",
+    "semantic_hash": ""
+  },
+  "src/main/resources/templates/fragments/sidebar.html": {
+    "mtime": 1790861777.9235668,
+    "seen": 1791202753.8855114,
+    "ast_hash": "cae3c7903dbda404b8cd966ff0312d91",
+    "semantic_hash": ""
+  },
+  "src/main/resources/templates/settings.html": {
+    "mtime": 1790861777.9235668,
+    "seen": 1791202753.885512,
+    "ast_hash": "0ca64e834dce5693892f2881695af257",
+    "semantic_hash": ""
+  },
+  "src/main/resources/templates/wiki.html": {
+    "mtime": 1790861777.924564,
+    "seen": 1791202753.8855133,
+    "ast_hash": "d67775d106d573848d58c027be95ffc7",
+    "semantic_hash": ""
+  },
+  "wiki.html": {
+    "mtime": 1790861777.924564,
+    "seen": 1791202753.885514,
+    "ast_hash": "379b1b11d16ab8c850c0eddfc3ced53b",
+    "semantic_hash": ""
+  }
+}

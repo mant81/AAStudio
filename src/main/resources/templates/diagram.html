@@ -4,8 +4,20 @@
 <div class="flex flex-col w-full h-screen min-h-0 font-body-md text-on-background relative overflow-hidden bg-surface-container-lowest" id="diagram-root">
     <div class="flex items-center justify-between px-gutter py-3 border-b border-outline-variant bg-surface-white shrink-0 z-10 shadow-sm relative">
         <div class="flex items-center gap-4">
-            <h1 class="font-title-md text-title-md text-on-surface" th:text="${pageTitle}">Microservices Architecture v2</h1>
-            <span class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-label-md text-label-md">Draft</span>
+            <div class="relative" id="diagram-selector">
+                <button aria-expanded="false" aria-haspopup="menu" class="font-title-md text-title-md text-on-surface inline-flex items-center gap-2 rounded-lg px-2 py-1 -mx-2 hover:bg-surface-container transition-colors" id="diagram-current-button" title="다이어그램 선택" type="button">
+                    <span class="material-symbols-outlined text-[22px] text-on-surface-variant">account_tree</span>
+                    <span class="max-w-[32rem] truncate" id="diagram-current-name" th:text="${pageTitle}">Microservices v2</span>
+                    <span class="material-symbols-outlined text-[20px] text-on-surface-variant">expand_more</span>
+                </button>
+                <div class="hidden absolute left-0 top-full mt-2 z-50 w-56 rounded-xl border border-outline-variant/50 bg-surface-white p-1.5 shadow-xl" id="diagram-menu" role="menu">
+                    <div class="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">다이어그램 선택</div>
+                    <div class="space-y-0.5" id="diagram-options"></div>
+                </div>
+            </div>
+            <button aria-label="다이어그램 추가" class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-label-md text-label-md inline-flex items-center gap-1 hover:opacity-80 transition-opacity" id="diagram-add-button" title="다이어그램 추가" type="button">
+                <span class="text-[16px] leading-none">+</span>
+            </button>
         </div>
         <div class="flex items-center gap-3">
             <div class="flex items-center -space-x-2 mr-4">
@@ -13,15 +25,48 @@
                 <div class="w-8 h-8 rounded-full border-2 border-surface-white bg-accent-db/20 shadow-sm z-20"></div>
                 <div class="w-8 h-8 rounded-full border-2 border-surface-white bg-surface-variant flex items-center justify-center font-label-md text-label-md text-on-surface-variant shadow-sm z-10">+3</div>
             </div>
-            <button class="flex items-center gap-2 px-4 py-2 text-on-surface-variant hover:bg-surface-variant rounded-xl transition-colors font-label-md text-label-md" type="button">
-                <span class="material-symbols-outlined text-[18px]">history</span>
-                History
+            <button class="flex items-center gap-2 px-4 py-2 text-on-surface-variant hover:bg-surface-variant rounded-xl transition-colors font-label-md text-label-md" id="diagram-import-button" title="JSON 가져오기" type="button">
+                <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                Import
             </button>
+            <input accept="application/json,.json" hidden id="diagram-import-input" type="file">
+            <div class="relative" id="diagram-export-picker">
+                <button aria-expanded="false" aria-haspopup="menu" class="flex items-center gap-2 px-4 py-2 text-on-surface-variant hover:bg-surface-variant rounded-xl transition-colors font-label-md text-label-md" id="diagram-export-button" title="다이어그램 내보내기" type="button">
+                    <span class="material-symbols-outlined text-[18px]">download</span>
+                    Export
+                </button>
+                <div class="hidden absolute right-0 top-full mt-2 z-50 w-40 rounded-xl border border-outline-variant/50 bg-surface-white p-1.5 shadow-xl" id="diagram-export-menu" role="menu">
+                    <button class="flex w-full items-center rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant" data-diagram-export="json" type="button">JSON</button>
+                    <button class="flex w-full items-center rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant" data-diagram-export="jpg" type="button">JPG</button>
+                    <button class="flex w-full items-center rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant" data-diagram-export="png" type="button">PNG</button>
+                    <button class="flex w-full items-center rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant" data-diagram-export="pdf" type="button">PDF</button>
+                </div>
+            </div>
             <button class="flex items-center gap-2 px-4 py-2 bg-secondary text-on-secondary hover:opacity-90 rounded-xl shadow-sm transition-opacity font-label-md text-label-md" type="button">
                 <span class="material-symbols-outlined text-[18px]">share</span>
                 Share
             </button>
         </div>
+    </div>
+
+    <div class="hidden fixed inset-0 z-[70] items-center justify-center bg-on-background/30 p-4" id="diagram-add-modal">
+        <form class="w-full max-w-md rounded-2xl bg-surface-white p-6 shadow-2xl" id="diagram-add-form">
+            <div class="mb-5 flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="font-title-md text-title-md text-on-surface">다이어그램 추가</h2>
+                    <p class="mt-1 text-sm text-on-surface-variant">현재 그룹에 새 다이어그램을 추가합니다.</p>
+                </div>
+                <button aria-label="닫기" class="rounded-lg p-1 text-on-surface-variant hover:bg-surface-variant" id="diagram-add-cancel" type="button">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <label class="block text-sm font-medium text-on-surface" for="diagram-add-name">다이어그램 이름</label>
+            <input class="mt-2 h-11 w-full rounded-lg border border-outline-variant bg-surface px-3 text-on-surface outline-none focus:border-secondary" id="diagram-add-name" placeholder="예: 주문 처리 흐름" type="text">
+            <div class="mt-6 flex justify-end gap-2">
+                <button class="rounded-lg px-4 py-2 text-on-surface-variant hover:bg-surface-variant" id="diagram-add-cancel-secondary" type="button">취소</button>
+                <button class="rounded-lg bg-secondary px-4 py-2 text-on-secondary hover:opacity-90" type="submit">추가</button>
+            </div>
+        </form>
     </div>
 
     <div class="flex flex-1 min-h-0 overflow-hidden relative">
@@ -34,7 +79,7 @@
                 <span class="material-symbols-outlined text-[20px] text-on-surface-variant hidden" data-spaces-collapsed-icon>folder</span>
                 <button class="text-on-surface-variant hover:text-primary transition-colors p-1"
                         data-spaces-action
-                        title="Add group"
+                        title="그룹 추가"
                         type="button">
                     <span class="material-symbols-outlined text-[20px]">create_new_folder</span>
                 </button>
@@ -52,7 +97,7 @@
                         </button>
                         <button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-variant/60 rounded-lg transition-colors"
                                 data-group-add-diagram
-                                title="Add diagram"
+                                title="다이어그램 추가"
                                 type="button">
                             <span class="material-symbols-outlined text-[18px]">add</span>
                         </button>
@@ -63,12 +108,6 @@
                                 type="button">
                             <span class="material-symbols-outlined text-[16px]">account_tree</span>
                             <span class="truncate" data-spaces-text>Microservices v2</span>
-                        </button>
-                        <button class="w-full flex items-center gap-2 px-3 py-1.5 text-on-surface-variant hover:bg-surface-variant/50 rounded-lg font-body-md text-body-md text-left transition-colors"
-                                data-space-diagram
-                                type="button">
-                            <span class="material-symbols-outlined text-[16px]">account_tree</span>
-                            <span class="truncate" data-spaces-text>Legacy Monolith</span>
                         </button>
                     </div>
                 </div>
@@ -90,12 +129,6 @@
                         </button>
                     </div>
                     <div class="pl-9 pr-2 py-1 space-y-1 hidden" data-spaces-children>
-                        <button class="w-full flex items-center gap-2 px-3 py-1.5 text-on-surface-variant hover:bg-surface-variant/50 rounded-lg font-body-md text-body-md text-left transition-colors"
-                                data-space-diagram
-                                type="button">
-                            <span class="material-symbols-outlined text-[16px]">account_tree</span>
-                            <span class="truncate" data-spaces-text>AWS Topology</span>
-                        </button>
                     </div>
                 </div>
                 <div class="group" data-space-group>
@@ -116,12 +149,6 @@
                         </button>
                     </div>
                     <div class="pl-9 pr-2 py-1 space-y-1 hidden" data-spaces-children>
-                        <button class="w-full flex items-center gap-2 px-3 py-1.5 text-on-surface-variant hover:bg-surface-variant/50 rounded-lg font-body-md text-body-md text-left transition-colors"
-                                data-space-diagram
-                                type="button">
-                            <span class="material-symbols-outlined text-[16px]">account_tree</span>
-                            <span class="truncate" data-spaces-text>Checkout Flow</span>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -135,13 +162,6 @@
         </div>
 
         <div class="flex-1 flex flex-col relative bg-surface-container-low overflow-hidden" id="canvas-container">
-            <button class="absolute top-4 left-4 w-10 h-10 rounded-xl bg-surface-white border border-outline-variant/30 shadow-lg text-on-surface-variant hover:text-primary hover:bg-surface transition-colors z-20 flex items-center justify-center"
-                    id="diagram-spaces-open"
-                    onclick="if (window.openDiagramSpaces) window.openDiagramSpaces()"
-                    title="공간 열기"
-                    type="button">
-                <span class="material-symbols-outlined text-[20px] pointer-events-none">folder_open</span>
-            </button>
             <div class="absolute top-4 left-1/2 -translate-x-1/2 bg-surface-white rounded-xl shadow-lg border border-outline-variant/30 p-1.5 flex items-center gap-1 z-20 backdrop-blur-md bg-opacity-90"
                  id="diagram-main-toolbar">
                 <button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors" data-diagram-tool="move" title="캔버스 이동" type="button">
