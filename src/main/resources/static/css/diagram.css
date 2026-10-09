@@ -394,6 +394,19 @@
     cursor: inherit !important;
 }
 
+#diagram-root.diagram-read-only [data-diagram-node],
+#diagram-root.diagram-read-only .diagram-line-hit-path,
+#diagram-root.diagram-read-only .diagram-line-path {
+    pointer-events: none !important;
+}
+
+#diagram-root.diagram-read-only [data-diagram-tool],
+#diagram-root.diagram-read-only #diagram-add-button,
+#diagram-root.diagram-read-only #diagram-manage-button {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 #zoom-layer.diagram-eraser-mode [data-diagram-node] {
     pointer-events: none !important;
     user-select: none !important;

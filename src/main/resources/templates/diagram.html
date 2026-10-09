@@ -7,7 +7,7 @@
             <div class="relative" id="diagram-selector">
                 <button aria-expanded="false" aria-haspopup="menu" class="font-title-md text-title-md text-on-surface inline-flex items-center gap-2 rounded-lg px-2 py-1 -mx-2 hover:bg-surface-container transition-colors" id="diagram-current-button" title="다이어그램 선택" type="button">
                     <span class="material-symbols-outlined text-[22px] text-on-surface-variant">account_tree</span>
-                    <span class="max-w-[32rem] truncate" id="diagram-current-name" th:text="${pageTitle}">Microservices v2</span>
+                    <span class="max-w-[32rem] truncate" id="diagram-current-name" th:text="${pageTitle}">다이어그램 1</span>
                     <span class="material-symbols-outlined text-[20px] text-on-surface-variant">expand_more</span>
                 </button>
                 <div class="hidden absolute left-0 top-full mt-2 z-50 w-56 rounded-xl border border-outline-variant/50 bg-surface-white p-1.5 shadow-xl" id="diagram-menu" role="menu">
@@ -18,9 +18,17 @@
             <button aria-label="다이어그램 추가" class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-label-md text-label-md inline-flex items-center gap-1 hover:opacity-80 transition-opacity" id="diagram-add-button" title="다이어그램 추가" type="button">
                 <span class="text-[16px] leading-none">+</span>
             </button>
+            <span class="inline-flex items-center gap-1 rounded-full border border-outline-variant/60 bg-surface-container-low px-2 py-1 text-[11px] font-medium text-on-surface-variant" id="diagram-save-status">
+                <span class="material-symbols-outlined text-[14px]" id="diagram-save-status-icon">cloud_off</span>
+                <span id="diagram-save-status-text">저장 대기</span>
+            </span>
         </div>
         <div class="flex items-center gap-3">
             <input accept="application/json,.json" hidden id="diagram-import-input" type="file">
+            <button aria-expanded="false" aria-label="샘플 다이어그램 열기" class="flex h-10 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-container transition-colors" id="diagram-sample-button" title="샘플 다이어그램" type="button">
+                <span class="material-symbols-outlined text-[18px]">dashboard_customize</span>
+                <span class="text-[11px] font-medium">샘플 다이어그램</span>
+            </button>
             <div class="flex items-center gap-1 rounded-xl border border-outline-variant/50 bg-surface-container-low p-1" aria-label="다이어그램 내보내기">
                 <span class="flex items-center gap-1 px-2 text-on-surface-variant">
                     <span class="material-symbols-outlined text-[17px]">download</span>
@@ -40,10 +48,21 @@
                     <span class="text-[11px] font-medium">PDF</span>
                 </button>
                 <span class="h-5 w-px bg-outline-variant/60" aria-hidden="true"></span>
-                <button aria-label="다이어그램 링크 공유" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" title="다이어그램 링크 공유" type="button">
-                    <span class="material-symbols-outlined text-[18px]">link</span>
-                    <span class="text-[11px] font-medium">링크 공유</span>
-                </button>
+                <div class="relative" id="diagram-share-picker">
+                    <button aria-expanded="false" aria-haspopup="dialog" aria-label="다이어그램 링크 공유" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" id="diagram-share-button" title="다이어그램 링크 공유" type="button">
+                        <span class="material-symbols-outlined text-[18px]">link</span>
+                        <span class="text-[11px] font-medium">링크 공유</span>
+                    </button>
+                    <div class="hidden fixed right-6 top-3 z-[100] w-[26rem] rounded-xl border border-outline-variant/50 bg-surface-white p-3 shadow-xl" id="diagram-share-menu" role="dialog">
+                        <div class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">읽기 전용 공유 링크</div>
+                        <div class="flex items-center gap-2">
+                            <input class="min-w-0 flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-xs text-on-surface outline-none" id="diagram-share-url" readonly type="text">
+                            <button aria-label="공유 링크 복사" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-on-secondary hover:bg-secondary/90" id="diagram-share-copy-button" title="공유 링크 복사" type="button">
+                                <span class="material-symbols-outlined text-[18px]">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="relative" id="diagram-manage-picker">
                 <button aria-expanded="false" aria-haspopup="menu" aria-label="다이어그램 관리" class="flex items-center justify-center w-10 h-10 text-on-surface-variant hover:bg-surface-variant rounded-xl transition-colors" id="diagram-manage-button" title="다이어그램 관리" type="button">
@@ -128,10 +147,11 @@
                     </div>
                     <div class="pl-9 pr-2 py-1 space-y-1" data-spaces-children>
                         <button class="w-full flex items-center gap-2 px-3 py-1.5 bg-secondary/10 text-secondary rounded-lg font-body-md text-body-md text-left"
+                                data-diagram-id="microservices-v2"
                                 data-space-diagram
                                 type="button">
                             <span class="material-symbols-outlined text-[16px]">account_tree</span>
-                            <span class="truncate" data-spaces-text>Microservices v2</span>
+                            <span class="truncate" data-spaces-text>다이어그램 1</span>
                         </button>
                     </div>
                 </div>
@@ -387,93 +407,7 @@
                                 <circle cx="5" cy="5" fill="context-stroke" r="4"></circle>
                             </marker>
                         </defs>
-                        <path data-line-from="client-apps" data-line-to="api-gateway" data-from-anchor="right" data-to-anchor="left" data-line-tone="default" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-dasharray="4" stroke-width="2"></path>
-                        <path data-line-from="api-gateway" data-line-to="auth-service" data-from-anchor="bottom" data-to-anchor="top" data-line-tone="default" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-width="2"></path>
-                        <path data-line-from="api-gateway" data-line-to="order-service" data-from-anchor="bottom" data-to-anchor="top" data-line-tone="selected" fill="none" marker-end="url(#arrow-selected)" stroke="#006399" stroke-width="2"></path>
-                        <path data-line-from="api-gateway" data-line-to="inventory-service" data-from-anchor="bottom" data-to-anchor="top" data-line-tone="default" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-width="2"></path>
-                        <path data-line-from="auth-service" data-line-to="auth-storage" data-from-anchor="bottom" data-to-anchor="top" data-line-tone="default" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-width="2"></path>
-                        <path data-line-from="order-service" data-line-to="order-storage" data-from-anchor="bottom" data-to-anchor="top" data-line-tone="selected" fill="none" marker-end="url(#arrow-selected)" stroke="#006399" stroke-width="2"></path>
-                        <path data-line-from="inventory-service" data-line-to="inventory-storage" data-from-anchor="bottom" data-to-anchor="top" data-line-tone="default" fill="none" marker-end="url(#arrow)" stroke="#7c839b" stroke-width="2"></path>
                     </svg>
-
-                    <div class="absolute top-[210px] left-[150px] w-48 bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-move z-10"
-                         data-diagram-node
-                         data-node-key="client-apps">
-                        <div class="w-12 h-12 bg-primary-fixed rounded-full flex items-center justify-center text-on-primary-fixed mb-1">
-                            <span class="material-symbols-outlined text-[24px]" data-node-icon-element>devices</span>
-                        </div>
-                        <h3 class="font-title-md text-title-md text-on-surface" data-node-title>Client Apps</h3>
-                    </div>
-                    <div class="absolute top-[190px] left-[550px] w-[200px] bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-move z-10"
-                         data-diagram-node
-                         data-node-badge-position="right"
-                         data-node-badge-text="v1.2"
-                         data-node-key="api-gateway">
-                        <div data-node-badge>v1.2</div>
-                        <div class="w-12 h-12 bg-surface-variant rounded-lg flex items-center justify-center text-on-surface mb-1">
-                            <span class="material-symbols-outlined text-[24px]" data-node-icon-element>router</span>
-                        </div>
-                        <h3 class="font-title-md text-title-md text-on-surface text-center" data-node-title>API Gateway</h3>
-                    </div>
-                    <div class="absolute top-[550px] left-[350px] w-48 bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-move z-10"
-                         data-diagram-node
-                         data-node-key="auth-service">
-                        <div class="w-10 h-10 bg-error-container text-on-error-container rounded-lg flex items-center justify-center mb-1">
-                            <span class="material-symbols-outlined text-[20px]" data-node-icon-element>lock</span>
-                        </div>
-                        <h3 class="font-title-md text-title-md text-on-surface" data-node-title>Auth Service</h3>
-                    </div>
-                    <div class="absolute top-[550px] left-[550px] w-[200px] bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 cursor-move z-10 transition-transform"
-                         data-diagram-node
-                         data-fill-color="#CDE5FF"
-                         data-stroke-width="2"
-                         data-node-key="order-service">
-                        <div class="absolute -top-1.5 -left-1.5 w-3 h-3 bg-surface-white border border-secondary rounded-sm"></div>
-                        <div class="absolute -top-1.5 -right-1.5 w-3 h-3 bg-surface-white border border-secondary rounded-sm"></div>
-                        <div class="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-surface-white border border-secondary rounded-sm"></div>
-                        <div class="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-surface-white border border-secondary rounded-sm"></div>
-                        <div class="w-10 h-10 bg-secondary text-on-secondary rounded-lg flex items-center justify-center mb-1">
-                            <span class="material-symbols-outlined text-[20px]" data-node-icon-element>shopping_cart</span>
-                        </div>
-                        <h3 class="font-title-md text-title-md text-on-surface" data-node-title>Order Service</h3>
-                    </div>
-                    <div class="absolute top-[550px] left-[750px] w-48 bg-surface-white rounded-xl shadow-md border border-outline-variant p-4 flex flex-col items-center justify-center gap-2 hover:shadow-lg transition-shadow cursor-move z-10"
-                         data-diagram-node
-                         data-node-key="inventory-service">
-                        <div class="w-10 h-10 bg-tertiary-fixed text-on-tertiary-fixed rounded-lg flex items-center justify-center mb-1">
-                            <span class="material-symbols-outlined text-[20px]" data-node-icon-element>inventory_2</span>
-                        </div>
-                        <h3 class="font-title-md text-title-md text-on-surface" data-node-title>Inventory</h3>
-                    </div>
-                    <div class="absolute top-[700px] left-[300px] w-[700px] h-[180px] bg-accent-db/5 border border-accent-db/20 rounded-2xl border-dashed z-[9] cursor-move"
-                         data-diagram-node
-                         data-node-key="storage-layer-group"
-                         data-node-kind="group-box"
-                         data-fill-color="rgba(16, 185, 129, 0.05)"
-                         data-stroke-width="1"
-                         data-stroke-style="dashed">
-                        <div class="absolute -top-3 left-6 font-label-md text-label-md text-accent-db">
-                            <span data-node-title>Storage Layer</span>
-                        </div>
-                    </div>
-                    <div class="absolute top-[750px] left-[370px] w-32 h-24 bg-surface-white rounded-lg shadow border border-outline-variant/50 flex flex-col items-center justify-center gap-1 z-10"
-                         data-diagram-node
-                         data-node-key="auth-storage">
-                        <span class="material-symbols-outlined text-accent-db text-[24px]" data-node-icon-element>storage</span>
-                        <span class="font-body-md text-body-md text-on-surface font-medium" data-node-title>Redis</span>
-                    </div>
-                    <div class="absolute top-[750px] left-[585px] w-32 h-24 bg-surface-white rounded-lg shadow border-2 border-secondary/50 flex flex-col items-center justify-center gap-1 z-10"
-                         data-diagram-node
-                         data-node-key="order-storage">
-                        <span class="material-symbols-outlined text-accent-db text-[24px]" data-node-icon-element>storage</span>
-                        <span class="font-body-md text-body-md text-on-surface font-medium" data-node-title>PostgreSQL</span>
-                    </div>
-                    <div class="absolute top-[750px] left-[785px] w-32 h-24 bg-surface-white rounded-lg shadow border border-outline-variant/50 flex flex-col items-center justify-center gap-1 z-10"
-                         data-diagram-node
-                         data-node-key="inventory-storage">
-                        <span class="material-symbols-outlined text-accent-db text-[24px]" data-node-icon-element>storage</span>
-                        <span class="font-body-md text-body-md text-on-surface font-medium" data-node-title>MongoDB</span>
-                    </div>
                 </div>
             </div>
         </div>
@@ -538,6 +472,21 @@
             </div>
         </aside>
 
+        <aside aria-label="샘플 다이어그램 선택"
+               class="absolute top-0 right-0 bottom-0 w-0 opacity-0 pointer-events-none overflow-hidden bg-surface-white border-l border-outline-variant flex-col z-40 shadow-[-4px_0_15px_rgba(0,0,0,0.03)] transition-all duration-300 ease-in-out"
+               id="diagram-sample-panel">
+            <div class="p-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">TEMPLATES</p>
+                    <h2 class="font-title-md text-title-md text-on-surface">샘플 다이어그램</h2>
+                </div>
+                <button aria-label="샘플 다이어그램 닫기" class="text-on-surface-variant hover:text-primary transition-colors" id="diagram-sample-close" type="button">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 space-y-2" id="diagram-sample-list"></div>
+        </aside>
+
         <div class="absolute top-0 right-0 bottom-0 w-0 opacity-0 pointer-events-none overflow-hidden bg-surface-white border-l border-outline-variant flex-col z-40 shadow-[-4px_0_15px_rgba(0,0,0,0.03)] transition-all duration-300 ease-in-out"
              id="diagram-properties-panel">
             <div class="p-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
@@ -558,7 +507,7 @@
                         <div>
                             <div class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wide"
                                  id="diagram-selected-node-type">Selected Node</div>
-                            <div class="font-body-md text-body-md font-medium text-on-surface" id="diagram-selected-node-name">Order Service</div>
+                            <div class="font-body-md text-body-md font-medium text-on-surface" id="diagram-selected-node-name">선택된 노드 없음</div>
                         </div>
                     </div>
                     <div class="diagram-property-tabs">
@@ -589,7 +538,7 @@
                         <input class="w-full px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-body-md text-body-md transition-all"
                                id="diagram-node-label-input"
                                type="text"
-                               value="Order Service">
+                               placeholder="노드 이름">
                         <textarea class="hidden w-full min-h-[88px] resize-y px-3 py-2 bg-surface rounded-lg border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary outline-none font-body-md text-body-md transition-all"
                                   id="diagram-text-label-input"
                                   rows="3">텍스트</textarea>

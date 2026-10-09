@@ -5,3 +5,4 @@ history/
 .tmp-edge-cdp-profile*/
 /aastudio-*/
 target/
+data/

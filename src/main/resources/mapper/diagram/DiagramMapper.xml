@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aastudio.core.diagram.mapper.DiagramMapper">
+
+    <update id="ensureDocumentTable">
+        CREATE TABLE IF NOT EXISTS diagram_document (
+            diagram_id VARCHAR(100) PRIMARY KEY,
+            diagram_name VARCHAR(200) NOT NULL,
+            state_json TEXT NOT NULL,
+            version BIGINT NOT NULL DEFAULT 0,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    </update>
+
+    <select id="selectDocument" resultType="map">
+        SELECT diagram_id AS diagramId,
+               diagram_name AS diagramName,
+               state_json AS stateJson,
+               version,
+               updated_at AS updatedAt
+        FROM diagram_document
+        WHERE diagram_id = #{diagramId}
+    </select>
+
+    <insert id="insertDocument">
+        INSERT INTO diagram_document (diagram_id, diagram_name, state_json, version, updated_at)
+        VALUES (#{diagramId}, #{diagramName}, #{stateJson}, 1, CURRENT_TIMESTAMP)
+    </insert>
+
+    <update id="updateDocument">
+        UPDATE diagram_document
+        SET diagram_name = #{diagramName},
+            state_json = #{stateJson},
+            version = version + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE diagram_id = #{diagramId}
+    </update>
+</mapper>

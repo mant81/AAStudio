@@ -24,6 +24,17 @@ function initializeDiagramPage() {
     const diagramAddCancelSecondary = document.getElementById("diagram-add-cancel-secondary");
     const importButton = document.getElementById("diagram-import-button");
     const importInput = document.getElementById("diagram-import-input");
+    const diagramSampleButton = document.getElementById("diagram-sample-button");
+    const diagramSamplePanel = document.getElementById("diagram-sample-panel");
+    const diagramSampleClose = document.getElementById("diagram-sample-close");
+    const diagramSampleList = document.getElementById("diagram-sample-list");
+    const diagramShareButton = document.getElementById("diagram-share-button");
+    const diagramShareMenu = document.getElementById("diagram-share-menu");
+    const diagramShareUrl = document.getElementById("diagram-share-url");
+    const diagramShareCopyButton = document.getElementById("diagram-share-copy-button");
+    const diagramSaveStatus = document.getElementById("diagram-save-status");
+    const diagramSaveStatusIcon = document.getElementById("diagram-save-status-icon");
+    const diagramSaveStatusText = document.getElementById("diagram-save-status-text");
     const diagramManageButton = document.getElementById("diagram-manage-button");
     const diagramManageMenu = document.getElementById("diagram-manage-menu");
     const diagramRenameButton = document.getElementById("diagram-rename-button");
@@ -165,10 +176,15 @@ function initializeDiagramPage() {
     let selectedNode = null;
     let selectedNodes = [];
     let selectedLine = null;
+    let activeDiagramCategory = null;
+    const categoryDiagramStates = new WeakMap();
     let nodeClipboard = [];
     let pasteOffset = 0;
     let activeTextSelectionRange = null;
     let isAltKeyPressed = false;
+    const isReadOnlyView = window.location.hash.startsWith("#diagram-share=");
+    let saveTimer = null;
+    let hasPendingSave = false;
     let selectedShapeTool = "rectangle";
     let selectedLinePreset = "straight-arrow";
     const lineStyleDefaults = {
@@ -239,7 +255,6 @@ function initializeDiagramPage() {
 
     let selectionFrame = null;
     let nodeCounter = diagramRoot.querySelectorAll("[data-diagram-node]").length;
-    let diagramCounter = diagramRoot.querySelectorAll("[data-space-diagram]").length + 1;
     let diagramRegistrationCounter = 0;
     let groupCounter = spaceGroups.length + 1;
     let activeIconCategory = "all";
@@ -411,6 +426,107 @@ function initializeDiagramPage() {
         nodeCounter
     });
 
+    const transientDiagramClasses = [
+        "diagram-node-selected",
+        "diagram-node-grouped-highlight",
+        "diagram-node-drawing",
+        "diagram-line-selected",
+        "diagram-line-hovered"
+    ];
+
+    const getPersistedDiagramStateSignature = () => {
+        const normalizeElement = (element, removeTransientDescendants = false) => {
+            const clone = element.cloneNode(true);
+            transientDiagramClasses.forEach((className) => clone.classList.remove(className));
+            if (removeTransientDescendants) {
+                clone.querySelectorAll(
+                    ".diagram-node-selected, .diagram-node-grouped-highlight, .diagram-node-drawing, [data-line-connect-point], [data-node-resize-handle]"
+                ).forEach((transientElement) => transientElement.remove());
+            }
+            return clone.outerHTML;
+        };
+
+        return JSON.stringify({
+            nodes: getNodes().map((node) => normalizeElement(node, true)),
+            lines: linePaths
+                .filter((line) => line.isConnected)
+                .map((line) => normalizeElement(line)),
+            nodeCounter
+        });
+    };
+
+    let lastDiagramStateSignature = null;
+    const markDiagramStateBaseline = () => {
+        lastDiagramStateSignature = getPersistedDiagramStateSignature();
+    };
+
+    const getActiveDiagramButton = () => diagramRoot.querySelector("[data-space-diagram].bg-secondary\\/10");
+
+    const setDiagramSaveStatus = (status) => {
+        const styles = {
+            pending: ["저장 대기", "cloud_off", "border-outline-variant/60", "bg-surface-container-low", "text-on-surface-variant"],
+            changed: ["변경됨", "edit", "border-amber-200", "bg-amber-50", "text-amber-700"],
+            saving: ["저장 중…", "sync", "border-blue-200", "bg-blue-50", "text-blue-700"],
+            saved: ["저장됨", "check_circle", "border-green-200", "bg-green-50", "text-green-700"],
+            failed: ["저장 실패", "error", "border-red-200", "bg-red-50", "text-red-700"],
+            loading: ["불러오는 중…", "progress_activity", "border-blue-200", "bg-blue-50", "text-blue-700"]
+        };
+        const [label, icon, border, background, color] = styles[status] ?? styles.saved;
+        diagramSaveStatus?.classList.remove(
+            "border-amber-200", "bg-amber-50", "text-amber-700",
+            "border-blue-200", "bg-blue-50", "text-blue-700",
+            "border-green-200", "bg-green-50", "text-green-700",
+            "border-red-200", "bg-red-50", "text-red-700",
+            "border-outline-variant/60", "bg-surface-container-low", "text-on-surface-variant"
+        );
+        diagramSaveStatus?.classList.add(border, background, color);
+        if (diagramSaveStatusIcon) diagramSaveStatusIcon.textContent = icon;
+        if (diagramSaveStatusText) diagramSaveStatusText.textContent = label;
+    };
+
+    const saveDiagramState = async () => {
+        if (isReadOnlyView) {
+            return;
+        }
+        hasPendingSave = false;
+        const activeDiagram = getActiveDiagramButton();
+        const diagramId = activeDiagram?.dataset.diagramId;
+        if (!diagramId) {
+            return;
+        }
+        setDiagramSaveStatus("saving");
+        try {
+            const response = await fetch(`/api/diagrams/${encodeURIComponent(diagramId)}/state`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...captureDiagramState(),
+                    diagramName: activeDiagram.querySelector("[data-spaces-text]")?.textContent?.trim() || diagramId
+                })
+            });
+            if (!response.ok) throw new Error(`Diagram save failed: ${response.status}`);
+            setDiagramSaveStatus("saved");
+        } catch (error) {
+            console.error("Failed to save diagram", error);
+            setDiagramSaveStatus("failed");
+        }
+    };
+
+    const queueDiagramSave = (force = false) => {
+        if (isReadOnlyView) return;
+        const nextSignature = getPersistedDiagramStateSignature();
+        if (!force && nextSignature === lastDiagramStateSignature) {
+            return;
+        }
+        lastDiagramStateSignature = nextSignature;
+        if (!hasPendingSave) {
+            hasPendingSave = true;
+            setDiagramSaveStatus("changed");
+        }
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(saveDiagramState, 1200);
+    };
+
     const downloadBlob = (blob, filename) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -429,6 +545,49 @@ function initializeDiagramPage() {
         const filename = `${title}_${timestamp}.json`;
         downloadBlob(new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }), filename);
     };
+
+    diagramShareButton?.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        closeDiagramShareMenu();
+        try {
+            const response = await fetch("/api/diagram-shares", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(captureDiagramState())
+            });
+            if (!response.ok) {
+                throw new Error(`Share creation failed: ${response.status}`);
+            }
+            const { token } = await response.json();
+            const url = new URL(window.location.href);
+            url.hash = `diagram-share=${encodeURIComponent(token)}`;
+            if (diagramShareUrl instanceof HTMLInputElement) {
+                diagramShareUrl.value = url.toString();
+            }
+            diagramShareMenu?.classList.remove("hidden");
+            diagramShareButton?.setAttribute("aria-expanded", "true");
+            diagramShareUrl?.focus();
+            diagramShareUrl?.select();
+        } catch {
+            window.alert("공유 링크를 만들지 못했습니다. 서버가 실행 중인지 확인하세요.");
+        }
+    });
+
+    diagramShareCopyButton?.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        if (!(diagramShareUrl instanceof HTMLInputElement) || !diagramShareUrl.value) {
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(diagramShareUrl.value);
+        } catch {
+            diagramShareUrl.focus();
+            diagramShareUrl.select();
+            document.execCommand("copy");
+        }
+        diagramShareCopyButton.setAttribute("aria-label", "복사 완료");
+        window.setTimeout(() => diagramShareCopyButton.setAttribute("aria-label", "공유 링크 복사"), 1200);
+    });
 
     const arrayBufferToDataUrl = (buffer, mimeType) => {
         const bytes = new Uint8Array(buffer);
@@ -655,6 +814,21 @@ function initializeDiagramPage() {
         updateLinePaths();
         isRestoringHistory = false;
         return true;
+    };
+
+    const resetDiagramCanvas = () => {
+        window.clearTimeout(saveTimer);
+        saveTimer = null;
+        hasPendingSave = false;
+        historyStack.length = 0;
+        restoreDiagramState({ nodes: [], lines: [], nodeCounter: 0 });
+        markDiagramStateBaseline();
+        if (activeDiagramCategory) {
+            categoryDiagramStates.set(activeDiagramCategory, captureDiagramState());
+        }
+        setDiagramSaveStatus("pending");
+        activeTool = "select";
+        syncToolButtons();
     };
 
     const undoLastHistory = () => {
@@ -902,17 +1076,22 @@ function initializeDiagramPage() {
             || diagramMenu?.contains(event.target)
             || currentDiagramButton?.contains(event.target)
             || diagramManageMenu?.contains(event.target)
-            || diagramManageButton?.contains(event.target)) {
+            || diagramManageButton?.contains(event.target)
+            || diagramShareMenu?.contains(event.target)
+            || diagramShareButton?.contains(event.target)) {
             return;
         }
         diagramMenu?.classList.add("hidden");
         currentDiagramButton?.setAttribute("aria-expanded", "false");
         closeDiagramManageMenu();
+        closeDiagramShareMenu();
     });
 
     const bindDiagramButton = (button) => {
+        button.dataset.diagramId ??= (globalThis.crypto?.randomUUID?.() || `diagram-${Date.now()}-${diagramRegistrationCounter + 1}`);
         button.dataset.diagramOrder ??= String(++diagramRegistrationCounter);
         button.addEventListener("click", () => {
+            activateDiagramCategory(button.closest("[data-space-group]"));
             setActiveDiagramButton(button);
         });
     };
@@ -947,6 +1126,53 @@ function initializeDiagramPage() {
         return button;
     };
 
+    const getNextDiagramDefaultName = () => {
+        const diagramNumbers = Array.from(diagramRoot.querySelectorAll("[data-space-diagram]"))
+            .map((diagram) => diagram.querySelector("[data-spaces-text]")?.textContent?.trim() ?? "")
+            .map((name) => name.match(/^다이어그램\s+(\d+)$/)?.[1])
+            .filter(Boolean)
+            .map(Number)
+            .filter(Number.isFinite);
+        const nextNumber = Math.max(0, ...diagramNumbers) + 1;
+        return `다이어그램 ${nextNumber}`;
+    };
+
+    const activateDiagramCategory = (group) => {
+        if (!(group instanceof HTMLElement)) {
+            return;
+        }
+
+        if (activeDiagramCategory === group) {
+            return;
+        }
+
+        if (activeDiagramCategory) {
+            categoryDiagramStates.set(activeDiagramCategory, captureDiagramState());
+        }
+
+        activeDiagramCategory = group;
+        const children = group.querySelector("[data-spaces-children]");
+        let diagramButton = group.querySelector("[data-space-diagram]");
+        if (!(diagramButton instanceof HTMLElement) && children instanceof HTMLElement) {
+            diagramButton = createDiagramButton(getNextDiagramDefaultName(), false);
+            diagramButton.classList.add("text-on-surface-variant", "hover:bg-surface-variant/50");
+            children.appendChild(diagramButton);
+        }
+
+        if (diagramButton instanceof HTMLElement) {
+            setActiveDiagramButton(diagramButton);
+        }
+
+        const hasCategoryState = categoryDiagramStates.has(group);
+        const state = categoryDiagramStates.get(group) ?? { nodes: [], lines: [], nodeCounter: 0 };
+        restoreDiagramState(state);
+        markDiagramStateBaseline();
+        categoryDiagramStates.set(group, captureDiagramState());
+        setDiagramSaveStatus(hasCategoryState ? "saved" : "pending");
+        activeTool = "select";
+        syncToolButtons();
+    };
+
     const closeDiagramAddModal = () => {
         diagramAddModal?.classList.add("hidden");
         diagramAddModal?.classList.remove("flex");
@@ -961,8 +1187,9 @@ function initializeDiagramPage() {
         diagramAddModal?.classList.remove("hidden");
         diagramAddModal?.classList.add("flex");
         if (diagramAddName instanceof HTMLInputElement) {
-            diagramAddName.value = "";
+            diagramAddName.value = getNextDiagramDefaultName();
             diagramAddName.focus();
+            diagramAddName.select();
         }
     };
 
@@ -988,9 +1215,15 @@ function initializeDiagramPage() {
         diagramManageButton?.setAttribute("aria-expanded", "false");
     };
 
+    const closeDiagramShareMenu = () => {
+        diagramShareMenu?.classList.add("hidden");
+        diagramShareButton?.setAttribute("aria-expanded", "false");
+    };
+
 
     diagramManageButton?.addEventListener("click", (event) => {
         event.stopPropagation();
+        closeDiagramShareMenu();
         const isOpen = diagramManageMenu?.classList.toggle("hidden") === false;
         diagramManageButton.setAttribute("aria-expanded", String(isOpen));
     });
@@ -1044,6 +1277,7 @@ function initializeDiagramPage() {
             const nameElement = diagramNameModalTarget.querySelector("[data-spaces-text]");
             if (nameElement) nameElement.textContent = name;
             setActiveDiagramButton(diagramNameModalTarget);
+            queueDiagramSave(true);
             closeDiagramAddModal();
             return;
         }
@@ -1055,11 +1289,12 @@ function initializeDiagramPage() {
             closeDiagramAddModal();
             return;
         }
-        const name = diagramAddName.value.trim() || `새 다이어그램 ${diagramCounter++}`;
+        const name = diagramAddName.value.trim() || getNextDiagramDefaultName();
         const newButton = createDiagramButton(name, true);
         newButton.classList.remove("text-on-surface-variant", "hover:bg-surface-variant/50");
         children.appendChild(newButton);
         setActiveDiagramButton(newButton);
+        resetDiagramCanvas();
         closeDiagramAddModal();
     });
 
@@ -1077,6 +1312,7 @@ function initializeDiagramPage() {
         syncGroupState(group, expanded);
 
         toggleButton?.addEventListener("click", () => {
+            activateDiagramCategory(group);
             const nextExpanded = group.dataset.groupExpanded !== "true";
             syncGroupState(group, nextExpanded);
         });
@@ -1088,9 +1324,12 @@ function initializeDiagramPage() {
             }
 
             const groupName = group.querySelector("[data-group-name]")?.textContent?.trim() || `Group ${groupCounter}`;
-            const newButton = createDiagramButton(`${groupName} Diagram ${diagramCounter++}`, true);
+            const newButton = createDiagramButton(getNextDiagramDefaultName(), false);
             newButton.classList.remove("text-on-surface-variant", "hover:bg-surface-variant/50");
             children.appendChild(newButton);
+            activateDiagramCategory(group);
+            setActiveDiagramButton(newButton);
+            resetDiagramCanvas();
             syncGroupState(group, true);
         });
 
@@ -1281,6 +1520,15 @@ function initializeDiagramPage() {
         return null;
     };
 
+    const syncShapeTextVisibility = (element) => {
+        if (!(element instanceof HTMLElement)) {
+            return;
+        }
+        const visible = Boolean(element.textContent?.trim());
+        element.classList.toggle("hidden", !visible);
+        element.style.setProperty("display", visible ? "block" : "none", "important");
+    };
+
     const ensureShapeContent = (node) => {
         if (node.dataset.nodeKind !== "shape") {
             return;
@@ -1299,10 +1547,10 @@ function initializeDiagramPage() {
                 contentElement.appendChild(element);
             }
         });
-        titleElement?.classList.remove("hidden");
         titleElement?.classList.add("diagram-shape-title");
-        subtitleElement?.classList.remove("hidden");
         subtitleElement?.classList.add("diagram-shape-subtitle");
+        syncShapeTextVisibility(titleElement);
+        syncShapeTextVisibility(subtitleElement);
     };
 
     const syncShapeClass = (node) => {
@@ -1512,9 +1760,26 @@ function initializeDiagramPage() {
         subtitleElement?.classList.toggle("text-center", position !== "left");
     };
 
+    const setSamplePanelVisible = (visible) => {
+        if (!(diagramSamplePanel instanceof HTMLElement)) {
+            return;
+        }
+        diagramSamplePanel.classList.toggle("w-[300px]", visible);
+        diagramSamplePanel.classList.toggle("opacity-100", visible);
+        diagramSamplePanel.classList.toggle("pointer-events-auto", visible);
+        diagramSamplePanel.classList.toggle("w-0", !visible);
+        diagramSamplePanel.classList.toggle("opacity-0", !visible);
+        diagramSamplePanel.classList.toggle("pointer-events-none", !visible);
+        diagramSampleButton?.setAttribute("aria-expanded", String(visible));
+    };
+
     const setPropertiesPanelVisible = (visible) => {
         if (!(propertiesPanel instanceof HTMLElement)) {
             return;
+        }
+
+        if (visible) {
+            setSamplePanelVisible(false);
         }
 
         propertiesPanel.classList.toggle("w-[300px]", visible);
@@ -2089,6 +2354,7 @@ function initializeDiagramPage() {
 
     const setPropertyTabsForSelection = (selectionType, nodeKind = "node") => {
         const restrictedNode = nodeKind === "shape" || nodeKind === "image";
+        const hideFillColor = nodeKind === "image";
         propertyTabs.forEach((button) => {
             const isLineTab = button.dataset.propertyTab === "line";
             const isLineBadgeTab = button.dataset.propertyTab === "line-badge";
@@ -2103,7 +2369,7 @@ function initializeDiagramPage() {
                 ? !isLineTab && !isLineBadgeTab
                 : isLineTab || isLineBadgeTab || hideNodeContentTab || hideIconTab);
         });
-        fillColorProperty?.classList.toggle("hidden", selectionType !== "line" && restrictedNode);
+        fillColorProperty?.classList.toggle("hidden", selectionType !== "line" && hideFillColor);
         if (propertyTabsContainer instanceof HTMLElement) {
             propertyTabsContainer.style.gridTemplateColumns = selectionType === "line"
                 ? "repeat(2, minmax(0, 1fr))"
@@ -3301,8 +3567,8 @@ function initializeDiagramPage() {
             syncShapeClass(node);
             node.innerHTML = `
                 <span class="material-symbols-outlined diagram-shape-icon hidden" data-node-icon-element></span>
-                <span class="hidden" data-node-title>${title}</span>
-                <span class="hidden" data-node-subtitle">Shape</span>
+                <span class="hidden" data-node-title></span>
+                <span class="hidden" data-node-subtitle></span>
             `;
             return node;
         }
@@ -3385,6 +3651,396 @@ function initializeDiagramPage() {
             <p class="font-label-md text-label-md text-on-surface-variant text-center" data-node-subtitle>${subtitle}</p>
         `;
         return node;
+    };
+
+    const sampleCategoryDefinitions = [
+        {
+            id: "development",
+            label: "개발 (Development)",
+            kind: "flowchart",
+            items: ["프론트엔드 · 웹 / 모바일 UI", "백엔드 · API / 비즈니스 로직", "데이터베이스 연동 · ORM", "테스트 · 단위 / 통합 / E2E", "CI/CD · 빌드 / 배포"]
+        },
+        {
+            id: "infrastructure",
+            label: "인프라 (Infrastructure)",
+            kind: "network",
+            items: ["컴퓨팅 · 서버 / VM / 컨테이너", "네트워크 · VPC / DNS / LB", "클라우드 · AWS / Azure / GCP", "스토리지 · 블록 / 객체 / 파일", "운영 · 모니터링 / 로깅 / 백업"]
+        },
+        {
+            id: "architecture",
+            label: "아키텍처 (Architecture)",
+            kind: "architecture",
+            items: ["시스템 구성 · 모놀리스 / MSA", "통신 구조 · REST / gRPC / 이벤트", "서비스 간 의존성 · 동기 / 비동기", "확장성 · 캐시 / 로드 밸런싱", "가용성 · 이중화 / 장애 복구"]
+        },
+        {
+            id: "data",
+            label: "데이터 (Data)",
+            kind: "erd",
+            items: ["DB · RDBMS / NoSQL", "데이터 파이프라인 · ETL / ELT", "메시징 · Kafka / RabbitMQ", "분석 · DW / Lake / BI", "검색 · Elasticsearch / OpenSearch"]
+        },
+        {
+            id: "security",
+            label: "보안 (Security)",
+            kind: "security",
+            items: ["인증 · OAuth2 / OIDC / MFA", "인가 · RBAC / ABAC", "네트워크 보안 · 방화벽 / WAF", "비밀 관리 · Secrets / KMS", "감사 · 취약점 / 로그 / 규정 준수"]
+        },
+        {
+            id: "operations",
+            label: "운영 및 관리 (Operations)",
+            kind: "operations",
+            items: ["IaC · Terraform / Ansible", "컨테이너 운영 · Kubernetes", "관측성 · Metrics / Logs / Traces", "장애 대응 · Incident / SRE", "비용 관리 · FinOps"]
+        }
+    ];
+
+    let sampleInstanceCounter = 0;
+
+    const createSampleNodeMarkup = ({
+        key,
+        title,
+        subtitle,
+        icon,
+        left,
+        top,
+        fillColor = "#FFFFFF",
+        strokeColor = "#C6C6CD",
+        strokeWidth = "1"
+    }) => {
+        const node = createNodeMarkup("node");
+        node.dataset.nodeKey = key;
+        node.dataset.nodeIcon = icon;
+        node.dataset.nodeIconSet = "material";
+        node.dataset.fillColor = fillColor;
+        node.dataset.strokeColor = strokeColor;
+        node.dataset.strokeWidth = strokeWidth;
+        node.style.left = `${left}px`;
+        node.style.top = `${top}px`;
+        node.querySelector("[data-node-title]")?.replaceChildren(document.createTextNode(title));
+        node.querySelector("[data-node-subtitle]")?.replaceChildren(document.createTextNode(subtitle));
+        const iconElement = node.querySelector("[data-node-icon-element]");
+        if (iconElement) {
+            iconElement.textContent = icon;
+        }
+        return node.outerHTML;
+    };
+
+    const createSampleGroupMarkup = ({
+        key,
+        title,
+        left,
+        top,
+        width,
+        height,
+        fillColor = "rgba(16, 185, 129, 0.04)",
+        strokeColor = "#8FD5B7"
+    }) => {
+        const group = createNodeMarkup("group-box");
+        group.dataset.nodeKey = key;
+        group.dataset.fillColor = fillColor;
+        group.dataset.strokeColor = strokeColor;
+        group.dataset.strokeWidth = "1";
+        group.dataset.strokeStyle = "dashed";
+        group.style.left = `${left}px`;
+        group.style.top = `${top}px`;
+        group.style.width = `${width}px`;
+        group.style.height = `${height}px`;
+        group.querySelector("[data-node-title]")?.replaceChildren(document.createTextNode(title));
+        return group.outerHTML;
+    };
+
+    const createSampleLineMarkup = (from, to, {
+        fromAnchor = "right",
+        toAnchor = "left",
+        type = "straight",
+        controlX = 0,
+        controlY = 0,
+        color = "#7C839B",
+        endArrow = "triangle",
+        dash = "solid"
+    } = {}) => {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        line.dataset.lineType = type;
+        line.dataset.lineFrom = from;
+        line.dataset.lineTo = to;
+        line.dataset.fromAnchor = fromAnchor;
+        line.dataset.toAnchor = toAnchor;
+        line.dataset.lineControlX = String(controlX);
+        line.dataset.lineControlY = String(controlY);
+        line.dataset.lineColor = color;
+        line.dataset.lineWidth = "2";
+        line.dataset.lineDash = dash;
+        line.dataset.lineStartArrow = "none";
+        line.dataset.lineEndArrow = endArrow;
+        line.setAttribute("fill", "none");
+        line.setAttribute("stroke", color);
+        line.setAttribute("stroke-width", "2");
+        line.setAttribute("d", "M 0 0 L 0 0");
+        return line.outerHTML;
+    };
+
+    const createSampleLayout = (category, subject, top) => {
+        const palette = {
+            flowchart: { line: "#5667D8", source: ["#EEF1FF", "#7787E8"], focus: ["#E9F7F0", "#55A982"], support: ["#FFF5E6", "#D79A3B"] },
+            network: { line: "#16866B", source: ["#E8F8F2", "#4BAF8D"], focus: ["#EAF3FF", "#6D9DEB"], support: ["#FFF5E6", "#D79A3B"] },
+            architecture: { line: "#7846C7", source: ["#F4EEFF", "#9A73D4"], focus: ["#EAF3FF", "#6D9DEB"], support: ["#FFF0F4", "#D87E9B"] },
+            erd: { line: "#B26A17", source: ["#FFF5E6", "#D79A3B"], focus: ["#EAF3FF", "#6D9DEB"], support: ["#F2F3F7", "#9CA3B4"] },
+            security: { line: "#C44646", source: ["#FFF0F0", "#D87575"], focus: ["#FFF5E6", "#D79A3B"], support: ["#F4EEFF", "#9A73D4"] },
+            operations: { line: "#147C91", source: ["#E8F8FB", "#58AFC0"], focus: ["#EAF3FF", "#6D9DEB"], support: ["#FFF5E6", "#D79A3B"] }
+        }[category.kind] ?? { line: "#5667D8", source: ["#EEF1FF", "#7787E8"], focus: ["#E9F7F0", "#55A982"], support: ["#FFF5E6", "#D79A3B"] };
+        const node = (key, title, subtitle, icon, left, offsetTop, colors = palette.focus) => ({
+            key,
+            title,
+            subtitle,
+            icon,
+            left,
+            top: top + offsetTop,
+            fillColor: colors[0],
+            strokeColor: colors[1]
+        });
+        const group = (key, title, left, offsetTop, width, height, colors = palette.focus) => ({
+            key,
+            title,
+            left,
+            top: top + offsetTop,
+            width,
+            height,
+            fillColor: "rgba(255, 255, 255, 0.04)",
+            strokeColor: colors[1]
+        });
+        const edge = (from, to, options = {}) => ({ from, to, ...options, color: options.color ?? palette.line });
+
+        if (category.kind === "flowchart") {
+            return {
+                groups: [
+                    group("request-zone", "01 · 사용자 흐름", 40, 10, 570, 450, palette.source),
+                    group("delivery-zone", "02 · 처리 및 배포", 650, 10, 700, 450, palette.support)
+                ],
+                nodes: [
+                    node("trigger", "시작 요청", "입력", "play_arrow", 80, 130, palette.source),
+                    node("input", subject, "사용자 화면", "web", 350, 30),
+                    node("process", "검증 / 처리", "비즈니스 규칙", "fact_check", 350, 260, palette.support),
+                    node("pipeline", "빌드 / 배포", "자동화 파이프라인", "rocket_launch", 700, 30),
+                    node("store", "결과 저장", "데이터 계층", "database", 700, 260, palette.support),
+                    node("complete", "완료", "응답 / 알림", "check_circle", 1070, 130, palette.source)
+                ],
+                lines: [
+                    edge("trigger", "input", { type: "curve", controlY: -50 }),
+                    edge("trigger", "process", { type: "curve", controlY: 50 }),
+                    edge("input", "pipeline"),
+                    edge("process", "store"),
+                    edge("pipeline", "complete", { type: "curve", controlY: 50 }),
+                    edge("store", "complete", { type: "curve", controlY: -50 })
+                ]
+            };
+        }
+
+        if (category.kind === "network") {
+            return {
+                groups: [
+                    group("edge-zone", "01 · Edge", 30, 80, 600, 300, palette.source),
+                    group("service-zone", "02 · Services & Storage", 650, 0, 700, 450, palette.focus)
+                ],
+                nodes: [
+                    node("client", "사용자 / Client", "접점", "language", 70, 130, palette.source),
+                    node("gateway", subject, "진입 계층", "router", 350, 130),
+                    node("compute", "서비스 클러스터", "확장 가능한 컴퓨팅", "cloud", 700, 30, palette.support),
+                    node("worker", "백그라운드 작업", "비동기 처리", "settings_suggest", 700, 260, palette.support),
+                    node("storage", "데이터 저장소", "영속 계층", "storage", 1080, 130, palette.source)
+                ],
+                lines: [
+                    edge("client", "gateway"),
+                    edge("gateway", "compute", { type: "curve", controlY: -55 }),
+                    edge("gateway", "worker", { type: "curve", controlY: 55 }),
+                    edge("compute", "storage", { type: "curve", controlY: 55 }),
+                    edge("worker", "storage", { type: "curve", controlY: -55 })
+                ]
+            };
+        }
+
+        if (category.kind === "architecture") {
+            return {
+                groups: [
+                    group("entry-zone", "01 · Entry Layer", 20, 80, 600, 300, palette.source),
+                    group("core-zone", "02 · Domain & Data", 650, 0, 700, 450, palette.focus)
+                ],
+                nodes: [
+                    node("consumer", "사용자 / 외부 시스템", "호출 주체", "devices", 50, 130, palette.source),
+                    node("gateway", "API Gateway", "인증 · 라우팅", "alt_route", 350, 130),
+                    node("domain", subject, "핵심 도메인", "account_tree", 700, 30),
+                    node("event", "Event Bus", "비동기 흐름", "hub", 700, 260, palette.support),
+                    node("database", "Primary DB", "트랜잭션 데이터", "database", 1080, 30, palette.source),
+                    node("cache", "Cache / Read Model", "조회 최적화", "cached", 1080, 260, palette.support)
+                ],
+                lines: [
+                    edge("consumer", "gateway"),
+                    edge("gateway", "domain", { type: "curve", controlY: -55 }),
+                    edge("gateway", "event", { type: "curve", controlY: 55 }),
+                    edge("domain", "database"),
+                    edge("domain", "cache", { type: "curve", controlY: 55 }),
+                    edge("event", "cache", { type: "curve", controlY: -55 })
+                ]
+            };
+        }
+
+        if (category.kind === "erd") {
+            return {
+                groups: [
+                    group("entity-zone", "01 · Core Entities", 40, 0, 600, 450, palette.focus),
+                    group("read-zone", "02 · Reference & Read Model", 730, 0, 650, 450, palette.source)
+                ],
+                nodes: [
+                    node("account", "Account", "사용자 식별자", "person", 80, 130, palette.source),
+                    node("subject", subject, "핵심 엔티티", "table_chart", 370, 30, palette.focus),
+                    node("detail", "Detail", "상세 레코드", "list_alt", 370, 260, palette.support),
+                    node("catalog", "Catalog", "참조 데이터", "menu_book", 760, 30, palette.source),
+                    node("audit", "Audit Log", "변경 이력", "history", 760, 260, palette.support),
+                    node("report", "Report / Search", "조회 모델", "search", 1080, 130, palette.source)
+                ],
+                lines: [
+                    edge("account", "subject", { type: "curve", controlY: -55, endArrow: "none" }),
+                    edge("subject", "detail", { fromAnchor: "bottom", toAnchor: "top", endArrow: "none" }),
+                    edge("subject", "catalog", { endArrow: "none" }),
+                    edge("detail", "audit", { endArrow: "none" }),
+                    edge("catalog", "report", { type: "curve", controlY: 55, endArrow: "none" }),
+                    edge("audit", "report", { type: "curve", controlY: -55, endArrow: "none" })
+                ]
+            };
+        }
+
+        if (category.kind === "security") {
+            return {
+                groups: [
+                    group("access-zone", "01 · Access Control", 30, 0, 620, 450, palette.source),
+                    group("resource-zone", "02 · Protected Resource", 700, 0, 650, 450, palette.support)
+                ],
+                nodes: [
+                    node("client", "Client", "요청", "devices", 80, 130, palette.source),
+                    node("identity", subject, "인증 · 식별", "fingerprint", 370, 30, palette.focus),
+                    node("policy", "Policy Engine", "인가 · 접근 제어", "policy", 370, 260, palette.support),
+                    node("api", "Protected API", "보호된 리소스", "lock", 760, 130, palette.source),
+                    node("audit", "Audit / Alert", "감사 · 탐지", "security_update_good", 1080, 130, palette.support)
+                ],
+                lines: [
+                    edge("client", "identity", { type: "curve", controlY: -55 }),
+                    edge("client", "policy", { type: "curve", controlY: 55 }),
+                    edge("identity", "api", { type: "curve", controlY: 55 }),
+                    edge("policy", "api", { type: "curve", controlY: -55 }),
+                    edge("api", "audit")
+                ]
+            };
+        }
+
+        return {
+            groups: [
+                group("runtime-zone", "01 · Runtime", 30, 80, 600, 300, palette.source),
+                group("observe-zone", "02 · Observability & Response", 650, 0, 700, 450, palette.focus)
+            ],
+            nodes: [
+                node("deploy", "Deploy", "변경 반영", "rocket_launch", 80, 130, palette.source),
+                node("service", subject, "운영 서비스", "dns", 370, 130),
+                node("metrics", "Metrics / Logs", "상태 수집", "monitoring", 700, 30, palette.focus),
+                node("incident", "Incident", "장애 대응", "warning", 700, 260, palette.support),
+                node("improve", "Improve", "학습 · 개선", "autorenew", 1080, 130, palette.source)
+            ],
+            lines: [
+                edge("deploy", "service"),
+                edge("service", "metrics", { type: "curve", controlY: -55 }),
+                edge("service", "incident", { type: "curve", controlY: 55 }),
+                edge("metrics", "improve", { type: "curve", controlY: 55 }),
+                edge("incident", "improve", { type: "curve", controlY: -55 }),
+                edge("improve", "deploy", { type: "curve", controlY: 150, dash: "small" })
+            ]
+        };
+    };
+
+    const createSampleDiagramState = (category, subject, top = 390) => {
+        const layout = createSampleLayout(category, subject, top);
+        const samplePrefix = `sample-${++sampleInstanceCounter}`;
+        const originalNodeCounter = nodeCounter;
+        const nodes = [
+            ...(layout.groups ?? []).map((item) => createSampleGroupMarkup({
+                ...item,
+                key: `${samplePrefix}-${item.key}`
+            })),
+            ...layout.nodes.map((item) => createSampleNodeMarkup({
+                ...item,
+                key: `${samplePrefix}-${item.key}`
+            }))
+        ];
+        const state = {
+            nodes,
+            lines: layout.lines.map((item) => createSampleLineMarkup(
+                `${samplePrefix}-${item.from}`,
+                `${samplePrefix}-${item.to}`,
+                item
+            )),
+            nodeCounter
+        };
+        nodeCounter = originalNodeCounter;
+        return state;
+    };
+
+    const renderSampleCategories = () => {
+        if (!(diagramSampleList instanceof HTMLElement)) {
+            return;
+        }
+        diagramSampleList.replaceChildren();
+        sampleCategoryDefinitions.forEach((category, categoryIndex) => {
+            const section = document.createElement("section");
+            section.className = "rounded-xl border border-outline-variant/60 overflow-hidden";
+
+            const header = document.createElement("button");
+            header.className = "flex w-full items-center gap-2 bg-surface-container-lowest px-3 py-3 text-left hover:bg-surface-container-low transition-colors";
+            header.type = "button";
+            header.setAttribute("aria-expanded", String(categoryIndex === 0));
+            header.innerHTML = `<span class="material-symbols-outlined text-[18px] text-secondary">${categoryIndex === 0 ? "expand_more" : "chevron_right"}</span><span class="font-medium text-on-surface"></span>`;
+            header.querySelector("span:last-child").textContent = category.label;
+
+            const items = document.createElement("div");
+            items.className = `space-y-1 border-t border-outline-variant/40 bg-surface-container-low p-2${categoryIndex === 0 ? "" : " hidden"}`;
+            category.items.forEach((subject) => {
+                const option = document.createElement("button");
+                option.className = "flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-xs text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors";
+                option.type = "button";
+                option.innerHTML = '<span class="material-symbols-outlined mt-0.5 text-[16px]">subdirectory_arrow_right</span><span></span>';
+                option.querySelector("span:last-child").textContent = subject;
+                option.addEventListener("click", () => applySampleDiagram(category, subject));
+                items.appendChild(option);
+            });
+
+            header.addEventListener("click", () => {
+                const expanded = !items.classList.contains("hidden");
+                items.classList.toggle("hidden", expanded);
+                header.setAttribute("aria-expanded", String(!expanded));
+                header.querySelector(".material-symbols-outlined").textContent = expanded ? "chevron_right" : "expand_more";
+            });
+            section.append(header, items);
+            diagramSampleList.appendChild(section);
+        });
+    };
+
+    const applySampleDiagram = (category, subject) => {
+        if (isReadOnlyView) {
+            return;
+        }
+        const currentState = captureDiagramState();
+        const currentNodes = getNodes();
+        const maxBottom = currentNodes.reduce(
+            (bottom, node) => Math.max(bottom, node.offsetTop + node.offsetHeight),
+            0
+        );
+        const sampleTop = currentNodes.length ? Math.max(120, maxBottom + 120) : 180;
+        const sampleState = createSampleDiagramState(category, subject, sampleTop);
+        saveHistory();
+        restoreDiagramState({
+            nodes: [...currentState.nodes, ...sampleState.nodes],
+            lines: [...currentState.lines, ...sampleState.lines],
+            nodeCounter: sampleState.nodeCounter
+        });
+        if (activeDiagramCategory) {
+            categoryDiagramStates.set(activeDiagramCategory, captureDiagramState());
+        }
+        setSamplePanelVisible(false);
+        queueDiagramSave();
     };
 
     const placeNodeAtPoint = (node, point, { recordHistory = true } = {}) => {
@@ -3470,6 +4126,9 @@ function initializeDiagramPage() {
     };
 
     zoomLayer.addEventListener("pointerdown", (event) => {
+        if (isReadOnlyView) {
+            return;
+        }
         if (!isSelectionTool() || event.button !== 0) {
             return;
         }
@@ -3809,6 +4468,16 @@ function initializeDiagramPage() {
         node.style.height = `${height}px`;
     };
 
+    const getSquareShapeEnd = (start, end) => {
+        const deltaX = end.x - start.x;
+        const deltaY = end.y - start.y;
+        const size = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+        return {
+            x: start.x + (deltaX < 0 ? -size : size),
+            y: start.y + (deltaY < 0 ? -size : size)
+        };
+    };
+
     const freehandPathData = (points) => {
         if (points.length < 2) {
             return points.length ? `M ${points[0].x} ${points[0].y}` : "";
@@ -3938,6 +4607,10 @@ function initializeDiagramPage() {
     };
 
     zoomLayer.addEventListener("mousedown", (event) => {
+        if (isReadOnlyView) {
+            event.preventDefault();
+            return;
+        }
         if (event.target instanceof HTMLElement && event.target.closest("[data-diagram-node]") && !isCanvasMoveTool() && !isConnectorTool() && !isEraserTool()) {
             return;
         }
@@ -4177,9 +4850,12 @@ function initializeDiagramPage() {
 
         if (drawingShape) {
             const currentPoint = getStagePoint(event);
-            const area = normalizeBox(drawingShape.start, currentPoint);
+            const constrainedPoint = event.shiftKey && drawingShape.tool !== "group-box"
+                ? getSquareShapeEnd(drawingShape.start, currentPoint)
+                : currentPoint;
+            const area = normalizeBox(drawingShape.start, constrainedPoint);
             drawingShape.moved = area.width > 4 || area.height > 4;
-            syncDrawingShape(drawingShape.node, drawingShape.start, currentPoint);
+            syncDrawingShape(drawingShape.node, drawingShape.start, constrainedPoint);
             if (drawingShape.tool === "group-box") {
                 syncGroupedNodeHighlights(drawingShape.node);
             }
@@ -4433,6 +5109,10 @@ function initializeDiagramPage() {
     });
 
     zoomLayer.addEventListener("click", (event) => {
+        if (isReadOnlyView) {
+            event.preventDefault();
+            return;
+        }
         if (suppressShapeClick) {
             suppressShapeClick = false;
             return;
@@ -4560,6 +5240,9 @@ function initializeDiagramPage() {
         const titleElement = selectedNode.querySelector("[data-node-title]");
         if (titleElement) {
             titleElement.textContent = nodeLabelInput.value;
+            if (selectedNode.dataset.nodeKind === "shape") {
+                syncShapeTextVisibility(titleElement);
+            }
         }
         if (selectedNodeName) {
             selectedNodeName.textContent = nodeLabelInput.value;
@@ -4896,6 +5579,7 @@ function initializeDiagramPage() {
     const initialDiagramButton = diagramRoot.querySelector("[data-space-diagram].bg-secondary\\/10")
         ?? diagramRoot.querySelector("[data-space-diagram]");
     if (initialDiagramButton instanceof HTMLElement) {
+        activeDiagramCategory = initialDiagramButton.closest("[data-space-group]");
         setActiveDiagramButton(initialDiagramButton);
     }
 
@@ -4926,6 +5610,7 @@ function initializeDiagramPage() {
             `;
             spacesScroll.appendChild(group);
             bindGroupInteractions(group);
+            activateDiagramCategory(group);
             if (spacesPanel.classList.contains("w-0")) {
                 setSpacesHidden(false);
             }
@@ -5128,6 +5813,74 @@ function initializeDiagramPage() {
             setActivePropertyTab(button.dataset.propertyTab ?? "text");
         });
     });
+
+    renderSampleCategories();
+    diagramSampleButton?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        closeDiagramShareMenu();
+        closeDiagramManageMenu();
+        const isVisible = diagramSamplePanel instanceof HTMLElement
+            && !diagramSamplePanel.classList.contains("w-0");
+        if (!isVisible) {
+            setPropertiesPanelVisible(false);
+        }
+        setSamplePanelVisible(!isVisible);
+    });
+    diagramSampleClose?.addEventListener("click", () => setSamplePanelVisible(false));
+
+    const loadSavedDiagram = async () => {
+        if (isReadOnlyView) return;
+        const activeDiagram = getActiveDiagramButton();
+        const diagramId = activeDiagram?.dataset.diagramId;
+        if (!diagramId) return;
+        try {
+            const response = await fetch(`/api/diagrams/${encodeURIComponent(diagramId)}/state`);
+            if (response.status === 404) return;
+            if (!response.ok) throw new Error(`Diagram load failed: ${response.status}`);
+            const state = await response.json();
+            if (Array.isArray(state.nodes) && Array.isArray(state.lines)) {
+                restoreDiagramState(state);
+                markDiagramStateBaseline();
+                if (activeDiagramCategory) {
+                    categoryDiagramStates.set(activeDiagramCategory, captureDiagramState());
+                }
+                setDiagramSaveStatus("saved");
+            }
+        } catch (error) {
+            console.error("Failed to load saved diagram", error);
+            setDiagramSaveStatus("failed");
+        }
+    };
+
+    markDiagramStateBaseline();
+    const diagramMutationObserver = new MutationObserver(() => queueDiagramSave());
+    diagramMutationObserver.observe(diagramStage, { childList: true, subtree: true, attributes: true });
+    void loadSavedDiagram();
+
+    const loadSharedDiagram = async () => {
+        if (!isReadOnlyView) {
+            return;
+        }
+        try {
+            const token = decodeURIComponent(window.location.hash.slice("#diagram-share=".length));
+            const response = await fetch(`/api/diagram-shares/${encodeURIComponent(token)}`);
+            if (!response.ok) {
+                throw new Error(`Shared diagram load failed: ${response.status}`);
+            }
+            const sharedState = await response.json();
+            if (!Array.isArray(sharedState.nodes) || !Array.isArray(sharedState.lines)) {
+                throw new Error("Invalid shared diagram");
+            }
+            restoreDiagramState(sharedState);
+            diagramRoot.classList.add("diagram-read-only");
+            diagramAddButton?.setAttribute("disabled", "true");
+            diagramManageButton?.setAttribute("disabled", "true");
+        } catch (error) {
+            console.error("Failed to load shared diagram", error);
+            window.alert("공유 다이어그램을 불러오지 못했습니다.");
+        }
+    };
+    void loadSharedDiagram();
 
     setPropertiesPanelVisible(false);
     setActivePropertyTab("text");

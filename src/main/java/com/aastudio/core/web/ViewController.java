@@ -28,7 +28,7 @@ public class ViewController {
 
     @GetMapping("/diagram")
     public String diagram(Model model) {
-        model.addAttribute("pageTitle", "Microservices Architecture v2");
+        model.addAttribute("pageTitle", "다이어그램 1");
         model.addAttribute("pageDescription", "Interactive system diagram workspace");
         model.addAttribute("activeNav", "diagram");
         return "diagram";
