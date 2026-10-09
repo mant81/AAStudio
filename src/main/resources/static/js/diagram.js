@@ -177,7 +177,7 @@ function initializeDiagramPage() {
     let selectedNodes = [];
     let selectedLine = null;
     let activeDiagramCategory = null;
-    const categoryDiagramStates = new WeakMap();
+    const diagramStates = new WeakMap();
     let nodeClipboard = [];
     let pasteOffset = 0;
     let activeTextSelectionRange = null;
@@ -185,6 +185,9 @@ function initializeDiagramPage() {
     const isReadOnlyView = window.location.hash.startsWith("#diagram-share=");
     let saveTimer = null;
     let hasPendingSave = false;
+    let pendingSaveDiagram = null;
+    let pendingSaveState = null;
+    let diagramSelectionRequest = 0;
     let selectedShapeTool = "rectangle";
     let selectedLinePreset = "straight-arrow";
     const lineStyleDefaults = {
@@ -484,31 +487,39 @@ function initializeDiagramPage() {
         if (diagramSaveStatusText) diagramSaveStatusText.textContent = label;
     };
 
-    const saveDiagramState = async () => {
+    const saveDiagramState = async (targetDiagram = getActiveDiagramButton(), state = captureDiagramState()) => {
         if (isReadOnlyView) {
             return;
         }
         hasPendingSave = false;
-        const activeDiagram = getActiveDiagramButton();
+        pendingSaveDiagram = null;
+        pendingSaveState = null;
+        const activeDiagram = targetDiagram;
         const diagramId = activeDiagram?.dataset.diagramId;
         if (!diagramId) {
             return;
         }
-        setDiagramSaveStatus("saving");
+        if (getActiveDiagramButton() === activeDiagram) {
+            setDiagramSaveStatus("saving");
+        }
         try {
             const response = await fetch(`/api/diagrams/${encodeURIComponent(diagramId)}/state`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    ...captureDiagramState(),
+                    ...state,
                     diagramName: activeDiagram.querySelector("[data-spaces-text]")?.textContent?.trim() || diagramId
                 })
             });
             if (!response.ok) throw new Error(`Diagram save failed: ${response.status}`);
-            setDiagramSaveStatus("saved");
+            if (getActiveDiagramButton() === activeDiagram) {
+                setDiagramSaveStatus("saved");
+            }
         } catch (error) {
             console.error("Failed to save diagram", error);
-            setDiagramSaveStatus("failed");
+            if (getActiveDiagramButton() === activeDiagram) {
+                setDiagramSaveStatus("failed");
+            }
         }
     };
 
@@ -523,8 +534,12 @@ function initializeDiagramPage() {
             hasPendingSave = true;
             setDiagramSaveStatus("changed");
         }
+        pendingSaveDiagram = getActiveDiagramButton();
+        pendingSaveState = captureDiagramState();
         window.clearTimeout(saveTimer);
-        saveTimer = window.setTimeout(saveDiagramState, 1200);
+        saveTimer = window.setTimeout(() => {
+            void saveDiagramState(pendingSaveDiagram, pendingSaveState);
+        }, 1200);
     };
 
     const downloadBlob = (blob, filename) => {
@@ -813,6 +828,15 @@ function initializeDiagramPage() {
         clearSelectedNode();
         updateLinePaths();
         isRestoringHistory = false;
+        const refreshAfterLayout = () => {
+            updateLinePaths();
+            syncSelectionFrame();
+        };
+        if (typeof window.requestAnimationFrame === "function") {
+            window.requestAnimationFrame(refreshAfterLayout);
+        } else {
+            window.setTimeout(refreshAfterLayout, 0);
+        }
         return true;
     };
 
@@ -820,11 +844,14 @@ function initializeDiagramPage() {
         window.clearTimeout(saveTimer);
         saveTimer = null;
         hasPendingSave = false;
+        pendingSaveDiagram = null;
+        pendingSaveState = null;
         historyStack.length = 0;
         restoreDiagramState({ nodes: [], lines: [], nodeCounter: 0 });
         markDiagramStateBaseline();
-        if (activeDiagramCategory) {
-            categoryDiagramStates.set(activeDiagramCategory, captureDiagramState());
+        const activeDiagram = getActiveDiagramButton();
+        if (activeDiagram) {
+            diagramStates.set(activeDiagram, captureDiagramState());
         }
         setDiagramSaveStatus("pending");
         activeTool = "select";
@@ -1055,7 +1082,7 @@ function initializeDiagramPage() {
             option.querySelector("span:last-child").textContent = name;
             option.addEventListener("click", () => {
                 if (diagram instanceof HTMLElement) {
-                    setActiveDiagramButton(diagram);
+                    void activateDiagramSelection(diagram);
                 }
                 diagramMenu?.classList.add("hidden");
                 currentDiagramButton?.setAttribute("aria-expanded", "false");
@@ -1091,8 +1118,7 @@ function initializeDiagramPage() {
         button.dataset.diagramId ??= (globalThis.crypto?.randomUUID?.() || `diagram-${Date.now()}-${diagramRegistrationCounter + 1}`);
         button.dataset.diagramOrder ??= String(++diagramRegistrationCounter);
         button.addEventListener("click", () => {
-            activateDiagramCategory(button.closest("[data-space-group]"));
-            setActiveDiagramButton(button);
+            void activateDiagramSelection(button);
         });
     };
 
@@ -1137,20 +1163,57 @@ function initializeDiagramPage() {
         return `다이어그램 ${nextNumber}`;
     };
 
+    const emptyDiagramState = () => ({ nodes: [], lines: [], nodeCounter: 0 });
+
+    const activateDiagramSelection = async (button, { reset = false } = {}) => {
+        if (!(button instanceof HTMLElement) || isReadOnlyView) {
+            return;
+        }
+
+        const currentDiagram = getActiveDiagramButton();
+        if (currentDiagram === button && !reset) {
+            if (!diagramStates.has(button)) {
+                diagramStates.set(button, captureDiagramState());
+            }
+            return;
+        }
+        if (currentDiagram && currentDiagram !== button) {
+            diagramStates.set(currentDiagram, captureDiagramState());
+            if (hasPendingSave && pendingSaveDiagram === currentDiagram) {
+                window.clearTimeout(saveTimer);
+                const stateToSave = pendingSaveState ?? captureDiagramState();
+                void saveDiagramState(currentDiagram, stateToSave);
+            }
+        }
+
+        const selectionRequest = ++diagramSelectionRequest;
+        const cachedState = reset ? null : diagramStates.get(button);
+        if (reset) {
+            window.clearTimeout(saveTimer);
+            saveTimer = null;
+            hasPendingSave = false;
+            pendingSaveDiagram = null;
+            pendingSaveState = null;
+            historyStack.length = 0;
+        }
+        activeDiagramCategory = button.closest("[data-space-group]");
+        setActiveDiagramButton(button);
+        restoreDiagramState(cachedState ?? emptyDiagramState());
+        markDiagramStateBaseline();
+        diagramStates.set(button, captureDiagramState());
+        setDiagramSaveStatus(cachedState && !reset ? "saved" : "pending");
+        activeTool = "select";
+        syncToolButtons();
+
+        if (!reset && !cachedState) {
+            await loadSavedDiagram(button, selectionRequest);
+        }
+    };
+
     const activateDiagramCategory = (group) => {
         if (!(group instanceof HTMLElement)) {
             return;
         }
-
-        if (activeDiagramCategory === group) {
-            return;
-        }
-
-        if (activeDiagramCategory) {
-            categoryDiagramStates.set(activeDiagramCategory, captureDiagramState());
-        }
-
-        activeDiagramCategory = group;
         const children = group.querySelector("[data-spaces-children]");
         let diagramButton = group.querySelector("[data-space-diagram]");
         if (!(diagramButton instanceof HTMLElement) && children instanceof HTMLElement) {
@@ -1160,17 +1223,8 @@ function initializeDiagramPage() {
         }
 
         if (diagramButton instanceof HTMLElement) {
-            setActiveDiagramButton(diagramButton);
+            void activateDiagramSelection(diagramButton);
         }
-
-        const hasCategoryState = categoryDiagramStates.has(group);
-        const state = categoryDiagramStates.get(group) ?? { nodes: [], lines: [], nodeCounter: 0 };
-        restoreDiagramState(state);
-        markDiagramStateBaseline();
-        categoryDiagramStates.set(group, captureDiagramState());
-        setDiagramSaveStatus(hasCategoryState ? "saved" : "pending");
-        activeTool = "select";
-        syncToolButtons();
     };
 
     const closeDiagramAddModal = () => {
@@ -1252,7 +1306,7 @@ function initializeDiagramPage() {
         if (!window.confirm(`'${name}' 다이어그램을 삭제하시겠습니까?`)) return;
         const nextDiagram = diagrams[diagrams.indexOf(activeDiagram) + 1] ?? diagrams[diagrams.indexOf(activeDiagram) - 1];
         activeDiagram.remove();
-        if (nextDiagram instanceof HTMLElement) setActiveDiagramButton(nextDiagram);
+        if (nextDiagram instanceof HTMLElement) void activateDiagramSelection(nextDiagram);
     });
 
     diagramAddButton?.addEventListener("click", openDiagramAddModal);
@@ -1290,11 +1344,10 @@ function initializeDiagramPage() {
             return;
         }
         const name = diagramAddName.value.trim() || getNextDiagramDefaultName();
-        const newButton = createDiagramButton(name, true);
+        const newButton = createDiagramButton(name, false);
         newButton.classList.remove("text-on-surface-variant", "hover:bg-surface-variant/50");
         children.appendChild(newButton);
-        setActiveDiagramButton(newButton);
-        resetDiagramCanvas();
+        void activateDiagramSelection(newButton, { reset: true });
         closeDiagramAddModal();
     });
 
@@ -1327,9 +1380,7 @@ function initializeDiagramPage() {
             const newButton = createDiagramButton(getNextDiagramDefaultName(), false);
             newButton.classList.remove("text-on-surface-variant", "hover:bg-surface-variant/50");
             children.appendChild(newButton);
-            activateDiagramCategory(group);
-            setActiveDiagramButton(newButton);
-            resetDiagramCanvas();
+            void activateDiagramSelection(newButton, { reset: true });
             syncGroupState(group, true);
         });
 
@@ -4036,8 +4087,9 @@ function initializeDiagramPage() {
             lines: [...currentState.lines, ...sampleState.lines],
             nodeCounter: sampleState.nodeCounter
         });
-        if (activeDiagramCategory) {
-            categoryDiagramStates.set(activeDiagramCategory, captureDiagramState());
+        const activeDiagram = getActiveDiagramButton();
+        if (activeDiagram) {
+            diagramStates.set(activeDiagram, captureDiagramState());
         }
         setSamplePanelVisible(false);
         queueDiagramSave();
@@ -5828,27 +5880,35 @@ function initializeDiagramPage() {
     });
     diagramSampleClose?.addEventListener("click", () => setSamplePanelVisible(false));
 
-    const loadSavedDiagram = async () => {
-        if (isReadOnlyView) return;
-        const activeDiagram = getActiveDiagramButton();
+    const loadSavedDiagram = async (diagramButton = getActiveDiagramButton(), selectionRequest = diagramSelectionRequest) => {
+        if (isReadOnlyView) return false;
+        const activeDiagram = diagramButton;
         const diagramId = activeDiagram?.dataset.diagramId;
-        if (!diagramId) return;
+        if (!diagramId) return false;
         try {
             const response = await fetch(`/api/diagrams/${encodeURIComponent(diagramId)}/state`);
-            if (response.status === 404) return;
+            if (response.status === 404) {
+                return false;
+            }
             if (!response.ok) throw new Error(`Diagram load failed: ${response.status}`);
             const state = await response.json();
-            if (Array.isArray(state.nodes) && Array.isArray(state.lines)) {
-                restoreDiagramState(state);
-                markDiagramStateBaseline();
-                if (activeDiagramCategory) {
-                    categoryDiagramStates.set(activeDiagramCategory, captureDiagramState());
-                }
-                setDiagramSaveStatus("saved");
+            if (selectionRequest !== diagramSelectionRequest || getActiveDiagramButton() !== activeDiagram) {
+                return false;
             }
+            if (!Array.isArray(state.nodes) || !Array.isArray(state.lines)) {
+                throw new Error("Invalid saved diagram state");
+            }
+            restoreDiagramState(state);
+            markDiagramStateBaseline();
+            diagramStates.set(activeDiagram, captureDiagramState());
+            setDiagramSaveStatus("saved");
+            return true;
         } catch (error) {
             console.error("Failed to load saved diagram", error);
-            setDiagramSaveStatus("failed");
+            if (selectionRequest === diagramSelectionRequest && getActiveDiagramButton() === activeDiagram) {
+                setDiagramSaveStatus("failed");
+            }
+            return false;
         }
     };
 

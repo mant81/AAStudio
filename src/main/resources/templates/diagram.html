@@ -25,10 +25,17 @@
         </div>
         <div class="flex items-center gap-3">
             <input accept="application/json,.json" hidden id="diagram-import-input" type="file">
-            <button aria-expanded="false" aria-label="샘플 다이어그램 열기" class="flex h-10 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-container transition-colors" id="diagram-sample-button" title="샘플 다이어그램" type="button">
-                <span class="material-symbols-outlined text-[18px]">dashboard_customize</span>
-                <span class="text-[11px] font-medium">샘플 다이어그램</span>
-            </button>
+            <div aria-label="샘플 다이어그램" class="flex items-center gap-1 rounded-xl border border-secondary/25 bg-secondary/5 p-1">
+                <span class="flex items-center gap-1 px-2 text-secondary">
+                    <span class="material-symbols-outlined text-[17px]">dashboard_customize</span>
+                    <span class="text-[11px] font-semibold">샘플</span>
+                </span>
+                <span aria-hidden="true" class="h-5 w-px bg-secondary/20"></span>
+                <button aria-expanded="false" aria-label="샘플 다이어그램 열기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-secondary transition-colors" id="diagram-sample-button" title="샘플 다이어그램" type="button">
+                    <span class="material-symbols-outlined text-[18px]">view_compact</span>
+                    <span class="text-[11px] font-medium">다이어그램</span>
+                </button>
+            </div>
             <div class="flex items-center gap-1 rounded-xl border border-outline-variant/50 bg-surface-container-low p-1" aria-label="다이어그램 내보내기">
                 <span class="flex items-center gap-1 px-2 text-on-surface-variant">
                     <span class="material-symbols-outlined text-[17px]">download</span>
