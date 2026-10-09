@@ -24,8 +24,15 @@ function initializeDiagramPage() {
     const diagramAddCancelSecondary = document.getElementById("diagram-add-cancel-secondary");
     const importButton = document.getElementById("diagram-import-button");
     const importInput = document.getElementById("diagram-import-input");
-    const exportButton = document.getElementById("diagram-export-button");
-    const exportMenu = document.getElementById("diagram-export-menu");
+    const diagramManageButton = document.getElementById("diagram-manage-button");
+    const diagramManageMenu = document.getElementById("diagram-manage-menu");
+    const diagramRenameButton = document.getElementById("diagram-rename-button");
+    const diagramManageJsonButton = document.getElementById("diagram-manage-json-button");
+    const diagramManageRestoreButton = document.getElementById("diagram-manage-restore-button");
+    const diagramDeleteButton = document.getElementById("diagram-delete-button");
+    const diagramNameModalTitle = document.getElementById("diagram-name-modal-title");
+    const diagramNameModalDescription = document.getElementById("diagram-name-modal-description");
+    const diagramNameModalSubmit = document.getElementById("diagram-name-modal-submit");
     const exportOptions = Array.from(diagramRoot.querySelectorAll("[data-diagram-export]"));
     const spacesTexts = Array.from(diagramRoot.querySelectorAll("[data-spaces-text]"));
     const spacesAction = diagramRoot.querySelector("[data-spaces-action]");
@@ -40,6 +47,8 @@ function initializeDiagramPage() {
     const spaceGroups = Array.from(diagramRoot.querySelectorAll("[data-space-group]"));
     const zoomLayer = document.getElementById("zoom-layer");
     const diagramStage = document.getElementById("diagram-stage");
+    let diagramNameModalMode = "add";
+    let diagramNameModalTarget = null;
     const penLayer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     penLayer.classList.add("diagram-pen-layer");
     penLayer.setAttribute("aria-hidden", "true");
@@ -159,6 +168,7 @@ function initializeDiagramPage() {
     let nodeClipboard = [];
     let pasteOffset = 0;
     let activeTextSelectionRange = null;
+    let isAltKeyPressed = false;
     let selectedShapeTool = "rectangle";
     let selectedLinePreset = "straight-arrow";
     const lineStyleDefaults = {
@@ -412,7 +422,12 @@ function initializeDiagramPage() {
 
     const exportJson = () => {
         const state = captureDiagramState();
-        downloadBlob(new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }), "diagram.json");
+        const now = new Date();
+        const pad = (value) => String(value).padStart(2, "0");
+        const title = (currentDiagramName?.textContent?.trim() || "diagram").replace(/[\\/:*?"<>|]/g, "-");
+        const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getSeconds())}`;
+        const filename = `${title}_${timestamp}.json`;
+        downloadBlob(new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }), filename);
     };
 
     const arrayBufferToDataUrl = (buffer, mimeType) => {
@@ -668,24 +683,10 @@ function initializeDiagramPage() {
         }
     });
 
-    exportButton?.addEventListener("click", (event) => {
-        event.stopPropagation();
-        const isOpen = exportMenu?.classList.toggle("hidden") === false;
-        exportButton.setAttribute("aria-expanded", String(isOpen));
-    });
     exportOptions.forEach((option) => {
         option.addEventListener("click", async () => {
-            exportMenu?.classList.add("hidden");
-            exportButton?.setAttribute("aria-expanded", "false");
             await exportImage(option.dataset.diagramExport);
         });
-    });
-    document.addEventListener("click", (event) => {
-        if (!(event.target instanceof Node) || exportMenu?.contains(event.target) || exportButton?.contains(event.target)) {
-            return;
-        }
-        exportMenu?.classList.add("hidden");
-        exportButton?.setAttribute("aria-expanded", "false");
     });
 
     let propertyEditHistoryState = null;
@@ -869,7 +870,7 @@ function initializeDiagramPage() {
         }
         diagramOptions.replaceChildren();
         Array.from(diagramRoot.querySelectorAll("[data-space-diagram]"))
-            .sort((left, right) => Number(left.dataset.diagramOrder) - Number(right.dataset.diagramOrder))
+            .sort((left, right) => Number(right.dataset.diagramOrder) - Number(left.dataset.diagramOrder))
             .forEach((diagram) => {
             const name = diagram.querySelector("[data-spaces-text]")?.textContent?.trim() || "이름 없는 다이어그램";
             const option = document.createElement("button");
@@ -897,11 +898,16 @@ function initializeDiagramPage() {
     });
 
     document.addEventListener("click", (event) => {
-        if (!(event.target instanceof Node) || diagramMenu?.contains(event.target) || currentDiagramButton?.contains(event.target)) {
+        if (!(event.target instanceof Node)
+            || diagramMenu?.contains(event.target)
+            || currentDiagramButton?.contains(event.target)
+            || diagramManageMenu?.contains(event.target)
+            || diagramManageButton?.contains(event.target)) {
             return;
         }
         diagramMenu?.classList.add("hidden");
         currentDiagramButton?.setAttribute("aria-expanded", "false");
+        closeDiagramManageMenu();
     });
 
     const bindDiagramButton = (button) => {
@@ -947,6 +953,11 @@ function initializeDiagramPage() {
     };
 
     const openDiagramAddModal = () => {
+        diagramNameModalMode = "add";
+        diagramNameModalTarget = null;
+        if (diagramNameModalTitle) diagramNameModalTitle.textContent = "다이어그램 추가";
+        if (diagramNameModalDescription) diagramNameModalDescription.textContent = "현재 그룹에 새 다이어그램을 추가합니다.";
+        if (diagramNameModalSubmit) diagramNameModalSubmit.textContent = "추가";
         diagramAddModal?.classList.remove("hidden");
         diagramAddModal?.classList.add("flex");
         if (diagramAddName instanceof HTMLInputElement) {
@@ -954,6 +965,62 @@ function initializeDiagramPage() {
             diagramAddName.focus();
         }
     };
+
+    const openDiagramRenameModal = () => {
+        const activeDiagram = diagramRoot.querySelector("[data-space-diagram].bg-secondary\\/10");
+        if (!(activeDiagram instanceof HTMLElement) || !(diagramAddName instanceof HTMLInputElement)) {
+            return;
+        }
+        diagramNameModalMode = "rename";
+        diagramNameModalTarget = activeDiagram;
+        if (diagramNameModalTitle) diagramNameModalTitle.textContent = "다이어그램 이름 변경";
+        if (diagramNameModalDescription) diagramNameModalDescription.textContent = "현재 다이어그램의 이름을 변경합니다.";
+        if (diagramNameModalSubmit) diagramNameModalSubmit.textContent = "저장";
+        diagramAddName.value = activeDiagram.querySelector("[data-spaces-text]")?.textContent?.trim() || "";
+        diagramAddModal?.classList.remove("hidden");
+        diagramAddModal?.classList.add("flex");
+        diagramAddName.focus();
+        diagramAddName.select();
+    };
+
+    const closeDiagramManageMenu = () => {
+        diagramManageMenu?.classList.add("hidden");
+        diagramManageButton?.setAttribute("aria-expanded", "false");
+    };
+
+
+    diagramManageButton?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const isOpen = diagramManageMenu?.classList.toggle("hidden") === false;
+        diagramManageButton.setAttribute("aria-expanded", String(isOpen));
+    });
+    diagramRenameButton?.addEventListener("click", () => {
+        closeDiagramManageMenu();
+        openDiagramRenameModal();
+    });
+    diagramManageJsonButton?.addEventListener("click", () => {
+        closeDiagramManageMenu();
+        exportJson();
+    });
+    diagramManageRestoreButton?.addEventListener("click", () => {
+        closeDiagramManageMenu();
+        importInput?.click();
+    });
+    diagramDeleteButton?.addEventListener("click", () => {
+        closeDiagramManageMenu();
+        const activeDiagram = diagramRoot.querySelector("[data-space-diagram].bg-secondary\\/10");
+        const diagrams = Array.from(diagramRoot.querySelectorAll("[data-space-diagram]"));
+        if (!(activeDiagram instanceof HTMLElement)) return;
+        if (diagrams.length <= 1) {
+            window.alert("다이어그램이 하나 이상 있어야 합니다.");
+            return;
+        }
+        const name = activeDiagram.querySelector("[data-spaces-text]")?.textContent?.trim() || "이 다이어그램";
+        if (!window.confirm(`'${name}' 다이어그램을 삭제하시겠습니까?`)) return;
+        const nextDiagram = diagrams[diagrams.indexOf(activeDiagram) + 1] ?? diagrams[diagrams.indexOf(activeDiagram) - 1];
+        activeDiagram.remove();
+        if (nextDiagram instanceof HTMLElement) setActiveDiagramButton(nextDiagram);
+    });
 
     diagramAddButton?.addEventListener("click", openDiagramAddModal);
     diagramAddCancel?.addEventListener("click", closeDiagramAddModal);
@@ -966,6 +1033,18 @@ function initializeDiagramPage() {
     diagramAddForm?.addEventListener("submit", (event) => {
         event.preventDefault();
         if (!(diagramAddName instanceof HTMLInputElement)) {
+            return;
+        }
+        if (diagramNameModalMode === "rename" && diagramNameModalTarget instanceof HTMLElement) {
+            const name = diagramAddName.value.trim();
+            if (!name) {
+                diagramAddName.focus();
+                return;
+            }
+            const nameElement = diagramNameModalTarget.querySelector("[data-spaces-text]");
+            if (nameElement) nameElement.textContent = name;
+            setActiveDiagramButton(diagramNameModalTarget);
+            closeDiagramAddModal();
             return;
         }
         const activeDiagram = diagramRoot.querySelector("[data-space-diagram].bg-secondary\\/10");
@@ -1034,6 +1113,22 @@ function initializeDiagramPage() {
         return `url("data:image/svg+xml,${encodeURIComponent(cursorSvg)}") ${center} ${center}, crosshair`;
     };
 
+    const syncCanvasCursor = () => {
+        if (isPanning) {
+            zoomLayer.style.cursor = "grabbing";
+            return;
+        }
+        if (activeTool === "eraser") {
+            zoomLayer.style.cursor = getEraserCursor();
+            return;
+        }
+        if (activeTool === "move" || (activeTool === "select" && isAltKeyPressed)) {
+            zoomLayer.style.cursor = "grab";
+            return;
+        }
+        zoomLayer.style.cursor = activeTool === "select" ? "default" : "copy";
+    };
+
     const syncToolButtons = () => {
         toolButtons.forEach((button) => {
             const isActive = button.dataset.diagramTool === activeTool
@@ -1057,15 +1152,30 @@ function initializeDiagramPage() {
         if (penOpacityValue) penOpacityValue.textContent = `${penSettings.opacity}%`;
         if (eraserSizeInput instanceof HTMLInputElement) eraserSizeInput.value = eraserSettings.size;
         if (eraserSizeValue) eraserSizeValue.textContent = `${eraserSettings.size}px`;
-        zoomLayer.style.cursor = activeTool === "eraser"
-            ? getEraserCursor()
-            : (activeTool === "move" ? "grab" : (activeTool === "select" ? "default" : "copy"));
+        syncCanvasCursor();
     };
 
     const isSelectionTool = () => activeTool === "select";
     const isCanvasMoveTool = () => activeTool === "move";
     const isConnectorTool = () => activeTool === "connector";
     const isEraserTool = () => activeTool === "eraser";
+
+    window.addEventListener("keydown", (event) => {
+        if (event.key === "Alt") {
+            isAltKeyPressed = true;
+            syncCanvasCursor();
+        }
+    });
+    window.addEventListener("keyup", (event) => {
+        if (event.key === "Alt") {
+            isAltKeyPressed = false;
+            syncCanvasCursor();
+        }
+    });
+    window.addEventListener("blur", () => {
+        isAltKeyPressed = false;
+        syncCanvasCursor();
+    });
 
     const closeIconPicker = ({ restore = true } = {}) => {
         if (restore && iconLibraryNode && originalIconSnapshot) {
@@ -3942,7 +4052,6 @@ function initializeDiagramPage() {
             startY = event.clientY;
             startStagePanX = stagePanX;
             startStagePanY = stagePanY;
-            zoomLayer.style.cursor = "grabbing";
             syncToolButtons();
             event.preventDefault();
             return;

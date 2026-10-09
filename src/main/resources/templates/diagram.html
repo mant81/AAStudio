@@ -20,32 +20,56 @@
             </button>
         </div>
         <div class="flex items-center gap-3">
-            <div class="flex items-center -space-x-2 mr-4">
-                <div class="w-8 h-8 rounded-full border-2 border-surface-white bg-secondary/20 shadow-sm z-30"></div>
-                <div class="w-8 h-8 rounded-full border-2 border-surface-white bg-accent-db/20 shadow-sm z-20"></div>
-                <div class="w-8 h-8 rounded-full border-2 border-surface-white bg-surface-variant flex items-center justify-center font-label-md text-label-md text-on-surface-variant shadow-sm z-10">+3</div>
-            </div>
-            <button class="flex items-center gap-2 px-4 py-2 text-on-surface-variant hover:bg-surface-variant rounded-xl transition-colors font-label-md text-label-md" id="diagram-import-button" title="JSON 가져오기" type="button">
-                <span class="material-symbols-outlined text-[18px]">upload_file</span>
-                Import
-            </button>
             <input accept="application/json,.json" hidden id="diagram-import-input" type="file">
-            <div class="relative" id="diagram-export-picker">
-                <button aria-expanded="false" aria-haspopup="menu" class="flex items-center gap-2 px-4 py-2 text-on-surface-variant hover:bg-surface-variant rounded-xl transition-colors font-label-md text-label-md" id="diagram-export-button" title="다이어그램 내보내기" type="button">
-                    <span class="material-symbols-outlined text-[18px]">download</span>
-                    Export
+            <div class="flex items-center gap-1 rounded-xl border border-outline-variant/50 bg-surface-container-low p-1" aria-label="다이어그램 내보내기">
+                <span class="flex items-center gap-1 px-2 text-on-surface-variant">
+                    <span class="material-symbols-outlined text-[17px]">download</span>
+                    <span class="text-[11px] font-semibold">내보내기</span>
+                </span>
+                <span class="h-5 w-px bg-outline-variant/60" aria-hidden="true"></span>
+                <button aria-label="JPG로 내보내기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" data-diagram-export="jpg" title="JPG로 내보내기" type="button">
+                    <span class="material-symbols-outlined text-[18px]">photo</span>
+                    <span class="text-[11px] font-medium">JPG</span>
                 </button>
-                <div class="hidden absolute right-0 top-full mt-2 z-50 w-40 rounded-xl border border-outline-variant/50 bg-surface-white p-1.5 shadow-xl" id="diagram-export-menu" role="menu">
-                    <button class="flex w-full items-center rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant" data-diagram-export="json" type="button">JSON</button>
-                    <button class="flex w-full items-center rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant" data-diagram-export="jpg" type="button">JPG</button>
-                    <button class="flex w-full items-center rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant" data-diagram-export="png" type="button">PNG</button>
-                    <button class="flex w-full items-center rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant" data-diagram-export="pdf" type="button">PDF</button>
+                <button aria-label="PNG로 내보내기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" data-diagram-export="png" title="PNG로 내보내기" type="button">
+                    <span class="material-symbols-outlined text-[18px]">image</span>
+                    <span class="text-[11px] font-medium">PNG</span>
+                </button>
+                <button aria-label="PDF로 내보내기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" data-diagram-export="pdf" title="PDF로 내보내기" type="button">
+                    <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                    <span class="text-[11px] font-medium">PDF</span>
+                </button>
+                <span class="h-5 w-px bg-outline-variant/60" aria-hidden="true"></span>
+                <button aria-label="다이어그램 링크 공유" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" title="다이어그램 링크 공유" type="button">
+                    <span class="material-symbols-outlined text-[18px]">link</span>
+                    <span class="text-[11px] font-medium">링크 공유</span>
+                </button>
+            </div>
+            <div class="relative" id="diagram-manage-picker">
+                <button aria-expanded="false" aria-haspopup="menu" aria-label="다이어그램 관리" class="flex items-center justify-center w-10 h-10 text-on-surface-variant hover:bg-surface-variant rounded-xl transition-colors" id="diagram-manage-button" title="다이어그램 관리" type="button">
+                    <span class="material-symbols-outlined text-[20px]">settings</span>
+                </button>
+                <div class="hidden absolute right-0 top-full mt-2 z-50 w-48 rounded-xl border border-outline-variant/50 bg-surface-white p-1.5 shadow-xl" id="diagram-manage-menu" role="menu">
+                    <div class="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">현재 다이어그램</div>
+                    <button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant transition-colors" id="diagram-rename-button" type="button">
+                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                        이름 변경
+                    </button>
+                    <button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant transition-colors" id="diagram-manage-json-button" type="button">
+                        <span class="material-symbols-outlined text-[18px]">backup</span>
+                        백업하기
+                    </button>
+                    <button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant transition-colors" id="diagram-manage-restore-button" type="button">
+                        <span class="material-symbols-outlined text-[18px]">restore</span>
+                        복원하기
+                    </button>
+                    <div class="my-1 border-t border-outline-variant/40"></div>
+                    <button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-error hover:bg-error-container/30 transition-colors" id="diagram-delete-button" type="button">
+                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                        다이어그램 삭제
+                    </button>
                 </div>
             </div>
-            <button class="flex items-center gap-2 px-4 py-2 bg-secondary text-on-secondary hover:opacity-90 rounded-xl shadow-sm transition-opacity font-label-md text-label-md" type="button">
-                <span class="material-symbols-outlined text-[18px]">share</span>
-                Share
-            </button>
         </div>
     </div>
 
@@ -53,8 +77,8 @@
         <form class="w-full max-w-md rounded-2xl bg-surface-white p-6 shadow-2xl" id="diagram-add-form">
             <div class="mb-5 flex items-start justify-between gap-4">
                 <div>
-                    <h2 class="font-title-md text-title-md text-on-surface">다이어그램 추가</h2>
-                    <p class="mt-1 text-sm text-on-surface-variant">현재 그룹에 새 다이어그램을 추가합니다.</p>
+                    <h2 class="font-title-md text-title-md text-on-surface" id="diagram-name-modal-title">다이어그램 추가</h2>
+                    <p class="mt-1 text-sm text-on-surface-variant" id="diagram-name-modal-description">현재 그룹에 새 다이어그램을 추가합니다.</p>
                 </div>
                 <button aria-label="닫기" class="rounded-lg p-1 text-on-surface-variant hover:bg-surface-variant" id="diagram-add-cancel" type="button">
                     <span class="material-symbols-outlined">close</span>
@@ -64,7 +88,7 @@
             <input class="mt-2 h-11 w-full rounded-lg border border-outline-variant bg-surface px-3 text-on-surface outline-none focus:border-secondary" id="diagram-add-name" placeholder="예: 주문 처리 흐름" type="text">
             <div class="mt-6 flex justify-end gap-2">
                 <button class="rounded-lg px-4 py-2 text-on-surface-variant hover:bg-surface-variant" id="diagram-add-cancel-secondary" type="button">취소</button>
-                <button class="rounded-lg bg-secondary px-4 py-2 text-on-secondary hover:opacity-90" type="submit">추가</button>
+                <button class="rounded-lg bg-secondary px-4 py-2 text-on-secondary hover:opacity-90" id="diagram-name-modal-submit" type="submit">추가</button>
             </div>
         </form>
     </div>
