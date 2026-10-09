@@ -30,3 +30,9 @@ Context → Plan → Design → Implement → Verify → Record 순서로 진행
 - 다음 작업 또는 오픈 이슈가 문서화되어 있다.
 
 세부 절차와 AAStudio 전용 QA 체크리스트는 `docs/development-guide.md`를 따른다.
+
+## Git 커밋·push 규칙
+
+- 사용자가 `git push`를 요청하면 변경 내용을 먼저 커밋한다.
+- 커밋 메시지는 UTF-8 한글로 자동 작성하고 100자 이내로 유지한다.
+- push 전 커밋 메시지의 한글 표시와 작업 트리 상태를 확인한다.
