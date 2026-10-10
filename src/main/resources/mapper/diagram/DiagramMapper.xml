@@ -7,6 +7,7 @@
     <update id="ensureDocumentTable">
         CREATE TABLE IF NOT EXISTS diagram_document (
             diagram_id VARCHAR(100) PRIMARY KEY,
+            project_id VARCHAR(64) NOT NULL DEFAULT 'alpha',
             diagram_name VARCHAR(200) NOT NULL,
             state_json TEXT NOT NULL,
             version BIGINT NOT NULL DEFAULT 0,
@@ -22,17 +23,19 @@
                updated_at AS updatedAt
         FROM diagram_document
         WHERE diagram_id = #{diagramId}
+          AND project_id = #{projectId}
     </select>
 
     <select id="selectStateJson" resultType="string">
         SELECT state_json
         FROM diagram_document
         WHERE diagram_id = #{diagramId}
+          AND project_id = #{projectId}
     </select>
 
     <insert id="insertDocument">
-        INSERT INTO diagram_document (diagram_id, diagram_name, state_json, version, updated_at)
-        VALUES (#{diagramId}, #{diagramName}, #{stateJson}, 1, CURRENT_TIMESTAMP)
+        INSERT INTO diagram_document (diagram_id, project_id, diagram_name, state_json, version, updated_at)
+        VALUES (#{diagramId}, #{projectId}, #{diagramName}, #{stateJson}, 1, CURRENT_TIMESTAMP)
     </insert>
 
     <update id="updateDocument">
@@ -42,5 +45,6 @@
             version = version + 1,
             updated_at = CURRENT_TIMESTAMP
         WHERE diagram_id = #{diagramId}
+          AND project_id = #{projectId}
     </update>
 </mapper>

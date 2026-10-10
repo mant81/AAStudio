@@ -4852,11 +4852,12 @@ function initializeDiagramPage() {
             path.dataset.lineBadgeText = "";
             path.dataset.lineBadgeColor = "#006399";
             path.setAttribute("stroke-opacity", String(Number(penSettings.opacity) / 100));
-            path.setAttribute("d", `M ${point.x} ${point.y}`);
+            const initialPathData = `M ${point.x} ${point.y}`;
+            path.setAttribute("d", initialPathData);
             svg.appendChild(path);
             linePaths.push(path);
             bindLineInteractions(path);
-            drawingPen = { path, points: [point], moved: false };
+            drawingPen = { path, points: [point], pathData: initialPathData, moved: false };
             event.preventDefault();
             return;
         }
@@ -5041,7 +5042,8 @@ function initializeDiagramPage() {
             if (Math.hypot(currentPoint.x - previousPoint.x, currentPoint.y - previousPoint.y) > 2) {
                 drawingPen.points.push(currentPoint);
                 drawingPen.moved = drawingPen.points.length > 2;
-                drawingPen.path.setAttribute("d", freehandPathData(drawingPen.points));
+                drawingPen.pathData += ` L ${currentPoint.x} ${currentPoint.y}`;
+                drawingPen.path.setAttribute("d", drawingPen.pathData);
             }
             return;
         }

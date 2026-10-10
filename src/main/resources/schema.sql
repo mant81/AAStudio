@@ -33,6 +33,13 @@ CREATE TABLE IF NOT EXISTS status_item (
     tone VARCHAR(20) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS project (
+    project_id VARCHAR(64) PRIMARY KEY,
+    project_name VARCHAR(120) NOT NULL,
+    description VARCHAR(500) NOT NULL DEFAULT '',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS profile (
     id BIGINT PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL,
@@ -50,8 +57,18 @@ CREATE TABLE IF NOT EXISTS team_member (
 
 CREATE TABLE IF NOT EXISTS diagram_document (
     diagram_id VARCHAR(100) PRIMARY KEY,
+    project_id VARCHAR(64) NOT NULL DEFAULT 'alpha',
     diagram_name VARCHAR(200) NOT NULL,
     state_json TEXT NOT NULL,
+    version BIGINT NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE diagram_document ADD COLUMN IF NOT EXISTS project_id VARCHAR(64) NOT NULL DEFAULT 'alpha';
+
+CREATE TABLE IF NOT EXISTS db_model_document (
+    project_id VARCHAR(64) PRIMARY KEY,
+    schema_text TEXT NOT NULL,
     version BIGINT NOT NULL DEFAULT 0,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

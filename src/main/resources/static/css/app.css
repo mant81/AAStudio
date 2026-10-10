@@ -144,6 +144,139 @@ button, input, textarea {
     color: var(--sidebar-muted);
 }
 
+.project-select-area { overflow: hidden; }
+.project-select-area.is-open { overflow: visible; }
+
+.project-select-card {
+    width: 100%;
+    min-height: 68px;
+    padding: 12px;
+    border: 1px solid rgba(216, 222, 240, 0.12);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--sidebar-text);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.project-select-card:hover,
+.project-select-card:focus-within {
+    border-color: rgba(216, 222, 240, 0.28);
+    background: rgba(255, 255, 255, 0.11);
+}
+
+.project-select-content { min-width: 0; }
+
+.project-select-label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--sidebar-muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    line-height: 14px;
+    text-transform: uppercase;
+}
+
+.project-select-control { position: relative; min-width: 0; }
+
+.project-select-native {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.project-select-trigger {
+    display: flex;
+    width: 100%;
+    height: 28px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    text-align: left;
+}
+
+.project-select-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.project-select-trigger:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid rgba(123, 194, 255, 0.7);
+    outline-offset: 2px;
+}
+
+.project-select-chevron {
+    font-size: 20px;
+    line-height: 24px;
+    pointer-events: none;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.project-select-card:hover .project-select-chevron,
+.project-select-card:focus-within .project-select-chevron { color: #fff; }
+
+.common-name-modal { font-family: var(--font-body); }
+.common-name-modal-card { border: 1px solid var(--line); }
+
+.project-select-menu {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 8px);
+    right: 0;
+    left: 0;
+    display: none;
+    max-height: 240px;
+    padding: 6px;
+    overflow-y: auto;
+    border: 1px solid rgba(216, 222, 240, 0.2);
+    border-radius: 10px;
+    background: #1c2740;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32), 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.project-select-card.is-open .project-select-menu { display: grid; gap: 2px; }
+.project-select-card.is-open .project-select-chevron { transform: rotate(180deg); color: #fff; }
+
+.project-select-option {
+    width: 100%;
+    min-height: 36px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #e9eefc;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 20px;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-select-option:hover,
+.project-select-option:focus-visible,
+.project-select-option.is-selected { background: rgba(123, 194, 255, 0.16); color: #fff; outline: 0; }
+.project-select-create { margin-top: 4px; border-top: 1px solid rgba(216, 222, 240, 0.12); border-radius: 0 0 7px 7px; color: #9bd5ff; }
+.project-select-chevron-legacy { display: none; }
+
+#main-sidebar.collapsed .project-select-card {
+    display: grid;
+    min-height: 48px;
+    padding: 12px 0;
+    place-items: center;
+}
+
 .sidebar-nav {
     display: flex;
     flex-direction: column;

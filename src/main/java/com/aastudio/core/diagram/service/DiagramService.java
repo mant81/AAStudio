@@ -24,8 +24,8 @@ public class DiagramService {
         diagramMapper.ensureDocumentTable();
     }
 
-    public Map<String, Object> getState(String diagramId) throws JsonProcessingException {
-        String stateJson = diagramMapper.selectStateJson(diagramId);
+    public Map<String, Object> getState(String projectId, String diagramId) throws JsonProcessingException {
+        String stateJson = diagramMapper.selectStateJson(projectId, diagramId);
         if (stateJson == null) {
             return null;
         }
@@ -46,10 +46,10 @@ public class DiagramService {
         return String.valueOf(value);
     }
 
-    public void saveState(String diagramId, String diagramName, Map<String, Object> state) throws JsonProcessingException {
+    public void saveState(String projectId, String diagramId, String diagramName, Map<String, Object> state) throws JsonProcessingException {
         String stateJson = objectMapper.writeValueAsString(state);
-        if (diagramMapper.updateDocument(diagramId, diagramName, stateJson) == 0) {
-            diagramMapper.insertDocument(diagramId, diagramName, stateJson);
+        if (diagramMapper.updateDocument(projectId, diagramId, diagramName, stateJson) == 0) {
+            diagramMapper.insertDocument(projectId, diagramId, diagramName, stateJson);
         }
     }
 }

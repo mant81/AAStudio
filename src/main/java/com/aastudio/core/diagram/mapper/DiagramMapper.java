@@ -10,15 +10,19 @@ public interface DiagramMapper {
 
     void ensureDocumentTable();
 
-    Map<String, Object> selectDocument(@Param("diagramId") String diagramId);
+    Map<String, Object> selectDocument(@Param("projectId") String projectId,
+                                        @Param("diagramId") String diagramId);
 
-    String selectStateJson(@Param("diagramId") String diagramId);
+    String selectStateJson(@Param("projectId") String projectId,
+                           @Param("diagramId") String diagramId);
 
-    int insertDocument(@Param("diagramId") String diagramId,
+    int insertDocument(@Param("projectId") String projectId,
+                       @Param("diagramId") String diagramId,
                        @Param("diagramName") String diagramName,
                        @Param("stateJson") String stateJson);
 
-    int updateDocument(@Param("diagramId") String diagramId,
+    int updateDocument(@Param("projectId") String projectId,
+                       @Param("diagramId") String diagramId,
                        @Param("diagramName") String diagramName,
                        @Param("stateJson") String stateJson);
 }
