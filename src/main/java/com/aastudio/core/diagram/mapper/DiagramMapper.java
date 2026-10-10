@@ -12,6 +12,8 @@ public interface DiagramMapper {
 
     Map<String, Object> selectDocument(@Param("diagramId") String diagramId);
 
+    String selectStateJson(@Param("diagramId") String diagramId);
+
     int insertDocument(@Param("diagramId") String diagramId,
                        @Param("diagramName") String diagramName,
                        @Param("stateJson") String stateJson);

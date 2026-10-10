@@ -1571,6 +1571,23 @@
 .diagram-shape-database .diagram-shape-content::before { top: 30%; }
 .diagram-shape-database .diagram-shape-content::after { top: 55%; }
 
+.diagram-shape-database::before,
+.diagram-shape-database::after,
+.diagram-shape-database .diagram-shape-content::before,
+.diagram-shape-database .diagram-shape-content::after {
+    display: none;
+}
+
+.diagram-database-shape-icon {
+    position: absolute;
+    top: 9%;
+    left: 14%;
+    width: 72%;
+    height: 82%;
+    color: var(--diagram-node-stroke-color, #c6c6cd);
+    pointer-events: none;
+}
+
 .diagram-shape-right-triangle::before,
 .diagram-shape-right-triangle::after {
     clip-path: polygon(0 0, 100% 100%, 0 100%);

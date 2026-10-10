@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.CacheControl;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -25,7 +26,14 @@ public class DiagramStateController {
     @GetMapping("/{diagramId}/state")
     public ResponseEntity<Map<String, Object>> getState(@PathVariable String diagramId) throws JsonProcessingException {
         Map<String, Object> state = diagramService.getState(diagramId);
-        return state == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(state);
+        if (state == null) {
+            return ResponseEntity.notFound()
+                    .cacheControl(CacheControl.noStore())
+                    .build();
+        }
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(state);
     }
 
     @PutMapping("/{diagramId}/state")

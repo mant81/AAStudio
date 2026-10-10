@@ -58,6 +58,7 @@ function initializeDiagramPage() {
     const spaceGroups = Array.from(diagramRoot.querySelectorAll("[data-space-group]"));
     const zoomLayer = document.getElementById("zoom-layer");
     const diagramStage = document.getElementById("diagram-stage");
+    const diagramEmptyState = diagramRoot.querySelector("[data-diagram-empty-state]");
     let diagramNameModalMode = "add";
     let diagramNameModalTarget = null;
     const penLayer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -423,6 +424,14 @@ function initializeDiagramPage() {
 
     const getNodes = () => Array.from(diagramRoot.querySelectorAll("[data-diagram-node]"));
 
+    const updateDiagramEmptyState = () => {
+        if (!(diagramEmptyState instanceof HTMLElement)) {
+            return;
+        }
+        const isEmpty = getNodes().length === 0 && linePaths.filter((line) => line.isConnected).length === 0;
+        diagramEmptyState.classList.toggle("hidden", !isEmpty);
+    };
+
     const captureDiagramState = () => ({
         nodes: getNodes().map((node) => node.outerHTML),
         lines: linePaths.filter((line) => line.isConnected).map((line) => line.outerHTML),
@@ -487,7 +496,11 @@ function initializeDiagramPage() {
         if (diagramSaveStatusText) diagramSaveStatusText.textContent = label;
     };
 
-    const saveDiagramState = async (targetDiagram = getActiveDiagramButton(), state = captureDiagramState()) => {
+    const saveDiagramState = async (
+        targetDiagram = getActiveDiagramButton(),
+        state = captureDiagramState(),
+        keepalive = false
+    ) => {
         if (isReadOnlyView) {
             return;
         }
@@ -509,7 +522,8 @@ function initializeDiagramPage() {
                 body: JSON.stringify({
                     ...state,
                     diagramName: activeDiagram.querySelector("[data-spaces-text]")?.textContent?.trim() || diagramId
-                })
+                }),
+                keepalive
             });
             if (!response.ok) throw new Error(`Diagram save failed: ${response.status}`);
             if (getActiveDiagramButton() === activeDiagram) {
@@ -541,6 +555,27 @@ function initializeDiagramPage() {
             void saveDiagramState(pendingSaveDiagram, pendingSaveState);
         }, 1200);
     };
+
+    const flushPendingDiagramSave = () => {
+        if (!hasPendingSave || !pendingSaveDiagram) {
+            return;
+        }
+        window.clearTimeout(saveTimer);
+        saveTimer = null;
+        const targetDiagram = pendingSaveDiagram;
+        const state = pendingSaveState ?? captureDiagramState();
+        hasPendingSave = false;
+        pendingSaveDiagram = null;
+        pendingSaveState = null;
+        void saveDiagramState(targetDiagram, state, true);
+    };
+
+    window.addEventListener("pagehide", flushPendingDiagramSave);
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+            flushPendingDiagramSave();
+        }
+    });
 
     const downloadBlob = (blob, filename) => {
         const url = URL.createObjectURL(blob);
@@ -827,6 +862,7 @@ function initializeDiagramPage() {
         nodeCounter = state.nodeCounter;
         clearSelectedNode();
         updateLinePaths();
+        updateDiagramEmptyState();
         isRestoringHistory = false;
         const refreshAfterLayout = () => {
             updateLinePaths();
@@ -1598,6 +1634,23 @@ function initializeDiagramPage() {
                 contentElement.appendChild(element);
             }
         });
+        let databaseIcon = node.querySelector("[data-database-shape-icon]");
+        if (node.dataset.shapeType === "database") {
+            if (!(databaseIcon instanceof SVGElement)) {
+                databaseIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                databaseIcon.classList.add("diagram-database-shape-icon");
+                databaseIcon.dataset.databaseShapeIcon = "";
+                databaseIcon.setAttribute("aria-hidden", "true");
+                databaseIcon.setAttribute("viewBox", "0 0 40 40");
+                databaseIcon.innerHTML = `
+                    <ellipse cx="20" cy="12" rx="11" ry="4" fill="none" stroke="currentColor" stroke-width="2"></ellipse>
+                    <path d="M9 12V28C9 30.2 14 32 20 32S31 30.2 31 28V12M9 20C9 22.2 14 24 20 24S31 22.2 31 20" fill="none" stroke="currentColor" stroke-width="2"></path>
+                `;
+                node.appendChild(databaseIcon);
+            }
+        } else {
+            databaseIcon?.remove();
+        }
         titleElement?.classList.add("diagram-shape-title");
         subtitleElement?.classList.add("diagram-shape-subtitle");
         syncShapeTextVisibility(titleElement);
@@ -4035,24 +4088,65 @@ function initializeDiagramPage() {
             return;
         }
         diagramSampleList.replaceChildren();
+        const categoryVisuals = {
+            flowchart: { icon: "code", color: "text-accent-logic" },
+            network: { icon: "cloud", color: "text-accent-api" },
+            architecture: { icon: "account_tree", color: "text-secondary" },
+            erd: { icon: "database", color: "text-accent-db" },
+            security: { icon: "shield", color: "text-error" },
+            operations: { icon: "monitoring", color: "text-accent-logic" }
+        };
+        const sampleSubjectIcon = (subject, category) => {
+            const iconRules = [
+                [/프론트엔드|웹|모바일|UI/i, "web"],
+                [/백엔드|API|비즈니스/i, "api"],
+                [/데이터베이스|ORM|RDBMS|NoSQL|DB/i, "database"],
+                [/테스트|단위|통합|E2E/i, "fact_check"],
+                [/CI\/CD|빌드|배포/i, "rocket_launch"],
+                [/컴퓨팅|서버|VM|컨테이너/i, "dns"],
+                [/네트워크|VPC|DNS|LB/i, "lan"],
+                [/클라우드|AWS|Azure|GCP/i, "cloud"],
+                [/스토리지|블록|객체|파일/i, "storage"],
+                [/운영|모니터링|로깅|백업|관측성|Metrics|Logs|Traces/i, "monitoring"],
+                [/시스템 구성|모놀리스|MSA|서비스 간 의존성/i, "account_tree"],
+                [/통신 구조|REST|gRPC|이벤트|메시징|Kafka|RabbitMQ/i, "sync_alt"],
+                [/확장성|캐시|로드 밸런싱/i, "speed"],
+                [/가용성|이중화|장애 복구/i, "health_and_safety"],
+                [/파이프라인|ETL|ELT/i, "account_tree"],
+                [/분석|DW|Lake|BI/i, "analytics"],
+                [/검색|Elasticsearch|OpenSearch/i, "search"],
+                [/인증|OAuth2|OIDC|MFA/i, "login"],
+                [/인가|RBAC|ABAC/i, "admin_panel_settings"],
+                [/보안|방화벽|WAF/i, "security"],
+                [/비밀 관리|Secrets|KMS/i, "key"],
+                [/감사|취약점|규정 준수/i, "fact_check"],
+                [/IaC|Terraform|Ansible/i, "construction"],
+                [/Kubernetes|컨테이너 운영/i, "view_in_ar"],
+                [/장애 대응|Incident|SRE/i, "emergency"],
+                [/비용 관리|FinOps/i, "payments"]
+            ];
+            return iconRules.find(([pattern]) => pattern.test(subject))?.[1]
+                ?? (category === "data" ? "database" : "description");
+        };
         sampleCategoryDefinitions.forEach((category, categoryIndex) => {
             const section = document.createElement("section");
-            section.className = "rounded-xl border border-outline-variant/60 overflow-hidden";
+            section.className = "border-b border-outline-variant/30 last:border-b-0";
+            const visual = categoryVisuals[category.kind] ?? { icon: "folder", color: "text-on-surface-variant" };
 
             const header = document.createElement("button");
-            header.className = "flex w-full items-center gap-2 bg-surface-container-lowest px-3 py-3 text-left hover:bg-surface-container-low transition-colors";
+            header.className = "flex w-full items-center gap-1 rounded-lg px-2 py-1.5 text-left text-on-surface hover:bg-surface-container-low transition-colors";
             header.type = "button";
             header.setAttribute("aria-expanded", String(categoryIndex === 0));
-            header.innerHTML = `<span class="material-symbols-outlined text-[18px] text-secondary">${categoryIndex === 0 ? "expand_more" : "chevron_right"}</span><span class="font-medium text-on-surface"></span>`;
-            header.querySelector("span:last-child").textContent = category.label;
+            header.innerHTML = `<span class="material-symbols-outlined text-[16px] text-on-surface-variant">${categoryIndex === 0 ? "expand_more" : "chevron_right"}</span><span class="material-symbols-outlined text-[16px] ${visual.color}">${visual.icon}</span><span class="flex-1 text-[11px] font-medium uppercase tracking-wider"></span><span class="text-[10px] text-on-surface-variant">${category.items.length}</span>`;
+            header.querySelector("span:nth-child(3)").textContent = category.label;
 
             const items = document.createElement("div");
-            items.className = `space-y-1 border-t border-outline-variant/40 bg-surface-container-low p-2${categoryIndex === 0 ? "" : " hidden"}`;
+            items.className = `space-y-0.5 pb-1 pl-6 pr-2${categoryIndex === 0 ? "" : " hidden"}`;
             category.items.forEach((subject) => {
                 const option = document.createElement("button");
-                option.className = "flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-xs text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors";
+                option.className = "flex w-full items-center gap-2 rounded-lg border-l-2 border-transparent px-2 py-1.5 text-left text-xs text-on-surface-variant hover:bg-surface-container-lowest hover:text-primary transition-colors";
                 option.type = "button";
-                option.innerHTML = '<span class="material-symbols-outlined mt-0.5 text-[16px]">subdirectory_arrow_right</span><span></span>';
+                option.innerHTML = `<span class="material-symbols-outlined text-[16px]">${sampleSubjectIcon(subject, category.id)}</span><span></span>`;
                 option.querySelector("span:last-child").textContent = subject;
                 option.addEventListener("click", () => applySampleDiagram(category, subject));
                 items.appendChild(option);
@@ -5886,7 +5980,9 @@ function initializeDiagramPage() {
         const diagramId = activeDiagram?.dataset.diagramId;
         if (!diagramId) return false;
         try {
-            const response = await fetch(`/api/diagrams/${encodeURIComponent(diagramId)}/state`);
+            const response = await fetch(`/api/diagrams/${encodeURIComponent(diagramId)}/state`, {
+                cache: "no-store"
+            });
             if (response.status === 404) {
                 return false;
             }
@@ -5913,7 +6009,10 @@ function initializeDiagramPage() {
     };
 
     markDiagramStateBaseline();
-    const diagramMutationObserver = new MutationObserver(() => queueDiagramSave());
+    const diagramMutationObserver = new MutationObserver(() => {
+        updateDiagramEmptyState();
+        queueDiagramSave();
+    });
     diagramMutationObserver.observe(diagramStage, { childList: true, subtree: true, attributes: true });
     void loadSavedDiagram();
 

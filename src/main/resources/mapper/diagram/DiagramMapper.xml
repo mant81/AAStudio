@@ -24,6 +24,12 @@
         WHERE diagram_id = #{diagramId}
     </select>
 
+    <select id="selectStateJson" resultType="string">
+        SELECT state_json
+        FROM diagram_document
+        WHERE diagram_id = #{diagramId}
+    </select>
+
     <insert id="insertDocument">
         INSERT INTO diagram_document (diagram_id, diagram_name, state_json, version, updated_at)
         VALUES (#{diagramId}, #{diagramName}, #{stateJson}, 1, CURRENT_TIMESTAMP)

@@ -26,10 +26,9 @@
         <div class="flex items-center gap-3">
             <input accept="application/json,.json" hidden id="diagram-import-input" type="file">
             <div aria-label="샘플 다이어그램" class="flex items-center gap-1 rounded-xl border border-secondary/25 bg-secondary/5 p-1">
-                <span class="flex items-center gap-1 px-2 text-secondary">
-                    <span class="material-symbols-outlined text-[17px]">dashboard_customize</span>
-                    <span class="text-[11px] font-semibold">샘플</span>
-                </span>
+                <div aria-hidden="true" class="pointer-events-none flex select-none items-center whitespace-nowrap border-l-2 border-secondary/50 pl-2 pr-1 text-[10px] font-semibold tracking-wide text-secondary/75">
+                    <span>샘플</span>
+                </div>
                 <span aria-hidden="true" class="h-5 w-px bg-secondary/20"></span>
                 <button aria-expanded="false" aria-label="샘플 다이어그램 열기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-secondary transition-colors" id="diagram-sample-button" title="샘플 다이어그램" type="button">
                     <span class="material-symbols-outlined text-[18px]">view_compact</span>
@@ -37,10 +36,9 @@
                 </button>
             </div>
             <div class="flex items-center gap-1 rounded-xl border border-outline-variant/50 bg-surface-container-low p-1" aria-label="다이어그램 내보내기">
-                <span class="flex items-center gap-1 px-2 text-on-surface-variant">
-                    <span class="material-symbols-outlined text-[17px]">download</span>
-                    <span class="text-[11px] font-semibold">내보내기</span>
-                </span>
+                <div aria-hidden="true" class="pointer-events-none flex select-none items-center whitespace-nowrap border-l-2 border-outline-variant pl-2 pr-1 text-[10px] font-semibold tracking-wide text-on-surface-variant/70">
+                    <span>내보내기</span>
+                </div>
                 <span class="h-5 w-px bg-outline-variant/60" aria-hidden="true"></span>
                 <button aria-label="JPG로 내보내기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" data-diagram-export="jpg" title="JPG로 내보내기" type="button">
                     <span class="material-symbols-outlined text-[18px]">photo</span>
@@ -390,6 +388,21 @@
 
             <div class="absolute inset-0 w-full h-full overflow-auto" id="zoom-layer" style="background-image: radial-gradient(circle at 2px 2px, rgba(200, 205, 215, 0.4) 1px, transparent 0px); background-size: 24px 24px; cursor: grab;">
                 <div class="relative w-[1500px] h-[1000px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" id="diagram-stage">
+                    <div aria-live="polite" class="pointer-events-none absolute inset-0 z-0 flex items-center justify-center text-center text-on-surface-variant/60" data-diagram-empty-state>
+                        <div class="relative flex flex-col items-center -rotate-2">
+                            <svg aria-hidden="true" class="absolute left-1/2 -top-24 h-24 w-24 -translate-x-1/2 opacity-60" fill="none" viewBox="0 0 96 96">
+                                <path d="M48 88C73 72 73 38 48 14" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path>
+                                <path d="m48 14 10 12-13-3" fill="currentColor"></path>
+                            </svg>
+                            <span class="material-symbols-outlined text-[38px] text-secondary/50">account_tree</span>
+                            <strong class="mt-3 text-base font-semibold">아직 다이어그램이 비어 있습니다</strong>
+                            <p class="mt-2 text-sm leading-6">상단 툴바에서 도구를 선택한 다음 캔버스에 추가해 보세요.</p>
+                            <div class="mt-5 space-y-1.5 text-left text-xs">
+                                <p><kbd class="mr-1.5 rounded border border-outline-variant/60 bg-surface-white/70 px-1.5 py-0.5 font-code-sm">Alt</kbd> 누른 채 드래그: 캔버스 이동</p>
+                                <p><kbd class="mr-1.5 rounded border border-outline-variant/60 bg-surface-white/70 px-1.5 py-0.5 font-code-sm">Shift</kbd> 정사각형·15° 회전·10px 이동</p>
+                            </div>
+                        </div>
+                    </div>
                     <svg class="absolute inset-0 w-full h-full" style="z-index: 8;">
                         <defs>
                             <marker id="arrow" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="9" refY="5" viewBox="0 0 10 10">
@@ -491,7 +504,7 @@
                     <span class="material-symbols-outlined text-[20px]">close</span>
                 </button>
             </div>
-            <div class="flex-1 overflow-y-auto p-3 space-y-2" id="diagram-sample-list"></div>
+            <div class="flex-1 overflow-y-auto px-2 py-2" id="diagram-sample-list"></div>
         </aside>
 
         <div class="absolute top-0 right-0 bottom-0 w-0 opacity-0 pointer-events-none overflow-hidden bg-surface-white border-l border-outline-variant flex-col z-40 shadow-[-4px_0_15px_rgba(0,0,0,0.03)] transition-all duration-300 ease-in-out"
