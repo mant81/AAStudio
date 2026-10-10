@@ -8,7 +8,7 @@
 
 1. 사용자의 현재 요청
 2. `docs/prd.md`의 제품 요구사항
-3. `README.md`와 `pom.xml`의 실행·기술 기준
+3. `README.md`와 `build.gradle`의 실행·기술 기준
 4. 현재 소스 코드와 테스트
 5. `docs/working_history/`의 최근 결정과 미해결 이슈
 
@@ -16,8 +16,8 @@
 
 ## 2. 현재 프로젝트 기준선
 
-- Spring Boot 3.4.2
-- Java 21
+- Spring Boot 4.1.1
+- Java 25
 - MyBatis XML Mapper
 - Thymeleaf 템플릿
 - H2 기본 실행 환경, MariaDB 프로파일 지원
@@ -107,8 +107,8 @@
 ## 6. 기본 검증 명령
 
 ```text
-mvn test
-mvn package
+gradlew test
+gradlew build
 node --check src/main/resources/static/js/<changed-file>.js
 git diff --check
 ```

@@ -5,4 +5,7 @@ history/
 .tmp-edge-cdp-profile*/
 /aastudio-*/
 target/
+.gradle/
+build/
+bin/
 data/

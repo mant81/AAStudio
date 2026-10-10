@@ -5,7 +5,7 @@ AAStudio의 개발 기준은 저장소 내부 문서로 관리한다.
 - 개발 기준: `docs/development-guide.md`
 - 제품 요구사항: `docs/prd.md`
 - 작업 이력: `docs/working_history/`
-- 실행·기술 기준: `README.md`, `pom.xml`
+- 실행·기술 기준: `README.md`, `build.gradle`, `settings.gradle`
 
 작업 전 요구사항, 현재 구현, 테스트와 실행 환경, 영향 범위를 먼저 확인한다.
 

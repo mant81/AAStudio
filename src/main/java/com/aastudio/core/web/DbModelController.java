@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/db-modeling")
+@RequestMapping("/api/db-modeling/schema")
 public class DbModelController {
 
     private final DbModelService dbModelService;
@@ -23,7 +23,7 @@ public class DbModelController {
         this.projectService = projectService;
     }
 
-    @GetMapping("/schema")
+    @GetMapping
     public ResponseEntity<Map<String, Object>> getSchema(
             @CookieValue(value = "aastudio.currentProject", required = false) String projectId
     ) {
@@ -31,7 +31,7 @@ public class DbModelController {
         return document == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(document);
     }
 
-    @PutMapping("/schema")
+    @PutMapping
     public ResponseEntity<Void> saveSchema(
             @CookieValue(value = "aastudio.currentProject", required = false) String projectId,
             @RequestBody Map<String, Object> request

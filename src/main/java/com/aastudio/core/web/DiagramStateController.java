@@ -2,7 +2,6 @@ package com.aastudio.core.web;
 
 import com.aastudio.core.diagram.service.DiagramService;
 import com.aastudio.core.project.service.ProjectService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +30,7 @@ public class DiagramStateController {
     public ResponseEntity<Map<String, Object>> getState(
             @PathVariable String diagramId,
             @CookieValue(value = "aastudio.currentProject", required = false) String projectId
-    ) throws JsonProcessingException {
+    ) {
         Map<String, Object> state = diagramService.getState(projectService.getProjectIdOrDefault(projectId), diagramId);
         if (state == null) {
             return ResponseEntity.notFound()
@@ -46,7 +45,7 @@ public class DiagramStateController {
     @PutMapping("/{diagramId}/state")
     public ResponseEntity<Void> saveState(@PathVariable String diagramId,
                                           @RequestBody Map<String, Object> request,
-                                          @CookieValue(value = "aastudio.currentProject", required = false) String projectId) throws JsonProcessingException {
+                                          @CookieValue(value = "aastudio.currentProject", required = false) String projectId) {
         Object nodes = request.get("nodes");
         Object lines = request.get("lines");
         if (!(nodes instanceof List<?>) || !(lines instanceof List<?>)) {

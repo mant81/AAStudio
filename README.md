@@ -15,13 +15,13 @@ Spring Boot 기반의 기본 업무 포털 샘플입니다.
 기본 프로필은 `h2`입니다.
 
 ```bash
-mvn spring-boot:run
+gradlew bootRun
 ```
 
 MariaDB로 실행할 때는 `application.yml`의 `mariadb` 프로필 값을 환경에 맞게 수정한 뒤 아래처럼 실행합니다.
 
 ```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=mariadb
+gradlew bootRun --args='--spring.profiles.active=mariadb'
 ```
 
 ## 화면
