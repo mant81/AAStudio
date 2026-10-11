@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: layout(~{::div})}">
-<div class="flex flex-col w-full h-full">
+<div class="db-modeling-page flex h-screen min-h-0 w-full flex-col" id="db-modeling-page">
     <div class="h-14 bg-surface-white border-b border-surface-container flex items-center justify-between px-6 shrink-0 shadow-sm z-10 relative">
         <div class="flex items-center gap-4">
             <h1 class="font-title-md text-title-md text-on-surface" th:text="${pageTitle}">E-Commerce Schema</h1>
@@ -51,9 +51,9 @@
             </button>
         </div>
     </div>
-    <div class="flex flex-1 overflow-hidden">
+        <div class="flex min-h-0 flex-1 overflow-hidden">
         <div class="w-64 bg-surface-white border-r border-surface-container flex flex-col shrink-0 relative z-10 shadow-[2px_0_12px_rgba(0,0,0,0.02)] sidebar-transition group/secondary-sidebar" id="secondary-sidebar">
-            <div class="p-4 group-[.collapsed]/secondary-sidebar:px-2">
+            <div class="p-4 group-[.collapsed]/secondary-sidebar:px-2" id="db-sidebar-controls">
                 <div class="flex items-center justify-end mb-2">
                     <button class="p-1 hover:bg-secondary/10 text-on-surface-variant hover:text-secondary rounded transition-colors" id="secondary-sidebar-toggle" type="button">
                         <span class="material-symbols-outlined text-[20px] transition-transform duration-300">chevron_left</span>
@@ -64,7 +64,20 @@
                     <span class="group-[.collapsed]/secondary-sidebar:hidden">New Table</span>
                 </button>
             </div>
-            <div class="flex-1 overflow-y-auto px-2 pb-4 custom-scrollbar group-[.collapsed]/secondary-sidebar:px-2">
+            <div class="hidden min-h-0 flex-1 flex-col" id="db-sidebar-editor">
+                <div class="flex items-center justify-between border-b border-[#333] bg-[#252526] px-3 py-2.5 text-[#cccccc]">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[15px] text-[#75beff]">description</span>
+                        <span class="font-code-sm text-[11px]">schema.dbml</span>
+                    </div>
+                    <button class="rounded px-2 py-1 text-[11px] text-[#cccccc] hover:bg-[#37373d]" id="db-sidebar-editor-render" type="button">GUI 생성</button>
+                </div>
+                <div class="flex min-h-0 flex-1 bg-[#1e1e1e]" id="db-sidebar-editor-host">
+                    <div aria-hidden="true" class="db-sidebar-editor-gutter" id="db-sidebar-editor-gutter"></div>
+                </div>
+                <div class="border-t border-[#333] bg-[#252526] px-3 py-2 text-[10px] text-[#9da3ad]" id="db-sidebar-editor-status">자동 분석 대기</div>
+            </div>
+            <div class="flex-1 overflow-y-auto px-2 pb-4 custom-scrollbar group-[.collapsed]/secondary-sidebar:px-2" id="db-object-explorer">
                 <div class="px-2 mb-4">
                     <div class="relative">
                         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
@@ -110,6 +123,7 @@
                     </div>
                 </div>
             </div>
+            <div aria-label="사이드바 너비 조절" class="db-sidebar-resize-handle" id="db-sidebar-resize-handle" role="separator" tabindex="0"></div>
         </div>
         <div class="flex-1 relative overflow-hidden bg-surface-container-low" id="db-modeling-workspace">
             <section class="flex h-full flex-col bg-surface-container-low" id="db-editor-view">

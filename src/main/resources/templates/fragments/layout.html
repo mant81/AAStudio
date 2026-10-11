@@ -119,7 +119,7 @@
         };
     </script>
     <link rel="stylesheet" th:href="@{/vendor/fonts/fonts.css(v='20260913-1')}">
-    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20261011-3')}">
     <link rel="stylesheet" th:if="${activeNav == 'diagram'}" th:href="@{/vendor/remixicon/remixicon.css(v='20260907-2')}">
     <link rel="stylesheet" th:if="${activeNav == 'diagram'}" th:href="@{/css/diagram.css(v='20260913-1')}">
 </head>
@@ -152,6 +152,6 @@
 <script th:src="@{/js/app.js(v='20261010-3')}"></script>
 <script th:if="${activeNav == 'diagram'}" th:src="@{/js/diagram-logic.js(v='20260907-1')}"></script>
 <script th:if="${activeNav == 'diagram'}" th:src="@{/js/diagram.js(v='20261011-6')}"></script>
-<script th:if="${activeNav == 'db-modeling'}" th:src="@{/js/db-modeling.js(v='20261010-1')}"></script>
+<script th:if="${activeNav == 'db-modeling'}" th:src="@{/js/db-modeling.js(v='20261011-8')}"></script>
 </body>
 </html>

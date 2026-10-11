@@ -2,12 +2,18 @@
     const editor = document.getElementById("db-schema-editor");
     const editorView = document.getElementById("db-editor-view");
     const erdView = document.getElementById("db-erd-view");
+    const sidebarEditor = document.getElementById("db-sidebar-editor");
+    const sidebarEditorHost = document.getElementById("db-sidebar-editor-host");
+    const sidebarEditorGutter = document.getElementById("db-sidebar-editor-gutter");
+    const objectExplorer = document.getElementById("db-object-explorer");
+    const sidebarEditorStatus = document.getElementById("db-sidebar-editor-status");
     const editorStatus = document.getElementById("db-editor-status");
     const inputType = document.getElementById("db-editor-input-type");
     const canvas = document.getElementById("canvas-pan-area");
     const linesLayer = document.getElementById("erd-lines");
     const secondarySidebar = document.getElementById("secondary-sidebar");
     const secondarySidebarToggle = document.getElementById("secondary-sidebar-toggle");
+    const sidebar_resize_handle = document.getElementById("db-sidebar-resize-handle");
     const objectSearch = document.getElementById("db-object-search");
     const newTableButton = document.getElementById("db-new-table-button");
     const sample = `Table users {
@@ -34,6 +40,7 @@ Ref: orders.user_id > users.id`;
     let schema = { tables: [], refs: [] };
     let parseTimer = null;
     let serverSaveTimer = null;
+    const sidebar_width_key = "aastudio-db-sidebar-width";
 
     const escapeHtml = (value) => String(value ?? "")
         .replace(/&/g, "&amp;")
@@ -53,6 +60,17 @@ Ref: orders.user_id > users.id`;
             editorStatus.textContent = message;
             editorStatus.classList.toggle("text-error", isError);
         }
+        if (sidebarEditorStatus) {
+            sidebarEditorStatus.textContent = message;
+            sidebarEditorStatus.classList.toggle("text-error", isError);
+        }
+    };
+
+    const updateEditorGutter = () => {
+        if (!(editor instanceof HTMLTextAreaElement) || !(sidebarEditorGutter instanceof HTMLElement)) return;
+        const lineCount = Math.max(1, editor.value.split("\n").length);
+        sidebarEditorGutter.textContent = Array.from({ length: lineCount }, (_, index) => String(index + 1)).join("\n");
+        sidebarEditorGutter.scrollTop = editor.scrollTop;
     };
 
     const splitTopLevel = (value, separator = ",") => {
@@ -319,8 +337,20 @@ Ref: orders.user_id > users.id`;
     };
 
     const setMode = (mode) => {
-        editorView?.classList.toggle("hidden", mode !== "editor");
-        erdView?.classList.toggle("hidden", mode !== "erd");
+        const editor_mode = mode === "editor";
+        editorView?.classList.add("hidden");
+        erdView?.classList.remove("hidden");
+        sidebarEditor?.classList.toggle("hidden", !editor_mode);
+        sidebarEditor?.classList.toggle("flex", editor_mode);
+        objectExplorer?.classList.toggle("hidden", editor_mode);
+        secondarySidebar?.classList.toggle("db-sidebar-editor-active", editor_mode);
+        if (editor_mode) {
+            setSidebarCollapsed(false);
+            document.getElementById("db-sidebar-controls")?.classList.add("hidden");
+        } else {
+            document.getElementById("db-sidebar-controls")?.classList.remove("hidden");
+            setSidebarCollapsed(localStorage.getItem("aastudio-db-sidebar-collapsed") === "true");
+        }
         document.querySelectorAll("[data-db-mode]").forEach((button) => {
             const active = button.dataset.dbMode === mode;
             button.classList.toggle("bg-surface-white", active);
@@ -328,7 +358,7 @@ Ref: orders.user_id > users.id`;
             button.classList.toggle("shadow-sm", active);
             button.classList.toggle("text-on-surface-variant", !active);
         });
-        if (mode === "erd") renderErd();
+        renderErd();
     };
 
     const setSidebarCollapsed = (collapsed) => {
@@ -339,8 +369,53 @@ Ref: orders.user_id > users.id`;
         secondarySidebarToggle?.setAttribute("aria-expanded", String(!collapsed));
         const icon = secondarySidebarToggle?.querySelector(".material-symbols-outlined");
         if (icon) icon.textContent = collapsed ? "chevron_right" : "chevron_left";
+        apply_sidebar_width(collapsed);
         localStorage.setItem("aastudio-db-sidebar-collapsed", String(collapsed));
     };
+
+    const apply_sidebar_width = (collapsed) => {
+        if (!(secondarySidebar instanceof HTMLElement)) return;
+        if (collapsed) {
+            secondarySidebar.style.setProperty("--db-sidebar-width", "3.5rem");
+            return;
+        }
+        const stored_width = Number(localStorage.getItem(sidebar_width_key));
+        if (Number.isFinite(stored_width)) {
+            secondarySidebar.style.setProperty("--db-sidebar-width", `${stored_width}px`);
+        } else {
+            secondarySidebar.style.removeProperty("--db-sidebar-width");
+        }
+    };
+
+    const resize_sidebar = (event) => {
+        if (!(secondarySidebar instanceof HTMLElement)) return;
+        const min_width = 280;
+        const max_width = Math.max(min_width, Math.floor(window.innerWidth * 0.6));
+        const width = Math.min(max_width, Math.max(min_width, event.clientX - secondarySidebar.getBoundingClientRect().left));
+        secondarySidebar.style.setProperty("--db-sidebar-width", `${width}px`);
+        localStorage.setItem(sidebar_width_key, String(width));
+    };
+
+    sidebar_resize_handle?.addEventListener("pointerdown", (event) => {
+        if (!(secondarySidebar instanceof HTMLElement) || secondarySidebar.classList.contains("collapsed")) return;
+        event.preventDefault();
+        sidebar_resize_handle.setPointerCapture?.(event.pointerId);
+        secondarySidebar.classList.add("db-sidebar-resizing");
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+        const handle_pointer_move = (move_event) => resize_sidebar(move_event);
+        const stop_resize = () => {
+            secondarySidebar.classList.remove("db-sidebar-resizing");
+            document.body.style.removeProperty("cursor");
+            document.body.style.removeProperty("user-select");
+            window.removeEventListener("pointermove", handle_pointer_move);
+            window.removeEventListener("pointerup", stop_resize);
+            window.removeEventListener("pointercancel", stop_resize);
+        };
+        window.addEventListener("pointermove", handle_pointer_move);
+        window.addEventListener("pointerup", stop_resize, { once: true });
+        window.addEventListener("pointercancel", stop_resize, { once: true });
+    });
 
     const toggleSidebarGroup = (header) => {
         const content = header.parentElement?.querySelector('[class~="space-y-0.5"]');
@@ -385,7 +460,9 @@ Ref: orders.user_id > users.id`;
     });
 
     document.querySelectorAll("[data-db-mode]").forEach((button) => button.addEventListener("click", () => setMode(button.dataset.dbMode)));
-    document.getElementById("db-editor-render")?.addEventListener("click", () => applySchema(editor?.value ?? "", true));
+    const render_editor = () => applySchema(editor?.value ?? "", true);
+    document.getElementById("db-editor-render")?.addEventListener("click", render_editor);
+    document.getElementById("db-sidebar-editor-render")?.addEventListener("click", render_editor);
     document.getElementById("db-editor-example")?.addEventListener("click", () => {
         if (editor) editor.value = sample;
         applySchema(sample);
@@ -408,6 +485,13 @@ Ref: orders.user_id > users.id`;
     });
 
     const stored = localStorage.getItem(storageKey);
+    if (editor instanceof HTMLTextAreaElement && sidebarEditorHost instanceof HTMLElement) {
+        sidebarEditorHost.appendChild(editor);
+        editor.classList.add("db-sidebar-schema-editor");
+        updateEditorGutter();
+        editor.addEventListener("input", updateEditorGutter);
+        editor.addEventListener("scroll", updateEditorGutter);
+    }
     const initialText = stored || sample;
     if (editor) editor.value = initialText;
     setInputType(editor?.value ?? sample);
