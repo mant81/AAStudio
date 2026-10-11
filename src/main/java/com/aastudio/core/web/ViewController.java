@@ -17,7 +17,7 @@ public class ViewController {
     @GetMapping("/")
     public String dashboard(Model model) {
         model.addAttribute("pageTitle", "Studio Dashboard");
-        model.addAttribute("pageDescription", "Project Alpha Operations");
+        model.addAttribute("pageDescription", "프로젝트1 운영 현황");
         model.addAttribute("activeNav", "dashboard");
         model.addAttribute("metricCards", dashboardService.getMetricCards());
         model.addAttribute("activityLogs", dashboardService.getActivityLogs());

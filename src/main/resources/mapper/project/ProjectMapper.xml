@@ -13,7 +13,7 @@
     <select id="selectProjects" resultMap="projectMap">
         SELECT project_id, project_name, description, created_at
         FROM project
-        ORDER BY project_name
+        ORDER BY CASE WHEN project_id = 'project-1' THEN 0 ELSE 1 END, project_name
     </select>
     <select id="selectProject" resultMap="projectMap">
         SELECT project_id, project_name, description, created_at

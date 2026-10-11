@@ -30,7 +30,7 @@ Ref: orders.user_id > users.id`;
         ?.split("=")
         .slice(1)
         .join("=");
-    const storageKey = `aastudio-db-modeling-schema:${decodeURIComponent(currentProjectId || "alpha")}`;
+    const storageKey = `aastudio-db-modeling-schema:${decodeURIComponent(currentProjectId || "project-1")}`;
     let schema = { tables: [], refs: [] };
     let parseTimer = null;
     let serverSaveTimer = null;

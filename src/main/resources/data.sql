@@ -1,3 +1,6 @@
+INSERT IGNORE INTO project (project_id, project_name, description) VALUES
+('project-1', '프로젝트1', '기본 프로젝트');
+
 INSERT IGNORE INTO metric_card (id, title, metric_value, trend_text, trend_tone, icon_name, accent_tone, inverse) VALUES
 (1, 'Active APIs', '24', '+3 this week', 'positive', 'api', 'api', FALSE),
 (2, 'DB Entities', '156', 'Unchanged', 'neutral', 'database', 'db', FALSE),

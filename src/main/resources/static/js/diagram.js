@@ -10,6 +10,13 @@ function initializeDiagramPage() {
         return;
     }
     const spacesPanel = document.getElementById("spaces-panel");
+    const currentProjectId = document.querySelector("[data-current-project-id]")?.dataset.currentProjectId;
+    const diagramApiBase = currentProjectId
+        ? `/api/projects/${encodeURIComponent(currentProjectId)}/diagrams`
+        : null;
+    const last_opened_diagram_storage_key = currentProjectId
+        ? `aastudio.diagram.last_opened_diagram_id.${currentProjectId}`
+        : null;
     const spacesToggle = document.getElementById("diagram-spaces-toggle");
     const spacesToggleIcon = document.getElementById("diagram-spaces-toggle-icon");
     const currentDiagramButton = document.getElementById("diagram-current-button");
@@ -516,12 +523,20 @@ function initializeDiagramPage() {
             setDiagramSaveStatus("saving");
         }
         try {
-            const response = await fetch(`/api/diagrams/${encodeURIComponent(diagramId)}/state`, {
+            const group = activeDiagram.closest("[data-space-group]");
+            const group_name = group?.querySelector("[data-group-name]")?.textContent?.trim();
+            const diagram_name = activeDiagram.querySelector("[data-spaces-text]")?.textContent?.trim();
+            if (!group_name || !diagram_name) {
+                throw new Error("Diagram group name is missing");
+            }
+            if (!diagramApiBase) throw new Error("Project key is missing");
+            const response = await fetch(`${diagramApiBase}/${encodeURIComponent(diagramId)}/state`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...state,
-                    diagramName: activeDiagram.querySelector("[data-spaces-text]")?.textContent?.trim() || diagramId
+                    group_name,
+                    diagram_name
                 }),
                 keepalive
             });
@@ -682,23 +697,66 @@ function initializeDiagramPage() {
         return styleBlocks.join("\n");
     };
 
+    const getExportBounds = () => {
+        const bounds = { min_x: Number.POSITIVE_INFINITY, min_y: Number.POSITIVE_INFINITY, max_x: Number.NEGATIVE_INFINITY, max_y: Number.NEGATIVE_INFINITY };
+        const include_bounds = (x, y, width, height) => {
+            if (![x, y, width, height].every(Number.isFinite) || width <= 0 || height <= 0) {
+                return;
+            }
+            bounds.min_x = Math.min(bounds.min_x, x);
+            bounds.min_y = Math.min(bounds.min_y, y);
+            bounds.max_x = Math.max(bounds.max_x, x + width);
+            bounds.max_y = Math.max(bounds.max_y, y + height);
+        };
+
+        getNodes().forEach((node) => {
+            include_bounds(node.offsetLeft, node.offsetTop, node.offsetWidth, node.offsetHeight);
+        });
+        linePaths.filter((line) => line.isConnected).forEach((line) => {
+            try {
+                const line_box = line.getBBox();
+                const line_width = Number(line.getAttribute("stroke-width") || 2);
+                const line_padding = Math.max(8, line_width / 2 + 4);
+                include_bounds(
+                    line_box.x - line_padding,
+                    line_box.y - line_padding,
+                    line_box.width + line_padding * 2,
+                    line_box.height + line_padding * 2
+                );
+            } catch {
+                // An SVG path can be temporarily unavailable while it is redrawn.
+            }
+        });
+
+        if (!Number.isFinite(bounds.min_x)) {
+            return { min_x: 0, min_y: 0, width: 1, height: 1 };
+        }
+        const padding = 32;
+        const min_x = Math.floor(bounds.min_x - padding);
+        const min_y = Math.floor(bounds.min_y - padding);
+        return {
+            min_x,
+            min_y,
+            width: Math.max(1, Math.ceil(bounds.max_x - min_x + padding)),
+            height: Math.max(1, Math.ceil(bounds.max_y - min_y + padding))
+        };
+    };
+
     const exportCanvasDataUrl = async (format) => {
         if (!(diagramStage instanceof HTMLElement)) {
             return null;
         }
-        const nodeBounds = getNodes().reduce((bounds, node) => ({
-            width: Math.max(bounds.width, node.offsetLeft + node.offsetWidth + 32),
-            height: Math.max(bounds.height, node.offsetTop + node.offsetHeight + 32)
-        }), { width: 0, height: 0 });
-        const width = Math.max(diagramStage.scrollWidth, diagramStage.clientWidth, nodeBounds.width, 1);
-        const height = Math.max(diagramStage.scrollHeight, diagramStage.clientHeight, nodeBounds.height, 1);
+        const export_bounds = getExportBounds();
+        const { min_x, min_y, width, height } = export_bounds;
         const clone = diagramStage.cloneNode(true);
-        clone.style.transform = "none";
+        clone.style.transform = `translate(${-min_x}px, ${-min_y}px)`;
+        clone.style.transformOrigin = "top left";
         clone.style.left = "0px";
         clone.style.top = "0px";
         clone.style.margin = "0";
         clone.style.width = `${width}px`;
         clone.style.height = `${height}px`;
+        clone.style.overflow = "visible";
         clone.classList.remove("left-1/2", "top-1/2", "-translate-x-1/2", "-translate-y-1/2");
         clone.querySelectorAll(".diagram-node-selected, .diagram-node-selection-frame, .diagram-line-selected, .diagram-line-handles, .diagram-line-hit-path").forEach((element) => element.remove());
         const markup = new XMLSerializer().serializeToString(clone);
@@ -896,7 +954,20 @@ function initializeDiagramPage() {
 
     const undoLastHistory = () => {
         const previousState = historyStack.pop();
-        return restoreDiagramState(previousState);
+        if (!previousState) {
+            return false;
+        }
+        const restored = restoreDiagramState(previousState);
+        if (restored) {
+            const active_diagram = getActiveDiagramButton();
+            if (active_diagram) {
+                diagramStates.set(active_diagram, captureDiagramState());
+            }
+            markDiagramStateBaseline();
+            setDiagramSaveStatus("pending");
+            queueDiagramSave(true);
+        }
+        return restored;
     };
 
     importButton?.addEventListener("click", () => importInput?.click());
@@ -1188,6 +1259,30 @@ function initializeDiagramPage() {
         return button;
     };
 
+    const persistNewDiagram = async (button, group) => {
+        try {
+            if (!diagramApiBase) throw new Error("Project key is missing");
+            const response = await fetch(diagramApiBase, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    diagram_id: button.dataset.diagramId,
+                    diagram_name: button.querySelector("[data-spaces-text]")?.textContent?.trim(),
+                    group_name: group.querySelector("[data-group-name]")?.textContent?.trim()
+                })
+            });
+            if (!response.ok) {
+                throw new Error(`Diagram create failed: ${response.status}`);
+            }
+            return true;
+        } catch (error) {
+            console.error("Failed to create diagram", error);
+            setDiagramSaveStatus("failed");
+            window.alert("다이어그램을 저장하지 못했습니다.");
+            return false;
+        }
+    };
+
     const getNextDiagramDefaultName = () => {
         const diagramNumbers = Array.from(diagramRoot.querySelectorAll("[data-space-diagram]"))
             .map((diagram) => diagram.querySelector("[data-spaces-text]")?.textContent?.trim() ?? "")
@@ -1201,10 +1296,22 @@ function initializeDiagramPage() {
 
     const emptyDiagramState = () => ({ nodes: [], lines: [], nodeCounter: 0 });
 
+    const rememberLastOpenedDiagram = (button) => {
+        const diagram_id = button?.dataset?.diagramId;
+        if (last_opened_diagram_storage_key && diagram_id) {
+            localStorage.setItem(last_opened_diagram_storage_key, diagram_id);
+        }
+    };
+
+    const getLastOpenedDiagramId = () => last_opened_diagram_storage_key
+        ? localStorage.getItem(last_opened_diagram_storage_key)
+        : null;
+
     const activateDiagramSelection = async (button, { reset = false } = {}) => {
         if (!(button instanceof HTMLElement) || isReadOnlyView) {
             return;
         }
+        rememberLastOpenedDiagram(button);
 
         const currentDiagram = getActiveDiagramButton();
         if (currentDiagram === button && !reset) {
@@ -1329,20 +1436,33 @@ function initializeDiagramPage() {
         closeDiagramManageMenu();
         importInput?.click();
     });
-    diagramDeleteButton?.addEventListener("click", () => {
+    diagramDeleteButton?.addEventListener("click", async () => {
         closeDiagramManageMenu();
         const activeDiagram = diagramRoot.querySelector("[data-space-diagram].bg-secondary\\/10");
         const diagrams = Array.from(diagramRoot.querySelectorAll("[data-space-diagram]"));
         if (!(activeDiagram instanceof HTMLElement)) return;
-        if (diagrams.length <= 1) {
-            window.alert("다이어그램이 하나 이상 있어야 합니다.");
+        if (diagrams.length === 1) {
+            saveHistory();
+            restoreDiagramState(emptyDiagramState());
+            diagramStates.set(activeDiagram, captureDiagramState());
+            markDiagramStateBaseline();
+            queueDiagramSave(true);
             return;
         }
         const name = activeDiagram.querySelector("[data-spaces-text]")?.textContent?.trim() || "이 다이어그램";
         if (!window.confirm(`'${name}' 다이어그램을 삭제하시겠습니까?`)) return;
         const nextDiagram = diagrams[diagrams.indexOf(activeDiagram) + 1] ?? diagrams[diagrams.indexOf(activeDiagram) - 1];
-        activeDiagram.remove();
-        if (nextDiagram instanceof HTMLElement) void activateDiagramSelection(nextDiagram);
+        const diagram_id = activeDiagram.dataset.diagramId;
+        try {
+            if (!diagramApiBase) throw new Error("Project key is missing");
+            const response = await fetch(`${diagramApiBase}/${encodeURIComponent(diagram_id)}`, { method: "DELETE" });
+            if (!response.ok) throw new Error(`Diagram delete failed: ${response.status}`);
+            activeDiagram.remove();
+            if (nextDiagram instanceof HTMLElement) void activateDiagramSelection(nextDiagram);
+        } catch (error) {
+            console.error("Failed to delete diagram", error);
+            window.alert("다이어그램을 삭제하지 못했습니다.");
+        }
     });
 
     diagramAddButton?.addEventListener("click", openDiagramAddModal);
@@ -1353,7 +1473,7 @@ function initializeDiagramPage() {
             closeDiagramAddModal();
         }
     });
-    diagramAddForm?.addEventListener("submit", (event) => {
+    diagramAddForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (!(diagramAddName instanceof HTMLInputElement)) {
             return;
@@ -1372,8 +1492,7 @@ function initializeDiagramPage() {
             return;
         }
         const activeDiagram = diagramRoot.querySelector("[data-space-diagram].bg-secondary\\/10");
-        const group = activeDiagram?.closest("[data-space-group]")
-            ?? diagramRoot.querySelector("[data-space-group]");
+        const group = activeDiagram?.closest("[data-space-group]");
         const children = group?.querySelector("[data-spaces-children]");
         if (!(children instanceof HTMLElement)) {
             closeDiagramAddModal();
@@ -1382,8 +1501,12 @@ function initializeDiagramPage() {
         const name = diagramAddName.value.trim() || getNextDiagramDefaultName();
         const newButton = createDiagramButton(name, false);
         newButton.classList.remove("text-on-surface-variant", "hover:bg-surface-variant/50");
+        if (!await persistNewDiagram(newButton, group)) {
+            return;
+        }
         children.appendChild(newButton);
         void activateDiagramSelection(newButton, { reset: true });
+        queueDiagramSave(true);
         closeDiagramAddModal();
     });
 
@@ -1406,7 +1529,7 @@ function initializeDiagramPage() {
             syncGroupState(group, nextExpanded);
         });
 
-        addDiagramButton?.addEventListener("click", (event) => {
+        addDiagramButton?.addEventListener("click", async (event) => {
             event.stopPropagation();
             if (!(children instanceof HTMLElement)) {
                 return;
@@ -1415,8 +1538,12 @@ function initializeDiagramPage() {
             const groupName = group.querySelector("[data-group-name]")?.textContent?.trim() || `Group ${groupCounter}`;
             const newButton = createDiagramButton(getNextDiagramDefaultName(), false);
             newButton.classList.remove("text-on-surface-variant", "hover:bg-surface-variant/50");
+            if (!await persistNewDiagram(newButton, group)) {
+                return;
+            }
             children.appendChild(newButton);
             void activateDiagramSelection(newButton, { reset: true });
+            queueDiagramSave(true);
             syncGroupState(group, true);
         });
 
@@ -3454,7 +3581,7 @@ function initializeDiagramPage() {
             editable.addEventListener("mousedown", (event) => {
                 if (activeTool === "pen" || isEraserTool()) {
                     if (isEraserTool()) {
-                        eraseAtTarget(event.target);
+                        eraseAtTarget(event.target, event);
                     }
                     event.preventDefault();
                     event.stopPropagation();
@@ -4641,6 +4768,17 @@ function initializeDiagramPage() {
         return path;
     };
 
+    const distanceToSegment = (point, start, end) => {
+        const deltaX = end.x - start.x;
+        const deltaY = end.y - start.y;
+        const lengthSquared = deltaX * deltaX + deltaY * deltaY;
+        if (lengthSquared === 0) {
+            return Math.hypot(point.x - start.x, point.y - start.y);
+        }
+        const ratio = Math.max(0, Math.min(1, ((point.x - start.x) * deltaX + (point.y - start.y) * deltaY) / lengthSquared));
+        return Math.hypot(point.x - (start.x + ratio * deltaX), point.y - (start.y + ratio * deltaY));
+    };
+
     const isLineInsideEraser = (line, point, radius) => {
         if (!(line instanceof SVGPathElement) || !point || !line.isConnected) {
             return false;
@@ -4649,12 +4787,15 @@ function initializeDiagramPage() {
         if (!Number.isFinite(length) || length <= 0) {
             return false;
         }
-        const sampleCount = Math.max(12, Math.ceil(length / 12));
-        for (let index = 0; index <= sampleCount; index += 1) {
+        const sampleCount = Math.max(32, Math.ceil(length / 4));
+        let previous = line.getPointAtLength(0);
+        const stroke_radius = Math.max(0, Number(line.dataset.lineWidth || line.getAttribute("stroke-width") || 0) / 2);
+        for (let index = 1; index <= sampleCount; index += 1) {
             const sample = line.getPointAtLength(length * index / sampleCount);
-            if (Math.hypot(sample.x - point.x, sample.y - point.y) <= radius) {
+            if (distanceToSegment(point, previous, sample) <= radius + stroke_radius) {
                 return true;
             }
+            previous = sample;
         }
         return false;
     };
@@ -4677,20 +4818,25 @@ function initializeDiagramPage() {
             return false;
         }
 
-        const sampleCount = Math.max(24, Math.ceil(length / 4));
+        const sampleCount = Math.max(48, Math.ceil(length / 3));
         const sampleStep = length / sampleCount;
         const newRanges = [];
         let rangeStart = null;
+        let previous = line.getPointAtLength(0);
+        const stroke_radius = Math.max(0, Number(line.dataset.lineWidth || line.getAttribute("stroke-width") || 0) / 2);
         for (let index = 0; index <= sampleCount; index += 1) {
             const distance = length * index / sampleCount;
             const sample = line.getPointAtLength(distance);
-            const isErased = Math.hypot(sample.x - point.x, sample.y - point.y) <= radius;
+            const isErased = index === 0
+                ? Math.hypot(sample.x - point.x, sample.y - point.y) <= radius + stroke_radius
+                : distanceToSegment(point, previous, sample) <= radius + stroke_radius;
             if (isErased && rangeStart === null) {
                 rangeStart = Math.max(0, distance - sampleStep / 2);
             } else if (!isErased && rangeStart !== null) {
                 newRanges.push([rangeStart, Math.min(length, distance + sampleStep / 2)]);
                 rangeStart = null;
             }
+            previous = sample;
         }
         if (rangeStart !== null) {
             newRanges.push([rangeStart, length]);
@@ -4715,16 +4861,47 @@ function initializeDiagramPage() {
         return true;
     };
 
+    const findNodeInsideEraser = (point, radius) => {
+        if (!point) {
+            return null;
+        }
+        return [...getNodes()].reverse().find((node) => {
+            const box = getNodeBox(node);
+            return point.x >= box.x - radius
+                && point.x <= box.x + box.width + radius
+                && point.y >= box.y - radius
+                && point.y <= box.y + box.height + radius;
+        }) ?? null;
+    };
+
+    const removeNodeWithConnections = (node) => {
+        const node_key = node.dataset.nodeKey;
+        linePaths
+            .filter((line) => line.dataset.lineFrom === node_key || line.dataset.lineTo === node_key)
+            .forEach(removeLineElement);
+        node.remove();
+        getNodes().forEach((item) => {
+            if (item.dataset.groupParent === node_key) {
+                delete item.dataset.groupParent;
+                item.classList.remove("diagram-node-grouped-highlight");
+            }
+        });
+        if (selectedNode === node || selectedNodes.includes(node)) {
+            clearSelectedNode();
+        }
+    };
+
     const eraseAtTarget = (target, event) => {
         if (!(target instanceof Element)) {
             return false;
         }
         const point = event ? getStagePoint(event) : null;
         const radius = Math.max(4, Number(eraserSettings.size) / 2);
+        const node = findNodeInsideEraser(point, radius);
         const line = point
             ? [...linePaths].reverse().find((item) => isLineInsideEraser(item, point, radius))
             : null;
-        const element = line;
+        const element = line ?? node;
         if (!(element instanceof Element)) {
             return false;
         }
@@ -4736,13 +4913,22 @@ function initializeDiagramPage() {
                 }
                 return eraseFreehandAtPoint(element, point, radius + Math.max(0, Number(element.dataset.lineWidth) || 0) / 2);
             })()
-            : (() => {
+            : element instanceof SVGPathElement
+                ? (() => {
                 if (!eraserHistorySaved) {
                     saveHistory();
                     eraserHistorySaved = true;
                 }
                 removeLineElement(element);
                 if (selectedNode === element || selectedLine === element) clearSelectedNode();
+                return true;
+            })()
+                : (() => {
+                if (!eraserHistorySaved) {
+                    saveHistory();
+                    eraserHistorySaved = true;
+                }
+                removeNodeWithConnections(element);
                 return true;
             })();
         if (!changed) {
@@ -5982,7 +6168,8 @@ function initializeDiagramPage() {
         const diagramId = activeDiagram?.dataset.diagramId;
         if (!diagramId) return false;
         try {
-            const response = await fetch(`/api/diagrams/${encodeURIComponent(diagramId)}/state`, {
+            if (!diagramApiBase) return false;
+            const response = await fetch(`${diagramApiBase}/${encodeURIComponent(diagramId)}/state`, {
                 cache: "no-store"
             });
             if (response.status === 404) {
@@ -6010,13 +6197,108 @@ function initializeDiagramPage() {
         }
     };
 
+    const loadSavedDiagramCatalog = async () => {
+        if (isReadOnlyView) {
+            return;
+        }
+        try {
+            if (!diagramApiBase) return;
+            const response = await fetch(diagramApiBase, { cache: "no-store" });
+            if (!response.ok) {
+                throw new Error(`Diagram catalog load failed: ${response.status}`);
+            }
+            const documents = await response.json();
+            if (!Array.isArray(documents)) {
+                return;
+            }
+            const knownIds = new Set(
+                Array.from(diagramRoot.querySelectorAll("[data-space-diagram]"))
+                    .map((button) => button.dataset.diagramId)
+                    .filter(Boolean)
+            );
+            documents.forEach((catalog_item) => {
+                const diagram_id = typeof catalog_item?.diagram_id === "string" ? catalog_item.diagram_id.trim() : "";
+                if (!diagram_id || knownIds.has(diagram_id)) {
+                    return;
+                }
+                const group_name = typeof catalog_item?.group_name === "string" ? catalog_item.group_name.trim() : "";
+                if (!group_name) {
+                    return;
+                }
+                let group = null;
+                if (spacesScroll instanceof HTMLElement) {
+                    group = document.createElement("div");
+                    group.dataset.spaceGroup = "";
+                    group.dataset.groupExpanded = "true";
+                    group.className = "group";
+                    group.innerHTML = `
+                        <div class="flex items-center gap-2" data-space-group-header>
+                            <button class="flex-1 flex items-center gap-2 px-2 py-1.5 text-on-surface hover:bg-surface-variant/50 rounded-lg transition-colors text-left"
+                                    data-spaces-row
+                                    data-group-toggle
+                                    type="button">
+                                <span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform duration-200" data-spaces-expander>expand_more</span>
+                                <span class="material-symbols-outlined text-[18px] text-accent-api" data-spaces-primary-icon>folder</span>
+                                <span class="font-body-md text-body-md flex-1 truncate font-medium" data-spaces-text data-group-name></span>
+                            </button>
+                            <button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-variant/60 rounded-lg transition-colors"
+                                    data-group-add-diagram
+                                    title="다이어그램 추가"
+                                    type="button">
+                                <span class="material-symbols-outlined text-[18px]">add</span>
+                            </button>
+                        </div>
+                        <div class="pl-9 pr-2 py-1 space-y-1" data-spaces-children></div>
+                    `;
+                    group.querySelector("[data-group-name]").textContent = group_name;
+                    spacesScroll.appendChild(group);
+                    bindGroupInteractions(group);
+                }
+                const children = group?.querySelector("[data-spaces-children]");
+                if (!(children instanceof HTMLElement)) {
+                    return;
+                }
+                if (typeof catalog_item?.diagram_name !== "string" || !catalog_item.diagram_name.trim()) {
+                    return;
+                }
+                const button = createDiagramButton(catalog_item.diagram_name.trim(), false);
+                button.dataset.diagramId = diagram_id;
+                children.appendChild(button);
+                knownIds.add(diagram_id);
+                syncGroupState(group, true);
+            });
+            renderDiagramOptions();
+        } catch (error) {
+            console.error("Failed to load diagram catalog", error);
+        }
+    };
+
+    const activateLastOpenedDiagram = () => {
+        const last_opened_diagram_id = getLastOpenedDiagramId();
+        if (!last_opened_diagram_id) {
+            return false;
+        }
+        const last_opened_diagram = Array.from(diagramRoot.querySelectorAll("[data-space-diagram]"))
+            .find((button) => button.dataset.diagramId === last_opened_diagram_id);
+        if (!(last_opened_diagram instanceof HTMLElement)) {
+            localStorage.removeItem(last_opened_diagram_storage_key);
+            return false;
+        }
+        void activateDiagramSelection(last_opened_diagram);
+        return true;
+    };
+
     markDiagramStateBaseline();
     const diagramMutationObserver = new MutationObserver(() => {
         updateDiagramEmptyState();
         queueDiagramSave();
     });
     diagramMutationObserver.observe(diagramStage, { childList: true, subtree: true, attributes: true });
-    void loadSavedDiagram();
+    void loadSavedDiagramCatalog().then(() => {
+        if (!activateLastOpenedDiagram()) {
+            void loadSavedDiagram();
+        }
+    });
 
     const loadSharedDiagram = async () => {
         if (!isReadOnlyView) {

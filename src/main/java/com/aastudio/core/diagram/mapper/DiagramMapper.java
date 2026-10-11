@@ -10,19 +10,28 @@ public interface DiagramMapper {
 
     void ensureDocumentTable();
 
-    Map<String, Object> selectDocument(@Param("projectId") String projectId,
-                                        @Param("diagramId") String diagramId);
+    void ensureDocumentGroupColumn();
 
-    String selectStateJson(@Param("projectId") String projectId,
-                           @Param("diagramId") String diagramId);
+    java.util.List<Map<String, Object>> selectDocuments(@Param("project_id") String project_id);
 
-    int insertDocument(@Param("projectId") String projectId,
-                       @Param("diagramId") String diagramId,
-                       @Param("diagramName") String diagramName,
-                       @Param("stateJson") String stateJson);
+    Map<String, Object> selectDocument(@Param("project_id") String project_id,
+                                        @Param("diagram_id") String diagram_id);
 
-    int updateDocument(@Param("projectId") String projectId,
-                       @Param("diagramId") String diagramId,
-                       @Param("diagramName") String diagramName,
-                       @Param("stateJson") String stateJson);
+    String selectStateJson(@Param("project_id") String project_id,
+                           @Param("diagram_id") String diagram_id);
+
+    int insertDocument(@Param("project_id") String project_id,
+                       @Param("diagram_id") String diagram_id,
+                       @Param("group_name") String group_name,
+                       @Param("diagram_name") String diagram_name,
+                       @Param("state_json") String state_json);
+
+    int updateDocument(@Param("project_id") String project_id,
+                       @Param("diagram_id") String diagram_id,
+                       @Param("group_name") String group_name,
+                       @Param("diagram_name") String diagram_name,
+                       @Param("state_json") String state_json);
+
+    int deleteDocument(@Param("project_id") String project_id,
+                       @Param("diagram_id") String diagram_id);
 }

@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProjectService {
 
+    private static final String DEFAULT_PROJECT_ID = "project-1";
+
     private final ProjectMapper projectMapper;
 
     public ProjectService(ProjectMapper projectMapper) {
@@ -23,6 +25,10 @@ public class ProjectService {
 
     public Map<String, Object> getProjectOrDefault(String projectId) {
         Map<String, Object> project = projectId == null ? null : projectMapper.selectProject(projectId);
+        if (project != null) {
+            return project;
+        }
+        project = projectMapper.selectProject(DEFAULT_PROJECT_ID);
         if (project != null) {
             return project;
         }

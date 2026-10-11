@@ -6,45 +6,77 @@
 
     <update id="ensureDocumentTable">
         CREATE TABLE IF NOT EXISTS diagram_document (
-            diagram_id VARCHAR(100) PRIMARY KEY,
-            project_id VARCHAR(64) NOT NULL DEFAULT 'alpha',
+            project_id VARCHAR(64) NOT NULL DEFAULT 'project-1',
+            diagram_id VARCHAR(100) NOT NULL,
+            group_name VARCHAR(200) NOT NULL DEFAULT 'System Architecture',
             diagram_name VARCHAR(200) NOT NULL,
             state_json TEXT NOT NULL,
             version BIGINT NOT NULL DEFAULT 0,
-            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT diagram_document_pk PRIMARY KEY (project_id, diagram_id)
         )
     </update>
 
-    <select id="selectDocument" resultType="map">
-        SELECT diagram_id AS diagramId,
-               diagram_name AS diagramName,
-               state_json AS stateJson,
-               version,
-               updated_at AS updatedAt
+    <update id="ensureDocumentGroupColumn">
+        ALTER TABLE diagram_document ADD COLUMN IF NOT EXISTS group_name VARCHAR(200) NOT NULL DEFAULT 'System Architecture'
+    </update>
+
+    <resultMap id="diagramCatalogMap" type="map">
+        <result property="diagram_id" column="diagram_id" />
+        <result property="project_id" column="project_id" />
+        <result property="group_name" column="group_name" />
+        <result property="diagram_name" column="diagram_name" />
+        <result property="updated_at" column="updated_at" />
+    </resultMap>
+
+    <select id="selectDocuments" resultMap="diagramCatalogMap">
+        SELECT diagram_id,
+               project_id,
+               group_name,
+               diagram_name,
+               updated_at
         FROM diagram_document
-        WHERE diagram_id = #{diagramId}
-          AND project_id = #{projectId}
+        WHERE project_id = #{project_id}
+        ORDER BY updated_at ASC, diagram_id ASC
+    </select>
+
+    <select id="selectDocument" resultType="map">
+        SELECT diagram_id AS diagram_id,
+               diagram_name AS diagram_name,
+               state_json AS state_json,
+               version,
+               updated_at AS updated_at
+        FROM diagram_document
+        WHERE diagram_id = #{diagram_id}
+          AND project_id = #{project_id}
     </select>
 
     <select id="selectStateJson" resultType="string">
         SELECT state_json
         FROM diagram_document
-        WHERE diagram_id = #{diagramId}
-          AND project_id = #{projectId}
+        WHERE diagram_id = #{diagram_id}
+          AND project_id = #{project_id}
     </select>
 
     <insert id="insertDocument">
-        INSERT INTO diagram_document (diagram_id, project_id, diagram_name, state_json, version, updated_at)
-        VALUES (#{diagramId}, #{projectId}, #{diagramName}, #{stateJson}, 1, CURRENT_TIMESTAMP)
+        INSERT INTO diagram_document (diagram_id, project_id, group_name, diagram_name, state_json, version, updated_at)
+        VALUES (#{diagram_id}, #{project_id}, #{group_name}, #{diagram_name}, #{state_json}, 1, CURRENT_TIMESTAMP)
     </insert>
 
     <update id="updateDocument">
         UPDATE diagram_document
-        SET diagram_name = #{diagramName},
-            state_json = #{stateJson},
+        SET group_name = #{group_name},
+            diagram_name = #{diagram_name},
+            state_json = #{state_json},
             version = version + 1,
             updated_at = CURRENT_TIMESTAMP
-        WHERE diagram_id = #{diagramId}
-          AND project_id = #{projectId}
+        WHERE diagram_id = #{diagram_id}
+          AND project_id = #{project_id}
     </update>
+
+    <delete id="deleteDocument">
+        DELETE FROM diagram_document
+        WHERE diagram_id = #{diagram_id}
+          AND project_id = #{project_id}
+    </delete>
 </mapper>

@@ -56,15 +56,24 @@ CREATE TABLE IF NOT EXISTS team_member (
 );
 
 CREATE TABLE IF NOT EXISTS diagram_document (
-    diagram_id VARCHAR(100) PRIMARY KEY,
-    project_id VARCHAR(64) NOT NULL DEFAULT 'alpha',
+    project_id VARCHAR(64) NOT NULL DEFAULT 'project-1',
+    diagram_id VARCHAR(100) NOT NULL,
+    group_name VARCHAR(200) NOT NULL DEFAULT 'System Architecture',
     diagram_name VARCHAR(200) NOT NULL,
     state_json TEXT NOT NULL,
     version BIGINT NOT NULL DEFAULT 0,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT diagram_document_pk PRIMARY KEY (project_id, diagram_id)
 );
 
-ALTER TABLE diagram_document ADD COLUMN IF NOT EXISTS project_id VARCHAR(64) NOT NULL DEFAULT 'alpha';
+ALTER TABLE diagram_document ADD COLUMN IF NOT EXISTS project_id VARCHAR(64) NOT NULL DEFAULT 'project-1';
+ALTER TABLE diagram_document DROP CONSTRAINT IF EXISTS PRIMARY_KEY_BEA;
+ALTER TABLE diagram_document DROP CONSTRAINT IF EXISTS CONSTRAINT_3;
+ALTER TABLE diagram_document DROP CONSTRAINT IF EXISTS diagram_document_pk;
+ALTER TABLE diagram_document ADD CONSTRAINT diagram_document_pk PRIMARY KEY (project_id, diagram_id);
+ALTER TABLE diagram_document DROP COLUMN IF EXISTS group_id;
+DROP TABLE IF EXISTS diagram_group;
+ALTER TABLE diagram_document ADD COLUMN IF NOT EXISTS group_name VARCHAR(200) NOT NULL DEFAULT 'System Architecture';
 
 CREATE TABLE IF NOT EXISTS db_model_document (
     project_id VARCHAR(64) PRIMARY KEY,
@@ -72,3 +81,18 @@ CREATE TABLE IF NOT EXISTS db_model_document (
     version BIGINT NOT NULL DEFAULT 0,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+DELETE FROM db_model_document
+WHERE project_id = 'alpha'
+  AND EXISTS (SELECT 1 FROM db_model_document WHERE project_id = 'project-1');
+
+UPDATE db_model_document
+SET project_id = 'project-1'
+WHERE project_id = 'alpha';
+
+UPDATE diagram_document
+SET project_id = 'project-1'
+WHERE project_id = 'alpha';
+
+DELETE FROM project
+WHERE project_id = 'alpha';
