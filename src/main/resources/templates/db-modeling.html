@@ -8,23 +8,23 @@
             <span class="px-2 py-1 bg-surface-container text-on-surface-variant rounded-md font-code-sm text-code-sm">v2.1.0</span>
             <div class="h-4 w-[1px] bg-outline-variant mx-2"></div>
             <div class="flex items-center gap-2">
-                <button class="p-2 text-on-surface-variant hover:bg-surface hover:text-primary rounded-lg transition-colors flex items-center justify-center group relative" type="button">
+                    <button aria-label="캔버스 이동" class="p-2 text-on-surface-variant hover:bg-surface hover:text-primary rounded-lg transition-colors flex items-center justify-center group relative" data-erd-tool="pan" id="erd-pan-tool" type="button">
                     <span class="material-symbols-outlined text-[20px]">pan_tool</span>
                 </button>
-                <button class="p-2 bg-secondary/10 text-secondary rounded-lg transition-colors flex items-center justify-center group relative" type="button">
+                    <button aria-label="테이블 선택" class="p-2 bg-secondary/10 text-secondary rounded-lg transition-colors flex items-center justify-center group relative" data-erd-tool="select" id="erd-select-tool" type="button">
                     <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">arrow_selector_tool</span>
                 </button>
                 <div class="h-4 w-[1px] bg-outline-variant mx-1"></div>
-                <button class="p-2 text-on-surface-variant hover:bg-surface hover:text-primary rounded-lg transition-colors flex items-center justify-center group relative" type="button">
+                <button aria-label="격자 표시 전환" class="p-2 text-on-surface-variant hover:bg-surface hover:text-primary rounded-lg transition-colors flex items-center justify-center group relative" id="erd-grid-toggle" type="button">
                     <span class="material-symbols-outlined text-[20px]">grid_on</span>
                 </button>
                 <div class="flex items-center bg-surface-container rounded-lg overflow-hidden ml-2">
                     <button class="p-1.5 text-on-surface-variant hover:bg-surface-variant hover:text-primary transition-colors flex items-center justify-center" type="button">
-                        <span class="material-symbols-outlined text-[18px]">remove</span>
+                        <span class="material-symbols-outlined text-[18px]" id="erd-zoom-out">remove</span>
                     </button>
-                    <span class="font-code-sm text-code-sm px-2 text-on-surface w-12 text-center">100%</span>
+                    <span class="font-code-sm text-code-sm px-2 text-on-surface w-12 text-center" id="erd-zoom-value">100%</span>
                     <button class="p-1.5 text-on-surface-variant hover:bg-surface-variant hover:text-primary transition-colors flex items-center justify-center" type="button">
-                        <span class="material-symbols-outlined text-[18px]">add</span>
+                        <span class="material-symbols-outlined text-[18px]" id="erd-zoom-in">add</span>
                     </button>
                 </div>
                 <div class="ml-2 flex items-center rounded-lg bg-surface-container p-0.5" id="db-editor-mode-toggle">
@@ -70,12 +70,19 @@
                         <span class="material-symbols-outlined text-[15px] text-[#75beff]">description</span>
                         <span class="font-code-sm text-[11px]">schema.dbml</span>
                     </div>
-                    <button class="rounded px-2 py-1 text-[11px] text-[#cccccc] hover:bg-[#37373d]" id="db-sidebar-editor-render" type="button">GUI 생성</button>
+                    <div class="flex items-center gap-1">
+                        <span class="rounded bg-[#37373d] px-1.5 py-0.5 font-code-sm text-[10px] text-[#9cdcfe]">DBML</span>
+                        <button aria-label="ERD 생성" class="rounded px-2 py-1 text-[11px] text-[#cccccc] hover:bg-[#37373d]" id="db-sidebar-editor-render" type="button">GUI 생성</button>
+                    </div>
                 </div>
-                <div class="flex min-h-0 flex-1 bg-[#1e1e1e]" id="db-sidebar-editor-host">
+                <div class="db-sidebar-editor-host flex min-h-0 flex-1 bg-[#1e1e1e]" id="db-sidebar-editor-host">
                     <div aria-hidden="true" class="db-sidebar-editor-gutter" id="db-sidebar-editor-gutter"></div>
+                    <div aria-hidden="true" class="db-sidebar-editor-highlight" id="db-sidebar-editor-highlight"></div>
                 </div>
-                <div class="border-t border-[#333] bg-[#252526] px-3 py-2 text-[10px] text-[#9da3ad]" id="db-sidebar-editor-status">자동 분석 대기</div>
+                <div class="flex items-center justify-between border-t border-[#333] bg-[#252526] px-3 py-2 text-[10px] text-[#9da3ad]" id="db-sidebar-editor-status">
+                    <span id="db-sidebar-editor-status-message">자동 분석 대기</span>
+                    <span class="font-code-sm text-[#858585]" id="db-sidebar-editor-position">Ln 1, Col 1</span>
+                </div>
             </div>
             <div class="flex-1 overflow-y-auto px-2 pb-4 custom-scrollbar group-[.collapsed]/secondary-sidebar:px-2" id="db-object-explorer">
                 <div class="px-2 mb-4">
@@ -177,7 +184,7 @@ Ref: orders.user_id &gt; users.id</pre>
             </section>
             <section class="hidden h-full bg-surface-container-low" id="db-erd-view">
                 <div class="flex h-full flex-col bg-surface-container-low relative overflow-hidden ERD-canvas" id="erd-canvas">
-            <div class="absolute inset-0 z-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 1px 1px, var(--tw-colors-outline-variant) 1px, transparent 0); background-size: 24px 24px;"></div>
+            <div class="absolute inset-0 z-0 opacity-20 pointer-events-none" id="erd-grid" style="background-image: radial-gradient(circle at 1px 1px, var(--tw-colors-outline-variant) 1px, transparent 0); background-size: 24px 24px;"></div>
             <svg class="absolute inset-0 w-full h-full z-0 pointer-events-none" id="erd-lines">
                 <path class="text-outline-variant" d="M 280,180 L 330,180 C 350,180 350,260 380,260 L 420,260" fill="none" stroke="currentColor" stroke-dasharray="4 4" stroke-width="2"></path>
                 <circle class="text-outline-variant" cx="280" cy="180" fill="currentColor" r="4"></circle>
