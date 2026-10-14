@@ -4,8 +4,24 @@
 <div class="db-modeling-page flex h-screen min-h-0 w-full flex-col" id="db-modeling-page">
     <div class="h-14 bg-surface-white border-b border-surface-container flex items-center justify-between px-6 shrink-0 shadow-sm z-10 relative">
         <div class="flex items-center gap-4">
-            <h1 class="font-title-md text-title-md text-on-surface" th:text="${pageTitle}">E-Commerce Schema</h1>
-            <span class="px-2 py-1 bg-surface-container text-on-surface-variant rounded-md font-code-sm text-code-sm">v2.1.0</span>
+            <div class="relative" id="db-schema-selector">
+                <button aria-expanded="false" aria-haspopup="menu" class="font-title-md text-title-md text-on-surface inline-flex items-center gap-2 rounded-lg px-2 py-1 -mx-2 hover:bg-surface-container transition-colors" id="db-current-schema-button" title="스키마 선택" type="button">
+                    <span class="material-symbols-outlined text-[22px] text-on-surface-variant">database</span>
+                    <span class="max-w-[32rem] truncate" id="db-current-schema-name" th:text="${pageTitle}">E-Commerce Schema</span>
+                    <span class="material-symbols-outlined text-[20px] text-on-surface-variant">expand_more</span>
+                </button>
+                <div class="hidden absolute left-0 top-full mt-2 z-50 w-64 rounded-xl border border-outline-variant/50 bg-surface-white p-1.5 shadow-xl" id="db-schema-menu" role="menu">
+                    <div class="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">스키마 선택</div>
+                    <div class="space-y-0.5" id="db-schema-options"></div>
+                </div>
+            </div>
+            <button aria-label="스키마 추가" class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-label-md text-label-md inline-flex items-center gap-1 hover:opacity-80 transition-opacity" id="db-schema-add-button" title="스키마 추가" type="button">
+                <span class="text-[16px] leading-none">+</span>
+            </button>
+            <span class="inline-flex items-center gap-1 rounded-full border border-outline-variant/60 bg-surface-container-low px-2 py-1 text-[11px] font-medium text-on-surface-variant" id="db-save-status">
+                <span class="material-symbols-outlined text-[14px]" id="db-save-status-icon">cloud_off</span>
+                <span id="db-save-status-text">저장 대기</span>
+            </span>
             <div class="h-4 w-[1px] bg-outline-variant mx-2"></div>
             <div class="flex items-center gap-2">
                     <button aria-label="캔버스 이동" class="p-2 text-on-surface-variant hover:bg-surface hover:text-primary rounded-lg transition-colors flex items-center justify-center group relative" data-erd-tool="pan" id="erd-pan-tool" type="button">

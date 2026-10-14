@@ -9,9 +9,28 @@ public interface DbModelMapper {
 
     Map<String, Object> selectDocument(@Param("projectId") String projectId);
 
+    java.util.List<Map<String, Object>> selectCategories(@Param("projectId") String projectId);
+
+    Map<String, Object> selectCategoryDocument(@Param("projectId") String projectId,
+                                               @Param("categoryId") String categoryId);
+
+    int insertCategoryDocument(@Param("projectId") String projectId,
+                               @Param("categoryId") String categoryId,
+                               @Param("categoryName") String categoryName,
+                               @Param("schemaText") String schemaText,
+                               @Param("layoutJson") String layoutJson);
+
+    int updateCategoryDocument(@Param("projectId") String projectId,
+                               @Param("categoryId") String categoryId,
+                               @Param("categoryName") String categoryName,
+                               @Param("schemaText") String schemaText,
+                               @Param("layoutJson") String layoutJson);
+
     int insertDocument(@Param("projectId") String projectId,
-                       @Param("schemaText") String schemaText);
+                       @Param("schemaText") String schemaText,
+                       @Param("layoutJson") String layoutJson);
 
     int updateDocument(@Param("projectId") String projectId,
-                       @Param("schemaText") String schemaText);
+                       @Param("schemaText") String schemaText,
+                       @Param("layoutJson") String layoutJson);
 }

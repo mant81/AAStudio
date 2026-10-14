@@ -78,8 +78,22 @@ ALTER TABLE diagram_document ADD COLUMN IF NOT EXISTS group_name VARCHAR(200) NO
 CREATE TABLE IF NOT EXISTS db_model_document (
     project_id VARCHAR(64) PRIMARY KEY,
     schema_text TEXT NOT NULL,
+    layout_json TEXT NOT NULL DEFAULT '{}',
     version BIGINT NOT NULL DEFAULT 0,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE db_model_document ADD COLUMN IF NOT EXISTS layout_json TEXT NOT NULL DEFAULT '{}';
+
+CREATE TABLE IF NOT EXISTS db_model_category_document (
+    project_id VARCHAR(64) NOT NULL,
+    category_id VARCHAR(64) NOT NULL,
+    category_name VARCHAR(120) NOT NULL,
+    schema_text TEXT NOT NULL DEFAULT '',
+    layout_json TEXT NOT NULL DEFAULT '{}',
+    version BIGINT NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT db_model_category_document_pk PRIMARY KEY (project_id, category_id)
 );
 
 DELETE FROM db_model_document

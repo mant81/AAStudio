@@ -22,6 +22,14 @@
     const sidebar_resize_handle = document.getElementById("db-sidebar-resize-handle");
     const objectSearch = document.getElementById("db-object-search");
     const newTableButton = document.getElementById("db-new-table-button");
+    const currentSchemaButton = document.getElementById("db-current-schema-button");
+    const currentSchemaName = document.getElementById("db-current-schema-name");
+    const schemaMenu = document.getElementById("db-schema-menu");
+    const schemaOptions = document.getElementById("db-schema-options");
+    const schemaAddButton = document.getElementById("db-schema-add-button");
+    const dbSaveStatus = document.getElementById("db-save-status");
+    const dbSaveStatusIcon = document.getElementById("db-save-status-icon");
+    const dbSaveStatusText = document.getElementById("db-save-status-text");
     const sample = `Table users {
   id int [pk]
   email varchar
@@ -42,7 +50,10 @@ Ref: orders.user_id > users.id`;
         ?.split("=")
         .slice(1)
         .join("=");
-    const storageKey = `aastudio-db-modeling-schema:${decodeURIComponent(currentProjectId || "project-1")}`;
+    const categoryStorageKey = `aastudio-db-modeling-category:${decodeURIComponent(currentProjectId || "project-1")}`;
+    let dbCategoryId = localStorage.getItem(categoryStorageKey) || "ecommerce";
+    let storageKey = `aastudio-db-modeling-schema:${decodeURIComponent(currentProjectId || "project-1")}:${dbCategoryId}`;
+    let dbCategories = [];
     let schema = { tables: [], refs: [] };
     let parseTimer = null;
     let serverSaveTimer = null;
@@ -51,6 +62,38 @@ Ref: orders.user_id > users.id`;
     let erdZoom = 1;
     let erdPanX = 0;
     let erdPanY = 0;
+    let erdPositions = {};
+
+    const parseErdLayout = (value) => {
+        if (value && typeof value === "object") return value;
+        if (typeof value !== "string" || !value.trim()) return {};
+        try {
+            const parsed = JSON.parse(value);
+            return parsed && typeof parsed === "object" ? parsed : {};
+        } catch (error) {
+            console.warn("ERD 좌표 복원에 실패했습니다.", error);
+            return {};
+        }
+    };
+
+    const renderSchemaOptions = () => {
+        if (!(schemaOptions instanceof HTMLElement)) return;
+        schemaOptions.replaceChildren();
+        dbCategories.forEach((category) => {
+            const option = document.createElement("button");
+            option.className = "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant transition-colors";
+            option.type = "button";
+            option.setAttribute("role", "menuitem");
+            option.innerHTML = `<span class="material-symbols-outlined text-[18px]">${category.categoryId === dbCategoryId ? "radio_button_checked" : "radio_button_unchecked"}</span><span class="truncate">${escapeHtml(category.categoryName)}</span>`;
+            option.addEventListener("click", () => loadCategory(category.categoryId));
+            schemaOptions.appendChild(option);
+        });
+    };
+
+    const closeSchemaMenu = () => {
+        schemaMenu?.classList.add("hidden");
+        currentSchemaButton?.setAttribute("aria-expanded", "false");
+    };
 
     const escapeHtml = (value) => String(value ?? "")
         .replace(/&/g, "&amp;")
@@ -75,6 +118,23 @@ Ref: orders.user_id > users.id`;
             else sidebarEditorStatus.textContent = message;
             sidebarEditorStatus.classList.toggle("text-error", isError);
         }
+    };
+
+    const setDbSaveStatus = (state, message) => {
+        if (!(dbSaveStatus instanceof HTMLElement)) return;
+        const states = {
+            pending: { icon: "cloud_upload", className: "text-on-surface-variant", label: "저장 중" },
+            saved: { icon: "cloud_done", className: "text-secondary", label: "저장됨" },
+            error: { icon: "cloud_off", className: "text-error", label: "저장 실패" }
+        };
+        const current = states[state] || states.pending;
+        if (dbSaveStatusIcon) {
+            dbSaveStatusIcon.textContent = current.icon;
+            dbSaveStatusIcon.className = `material-symbols-outlined text-[14px] ${current.className}`;
+        }
+        if (dbSaveStatusText) dbSaveStatusText.textContent = message || current.label;
+        dbSaveStatus.classList.toggle("text-error", state === "error");
+        dbSaveStatus.classList.toggle("text-secondary", state === "saved");
     };
 
     const applyErdViewport = () => {
@@ -410,8 +470,13 @@ Ref: orders.user_id > users.id`;
         schema.tables.forEach((table, index) => {
             const node = document.createElement("article");
             node.className = "db-erd-table-node absolute w-64 overflow-hidden rounded-xl border border-outline-variant bg-surface-white shadow-md transition-shadow";
-            node.style.left = `${48 + (index % columns) * 300}px`;
-            node.style.top = `${48 + Math.floor(index / columns) * 230}px`;
+            const savedPosition = erdPositions[table.name.toLowerCase()];
+            const defaultX = 48 + (index % columns) * 300;
+            const defaultY = 48 + Math.floor(index / columns) * 230;
+            const x = Number.isFinite(savedPosition?.x) ? Math.max(12, savedPosition.x) : defaultX;
+            const y = Number.isFinite(savedPosition?.y) ? Math.max(12, savedPosition.y) : defaultY;
+            node.style.left = `${x}px`;
+            node.style.top = `${y}px`;
             node.dataset.erdTable = table.name;
             const relationCount = schema.refs.filter((ref) => ref.fromTable.toLowerCase() === table.name.toLowerCase() || ref.toTable.toLowerCase() === table.name.toLowerCase()).length;
             const rows = table.columns.map((column) => {
@@ -452,6 +517,11 @@ Ref: orders.user_id > users.id`;
                 };
                 const stop = () => {
                     node.classList.remove("is-dragging");
+                    erdPositions[table.name.toLowerCase()] = {
+                        x: Math.round(node.offsetLeft),
+                        y: Math.round(node.offsetTop)
+                    };
+                    saveServerDocument(editor?.value ?? "", erdPositions);
                     node.removeEventListener("pointermove", move);
                     node.removeEventListener("pointerup", stop);
                     node.removeEventListener("pointercancel", stop);
@@ -494,22 +564,30 @@ Ref: orders.user_id > users.id`;
         applyErdViewport();
     };
 
-    const scheduleServerSave = (text) => {
+    const saveServerDocument = async (text, layout = erdPositions, targetCategoryId = dbCategoryId, targetCategoryName = currentSchemaName?.textContent?.trim() || "E-Commerce Schema") => {
+        setDbSaveStatus("pending");
+        try {
+            const query = new URLSearchParams({ categoryId: targetCategoryId, categoryName: targetCategoryName });
+            const response = await fetch(`/api/db-modeling/schema?${query.toString()}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                keepalive: true,
+                body: JSON.stringify({ schemaText: text, layoutJson: JSON.stringify(layout) })
+            });
+            if (!response.ok) throw new Error(`DB 모델 저장 실패: ${response.status}`);
+            setDbSaveStatus("saved");
+            setStatus(`${schema.tables.length}개 테이블 · DB 저장 완료`);
+        } catch (error) {
+            console.warn(error);
+            setDbSaveStatus("error");
+            setStatus("DB 저장에 실패했습니다. 입력 내용은 브라우저에 보관됩니다.", true);
+        }
+    };
+
+    const scheduleServerSave = (text, layout = erdPositions) => {
         window.clearTimeout(serverSaveTimer);
-        serverSaveTimer = window.setTimeout(async () => {
-            try {
-                const response = await fetch("/api/db-modeling/schema", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ schemaText: text })
-                });
-                if (!response.ok) throw new Error(`DB 모델 저장 실패: ${response.status}`);
-                setStatus(`${schema.tables.length}개 테이블 · DB 저장 완료`);
-            } catch (error) {
-                console.warn(error);
-                setStatus("DB 저장에 실패했습니다. 입력 내용은 브라우저에 보관됩니다.", true);
-            }
-        }, 700);
+        setDbSaveStatus("pending");
+        serverSaveTimer = window.setTimeout(() => saveServerDocument(text, layout), 700);
     };
 
     const applySchema = (text, switchToErd = false, persist = true) => {
@@ -526,6 +604,54 @@ Ref: orders.user_id > users.id`;
         setStatus(`${schema.tables.length}개 테이블 · ${schema.refs.length}개 관계 분석 완료`);
         if (switchToErd) setMode("erd");
         return true;
+    };
+
+    const loadCategory = (categoryId) => {
+        const query = new URLSearchParams({ categoryId });
+        return fetch(`/api/db-modeling/schema?${query.toString()}`, { headers: { Accept: "application/json" } })
+            .then((response) => {
+                if (!response.ok) throw new Error(`DB 모델 카테고리 조회 실패: ${response.status}`);
+                return response.json();
+            })
+            .then((document) => {
+                dbCategoryId = categoryId;
+                localStorage.setItem(categoryStorageKey, dbCategoryId);
+                storageKey = `aastudio-db-modeling-schema:${decodeURIComponent(currentProjectId || "project-1")}:${dbCategoryId}`;
+                dbCategories = Array.isArray(document?.categories) ? document.categories : dbCategories;
+                const category = dbCategories.find((item) => item.categoryId === dbCategoryId);
+                if (currentSchemaName) currentSchemaName.textContent = category?.categoryName || "E-Commerce Schema";
+                renderSchemaOptions();
+                closeSchemaMenu();
+                erdPositions = parseErdLayout(document?.layoutJson);
+                const storedCategoryText = localStorage.getItem(storageKey);
+                const categoryText = document?.schemaText || storedCategoryText || sample;
+                if (editor) editor.value = categoryText;
+                highlightDbml(categoryText);
+                updateEditorGutter();
+                setInputType(categoryText);
+                applySchema(categoryText, false, false);
+            })
+            .catch((error) => console.warn(error));
+    };
+
+    const addSchemaCategory = () => {
+        const name = window.prompt("새 스키마 이름을 입력하세요.", "New Schema");
+        if (!name?.trim()) return;
+        const baseId = name.trim().toLowerCase().replace(/[^a-z0-9가-힣]+/g, "-").replace(/^-|-$/g, "") || "schema";
+        let categoryId = baseId;
+        let suffix = 2;
+        while (dbCategories.some((item) => item.categoryId === categoryId)) categoryId = `${baseId}-${suffix++}`;
+        dbCategoryId = categoryId;
+        localStorage.setItem(categoryStorageKey, dbCategoryId);
+        storageKey = `aastudio-db-modeling-schema:${decodeURIComponent(currentProjectId || "project-1")}:${dbCategoryId}`;
+        if (currentSchemaName) currentSchemaName.textContent = name.trim();
+        erdPositions = {};
+        dbCategories = [...dbCategories, { categoryId, categoryName: name.trim() }];
+        renderSchemaOptions();
+        if (editor) editor.value = sample;
+        applySchema(sample, false, false);
+        saveServerDocument(sample, {}, categoryId, name.trim());
+        closeSchemaMenu();
     };
 
     const setMode = (mode) => {
@@ -693,6 +819,16 @@ Ref: orders.user_id > users.id`;
     });
 
     document.querySelectorAll("[data-db-mode]").forEach((button) => button.addEventListener("click", () => setMode(button.dataset.dbMode)));
+    currentSchemaButton?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const isOpen = schemaMenu?.classList.toggle("hidden") === false;
+        currentSchemaButton.setAttribute("aria-expanded", String(isOpen));
+    });
+    schemaAddButton?.addEventListener("click", addSchemaCategory);
+    document.addEventListener("click", (event) => {
+        if (!(event.target instanceof Node) || currentSchemaButton?.contains(event.target) || schemaMenu?.contains(event.target)) return;
+        closeSchemaMenu();
+    });
     const render_editor = () => applySchema(editor?.value ?? "", true);
     document.getElementById("db-editor-render")?.addEventListener("click", render_editor);
     document.getElementById("db-sidebar-editor-render")?.addEventListener("click", render_editor);
@@ -769,7 +905,8 @@ Ref: orders.user_id > users.id`;
     applySchema(editor?.value ?? sample, false, false);
     setMode("editor");
 
-    fetch("/api/db-modeling/schema", { headers: { Accept: "application/json" } })
+    loadCategory(dbCategoryId);
+    /*
         .then((response) => {
             if (response.status === 404) return null;
             if (!response.ok) throw new Error(`DB 모델 조회 실패: ${response.status}`);
@@ -777,6 +914,7 @@ Ref: orders.user_id > users.id`;
         })
         .then((document) => {
             if (document?.schemaText) {
+                erdPositions = parseErdLayout(document.layoutJson);
                 if (editor) editor.value = document.schemaText;
                 highlightDbml(document.schemaText);
                 updateEditorGutter();
@@ -787,4 +925,5 @@ Ref: orders.user_id > users.id`;
             }
         })
         .catch((error) => console.warn(error));
+    */
 })();

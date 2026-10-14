@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -25,22 +26,32 @@ public class DbModelController {
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getSchema(
-            @CookieValue(value = "aastudio.currentProject", required = false) String projectId
+            @CookieValue(value = "aastudio.currentProject", required = false) String projectId,
+            @RequestParam(value = "categoryId", required = false, defaultValue = "ecommerce") String categoryId
     ) {
-        Map<String, Object> document = dbModelService.getDocument(projectService.getProjectIdOrDefault(projectId));
-        return document == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(document);
+        String resolvedProjectId = projectService.getProjectIdOrDefault(projectId);
+        Map<String, Object> document = dbModelService.getCategoryDocument(resolvedProjectId, categoryId);
+        Map<String, Object> response = new java.util.HashMap<>();
+        if (document != null) response.putAll(document);
+        response.put("categoryId", categoryId);
+        response.put("categories", dbModelService.getCategories(resolvedProjectId));
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping
     public ResponseEntity<Void> saveSchema(
             @CookieValue(value = "aastudio.currentProject", required = false) String projectId,
+            @RequestParam(value = "categoryId", required = false, defaultValue = "ecommerce") String categoryId,
+            @RequestParam(value = "categoryName", required = false, defaultValue = "E-Commerce Schema") String categoryName,
             @RequestBody Map<String, Object> request
     ) {
         Object schemaText = request.get("schemaText");
         if (!(schemaText instanceof String text) || text.isBlank()) {
             return ResponseEntity.badRequest().build();
         }
-        dbModelService.saveDocument(projectService.getProjectIdOrDefault(projectId), text);
+        Object layoutValue = request.get("layoutJson");
+        String layoutJson = layoutValue instanceof String value && !value.isBlank() ? value : "{}";
+        dbModelService.saveCategoryDocument(projectService.getProjectIdOrDefault(projectId), categoryId, categoryName, text, layoutJson);
         return ResponseEntity.noContent().build();
     }
 }

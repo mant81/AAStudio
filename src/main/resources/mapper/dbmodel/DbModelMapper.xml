@@ -5,23 +5,59 @@
 <mapper namespace="com.aastudio.core.dbmodel.mapper.DbModelMapper">
     <resultMap id="dbModelMap" type="map">
         <result property="projectId" column="project_id" />
+        <result property="categoryId" column="category_id" />
+        <result property="categoryName" column="category_name" />
         <result property="schemaText" column="schema_text" />
+        <result property="layoutJson" column="layout_json" />
         <result property="version" column="version" />
         <result property="updatedAt" column="updated_at" />
     </resultMap>
+    <resultMap id="categoryMap" type="map">
+        <result property="categoryId" column="category_id" />
+        <result property="categoryName" column="category_name" />
+    </resultMap>
 
     <select id="selectDocument" resultMap="dbModelMap">
-        SELECT project_id, schema_text, version, updated_at
+        SELECT project_id, schema_text, layout_json, version, updated_at
         FROM db_model_document
         WHERE project_id = #{projectId}
     </select>
+    <select id="selectCategories" resultMap="categoryMap">
+        SELECT category_id, category_name
+        FROM db_model_category_document
+        WHERE project_id = #{projectId}
+        ORDER BY updated_at, category_name
+    </select>
+    <select id="selectCategoryDocument" resultMap="dbModelMap">
+        SELECT project_id, category_id, category_name, schema_text, layout_json, version, updated_at
+        FROM db_model_category_document
+        WHERE project_id = #{projectId}
+          AND category_id = #{categoryId}
+    </select>
+    <insert id="insertCategoryDocument">
+        INSERT INTO db_model_category_document
+            (project_id, category_id, category_name, schema_text, layout_json, version, updated_at)
+        VALUES
+            (#{projectId}, #{categoryId}, #{categoryName}, #{schemaText}, #{layoutJson}, 1, CURRENT_TIMESTAMP)
+    </insert>
+    <update id="updateCategoryDocument">
+        UPDATE db_model_category_document
+        SET category_name = #{categoryName},
+            schema_text = #{schemaText},
+            layout_json = #{layoutJson},
+            version = version + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE project_id = #{projectId}
+          AND category_id = #{categoryId}
+    </update>
     <insert id="insertDocument">
-        INSERT INTO db_model_document (project_id, schema_text, version, updated_at)
-        VALUES (#{projectId}, #{schemaText}, 1, CURRENT_TIMESTAMP)
+        INSERT INTO db_model_document (project_id, schema_text, layout_json, version, updated_at)
+        VALUES (#{projectId}, #{schemaText}, #{layoutJson}, 1, CURRENT_TIMESTAMP)
     </insert>
     <update id="updateDocument">
         UPDATE db_model_document
         SET schema_text = #{schemaText},
+            layout_json = #{layoutJson},
             version = version + 1,
             updated_at = CURRENT_TIMESTAMP
         WHERE project_id = #{projectId}
