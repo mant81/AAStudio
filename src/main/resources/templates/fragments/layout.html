@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle} + ' | AAStudio Core'">AAStudio Core</title>
+    <link th:if="${activeNav == 'db-modeling'}" rel="stylesheet" th:href="@{/vendor/monaco/vs/editor/editor.main.css}">
     <style>
         @layer base {
             html, body { margin: 0; padding: 0; }
@@ -13,9 +14,9 @@
             .sidebar-transition { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
             .content-transition { transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
             #main-sidebar { width: 80px; }
-            #main-sidebar:not(.collapsed) { width: 260px; }
+            #main-sidebar:not(.collapsed) { width: 220px; }
             #content-wrapper { padding-left: 80px; }
-            #content-wrapper.sidebar-expanded { padding-left: 260px; }
+            #content-wrapper.sidebar-expanded { padding-left: 220px; }
             #main-sidebar.collapsed .sidebar-expanded { display: none !important; }
             #main-sidebar:not(.collapsed) .sidebar-collapsed { display: none !important; }
             #main-sidebar.collapsed .sidebar-collapsed { display: inline-flex !important; }
@@ -87,7 +88,7 @@
                         full: "0.75rem"
                     },
                     spacing: {
-                        "sidebar-width": "260px",
+                        "sidebar-width": "220px",
                         "header-height": "64px",
                         "gutter": "16px",
                         "margin-mobile": "16px",
@@ -119,8 +120,8 @@
         };
     </script>
     <link rel="stylesheet" th:href="@{/vendor/fonts/fonts.css(v='20260913-1')}">
-    <link rel="stylesheet" th:href="@{/css/app.css(v='20261011-3')}">
-    <link rel="stylesheet" th:if="${activeNav == 'diagram'}" th:href="@{/vendor/remixicon/remixicon.css(v='20260907-2')}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20261015-15')}">
+    <link rel="stylesheet" th:if="${activeNav == 'diagram' or activeNav == 'db-modeling'}" th:href="@{/vendor/remixicon/remixicon.css(v='20260907-2')}">
     <link rel="stylesheet" th:if="${activeNav == 'diagram'}" th:href="@{/css/diagram.css(v='20260913-1')}">
 </head>
 <body class="bg-background font-body-md text-on-background">
@@ -152,6 +153,11 @@
 <script th:src="@{/js/app.js(v='20261010-3')}"></script>
 <script th:if="${activeNav == 'diagram'}" th:src="@{/js/diagram-logic.js(v='20260907-1')}"></script>
 <script th:if="${activeNav == 'diagram'}" th:src="@{/js/diagram.js(v='20261011-6')}"></script>
-<script th:if="${activeNav == 'db-modeling'}" th:src="@{/js/db-modeling.js(v='20261011-8')}"></script>
+<script th:if="${activeNav == 'db-modeling'}" th:src="@{/vendor/monaco/vs/loader.js(v='0.52.2')}"></script>
+<script th:if="${activeNav == 'db-modeling'}">
+    require.config({ paths: { vs: "/vendor/monaco/vs" } });
+    require(["vs/editor/editor.main"], () => window.dispatchEvent(new Event("monaco-ready")));
+</script>
+<script th:if="${activeNav == 'db-modeling'}" th:src="@{/js/db-modeling.js(v='20261015-4')}"></script>
 </body>
 </html>

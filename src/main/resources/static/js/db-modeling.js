@@ -1,9 +1,11 @@
 (() => {
     const editor = document.getElementById("db-schema-editor");
     const editorView = document.getElementById("db-editor-view");
-    const erdView = document.getElementById("db-erd-view");
+    const propertiesPanel = document.getElementById("db-properties-panel");
+    const propertiesContent = document.getElementById("db-properties-content");
     const sidebarEditor = document.getElementById("db-sidebar-editor");
     const sidebarEditorHost = document.getElementById("db-sidebar-editor-host");
+    const monacoEditorHost = document.getElementById("db-monaco-editor");
     const sidebarEditorGutter = document.getElementById("db-sidebar-editor-gutter");
     const sidebarEditorHighlight = document.getElementById("db-sidebar-editor-highlight");
     const objectExplorer = document.getElementById("db-object-explorer");
@@ -14,8 +16,12 @@
     const inputType = document.getElementById("db-editor-input-type");
     const canvas = document.getElementById("canvas-pan-area");
     const erdCanvas = document.getElementById("erd-canvas");
+    const erdToolbar = document.getElementById("erd-toolbar");
+    const erdOverlayToggle = document.getElementById("db-erd-overlay-toggle");
+    const canvasBackground = document.getElementById("db-canvas-background");
     const linesLayer = document.getElementById("erd-lines");
     const erdGrid = document.getElementById("erd-grid");
+    const erdGridToggle = document.getElementById("erd-grid-toggle");
     const erdZoomValue = document.getElementById("erd-zoom-value");
     const secondarySidebar = document.getElementById("secondary-sidebar");
     const secondarySidebarToggle = document.getElementById("secondary-sidebar-toggle");
@@ -27,6 +33,11 @@
     const schemaMenu = document.getElementById("db-schema-menu");
     const schemaOptions = document.getElementById("db-schema-options");
     const schemaAddButton = document.getElementById("db-schema-add-button");
+    const schemaAddModal = document.getElementById("db-schema-add-modal");
+    const schemaAddForm = document.getElementById("db-schema-add-form");
+    const schemaAddName = document.getElementById("db-schema-add-name");
+    const schemaAddCancel = document.getElementById("db-schema-add-cancel");
+    const schemaAddCancelSecondary = document.getElementById("db-schema-add-cancel-secondary");
     const dbSaveStatus = document.getElementById("db-save-status");
     const dbSaveStatusIcon = document.getElementById("db-save-status-icon");
     const dbSaveStatusText = document.getElementById("db-save-status-text");
@@ -63,6 +74,148 @@ Ref: orders.user_id > users.id`;
     let erdPanX = 0;
     let erdPanY = 0;
     let erdPositions = {};
+    let selectedTableName = null;
+
+    const moveErdToolbarToCanvas = () => {
+        if (!(erdToolbar instanceof HTMLElement) || !(erdCanvas instanceof HTMLElement)) return;
+        erdCanvas.appendChild(erdToolbar);
+    };
+    moveErdToolbarToCanvas();
+
+    const setErdOverlayVisible = (visible) => {
+        if (!(propertiesPanel instanceof HTMLElement)) return;
+        propertiesPanel.hidden = !visible;
+        erdOverlayToggle?.setAttribute("aria-expanded", String(visible));
+        erdOverlayToggle?.setAttribute("aria-label", visible ? "속성 닫기" : "속성 열기");
+        erdOverlayToggle?.setAttribute("title", visible ? "속성 닫기" : "속성 열기");
+        const icon = erdOverlayToggle?.querySelector("i");
+        if (icon) icon.className = visible ? "ri-arrow-right-s-line" : "ri-arrow-left-s-line";
+    };
+
+    const drawBaseCanvas = () => {
+        if (!(canvasBackground instanceof HTMLCanvasElement)) return;
+        const bounds = canvasBackground.getBoundingClientRect();
+        const width = Math.max(1, Math.round(bounds.width));
+        const height = Math.max(1, Math.round(bounds.height));
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        canvasBackground.width = Math.round(width * dpr);
+        canvasBackground.height = Math.round(height * dpr);
+        const context = canvasBackground.getContext("2d");
+        if (!context) return;
+        context.setTransform(dpr, 0, 0, dpr, 0, 0);
+        context.clearRect(0, 0, width, height);
+        context.fillStyle = "#f3f6fa";
+        context.fillRect(0, 0, width, height);
+        context.fillStyle = "rgba(82, 96, 110, 0.22)";
+        for (let x = 1; x < width; x += 24) {
+            for (let y = 1; y < height; y += 24) {
+                context.beginPath();
+                context.arc(x, y, 1, 0, Math.PI * 2);
+                context.fill();
+            }
+        }
+
+    };
+
+    drawBaseCanvas();
+    window.requestAnimationFrame(drawBaseCanvas);
+    window.setTimeout(drawBaseCanvas, 120);
+    window.addEventListener("resize", drawBaseCanvas);
+    if (window.ResizeObserver && canvasBackground instanceof HTMLElement) {
+        new ResizeObserver(drawBaseCanvas).observe(canvasBackground);
+    }
+
+    erdOverlayToggle?.addEventListener("click", () => {
+        setErdOverlayVisible(propertiesPanel?.hidden ?? true);
+    });
+    propertiesPanel?.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        setErdOverlayVisible(false);
+        erdOverlayToggle?.focus();
+    });
+
+    const renderProperties = () => {
+        if (!(propertiesContent instanceof HTMLElement)) return;
+        const table = schema.tables.find((item) => item.name === selectedTableName);
+        propertiesContent.replaceChildren();
+        const summary = document.createElement("p");
+        summary.textContent = table
+            ? table.name
+            : `${schema.tables.length}개 테이블 · ${schema.refs.length}개 관계`;
+        summary.className = "db-properties-name";
+        propertiesContent.appendChild(summary);
+        if (!table) {
+            const hint = document.createElement("p");
+            hint.textContent = "캔버스에서 테이블을 선택하면 속성이 표시됩니다.";
+            propertiesContent.appendChild(hint);
+            return;
+        }
+        if (table.comment) {
+            const comment = document.createElement("p");
+            comment.textContent = table.comment;
+            propertiesContent.appendChild(comment);
+        }
+        table.columns.forEach((column) => {
+            const row = document.createElement("div");
+            row.className = "db-properties-column";
+            const name = document.createElement("strong");
+            name.textContent = column.name;
+            const detail = document.createElement("span");
+            const fk = schema.refs.some((ref) =>
+                ref.fromTable.toLowerCase() === table.name.toLowerCase()
+                && ref.fromColumn.toLowerCase() === column.name.toLowerCase());
+            detail.textContent = [column.type, column.pk ? "PK" : "", fk ? "FK" : "",
+                column.nullable ? "NULL" : "NOT NULL", column.comment || ""].filter(Boolean).join(" · ");
+            row.append(name, detail);
+            propertiesContent.appendChild(row);
+        });
+    };
+
+    let monacoEditor = null;
+
+    const setEditorText = (text) => {
+        const value = String(text ?? "");
+        if (editor) editor.value = value;
+        monacoEditor?.setValue(value);
+    };
+
+    const mountMonacoEditor = () => {
+        if (monacoEditor || !(monacoEditorHost instanceof HTMLElement) || !window.monaco) return;
+        monacoEditor = window.monaco.editor.create(monacoEditorHost, {
+            value: editor?.value ?? "",
+            language: "sql",
+            theme: "vs-dark",
+            automaticLayout: true,
+            minimap: { enabled: false },
+            fontSize: 13,
+            lineHeight: 22,
+            padding: { top: 12, bottom: 12 },
+            wordWrap: "off",
+            scrollBeyondLastLine: false,
+            tabSize: 2,
+            insertSpaces: true,
+        });
+        monacoEditor.onDidChangeModelContent(() => {
+            if (!editor) return;
+            editor.value = monacoEditor.getValue();
+            editor.dispatchEvent(new Event("input", { bubbles: true }));
+            updateEditorGutter();
+        });
+        monacoEditor.onDidChangeCursorPosition((event) => {
+            if (editor) {
+                const offset = monacoEditor.getModel().getOffsetAt(event.position);
+                editor.selectionStart = offset;
+                editor.selectionEnd = offset;
+            }
+            updateEditorGutter();
+        });
+        monacoEditor.addCommand(window.monaco.KeyMod.CtrlCmd | window.monaco.KeyCode.Enter, () => {
+            applySchema(monacoEditor.getValue(), true);
+        });
+    };
+
+    window.addEventListener("monaco-ready", mountMonacoEditor, { once: true });
+    if (window.monaco) mountMonacoEditor();
 
     const parseErdLayout = (value) => {
         if (value && typeof value === "object") return value;
@@ -84,6 +237,9 @@ Ref: orders.user_id > users.id`;
             option.className = "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant transition-colors";
             option.type = "button";
             option.setAttribute("role", "menuitem");
+            option.setAttribute("aria-current", category.categoryId === dbCategoryId ? "true" : "false");
+            option.classList.toggle("bg-surface-container", category.categoryId === dbCategoryId);
+            option.classList.toggle("text-primary", category.categoryId === dbCategoryId);
             option.innerHTML = `<span class="material-symbols-outlined text-[18px]">${category.categoryId === dbCategoryId ? "radio_button_checked" : "radio_button_unchecked"}</span><span class="truncate">${escapeHtml(category.categoryName)}</span>`;
             option.addEventListener("click", () => loadCategory(category.categoryId));
             schemaOptions.appendChild(option);
@@ -396,21 +552,35 @@ Ref: orders.user_id > users.id`;
     };
 
     const renderSidebar = () => {
-        const tableCount = document.querySelector("#secondary-sidebar .group .text-on-surface-variant.font-code-sm");
+        const tableCount = document.getElementById("db-table-count");
         if (tableCount) tableCount.textContent = String(schema.tables.length);
-        const list = document.querySelector('#secondary-sidebar .group [class~="space-y-0.5"]');
+        const list = document.getElementById("db-table-list");
         if (!(list instanceof HTMLElement)) return;
         list.replaceChildren();
         schema.tables.forEach((table, index) => {
             const row = document.createElement("button");
-            row.className = `flex w-full items-center gap-2 rounded-lg border-l-2 px-2 py-1.5 text-left font-code-sm text-code-sm transition-colors ${index === 0 ? "border-secondary bg-secondary/5 text-secondary" : "border-transparent text-on-surface-variant hover:bg-surface-container-lowest hover:text-primary"}`;
+            const active = selectedTableName ? table.name === selectedTableName : index === 0;
+            row.className = `flex w-full items-center gap-2 rounded-lg border-l-2 px-2 py-1.5 text-left font-code-sm text-code-sm transition-colors ${active ? "border-secondary bg-secondary/5 text-secondary" : "border-transparent text-on-surface-variant hover:bg-surface-container-lowest hover:text-primary"}`;
             row.type = "button";
             row.dataset.dbTableRow = "";
             row.dataset.tableName = table.name.toLowerCase();
             row.innerHTML = `<span class="material-symbols-outlined text-[16px]">table</span><span class="truncate">${escapeHtml(table.name)}</span>`;
             row.addEventListener("click", () => {
-                setMode("erd");
-                window.requestAnimationFrame(() => document.querySelector(`[data-erd-table="${CSS.escape(table.name)}"]`)?.scrollIntoView({ block: "center", inline: "center" }));
+                selectedTableName = table.name;
+                document.querySelectorAll("[data-db-table-row]").forEach((item) => {
+                    const active = item.dataset.tableName === table.name.toLowerCase();
+                    item.classList.toggle("border-secondary", active);
+                    item.classList.toggle("bg-secondary/5", active);
+                    item.classList.toggle("text-secondary", active);
+                    item.classList.toggle("border-transparent", !active);
+                    item.classList.toggle("text-on-surface-variant", !active);
+                });
+                document.querySelectorAll(".db-erd-table-node.is-selected").forEach((item) => item.classList.remove("is-selected"));
+                const node = canvas.querySelector(`[data-erd-table="${CSS.escape(table.name)}"]`);
+                if (node instanceof HTMLElement) {
+                    node.classList.add("is-selected");
+                    renderProperties();
+                }
             });
             list.appendChild(row);
         });
@@ -456,6 +626,8 @@ Ref: orders.user_id > users.id`;
 
     const renderErd = () => {
         if (!(canvas instanceof HTMLElement) || !(linesLayer instanceof SVGElement)) return;
+        if (!schema.tables.some((table) => table.name === selectedTableName)) selectedTableName = null;
+        renderProperties();
         canvas.replaceChildren();
         linesLayer.replaceChildren();
         if (!schema.tables.length) {
@@ -478,6 +650,7 @@ Ref: orders.user_id > users.id`;
             node.style.left = `${x}px`;
             node.style.top = `${y}px`;
             node.dataset.erdTable = table.name;
+            node.classList.toggle("is-selected", table.name === selectedTableName);
             const relationCount = schema.refs.filter((ref) => ref.fromTable.toLowerCase() === table.name.toLowerCase() || ref.toTable.toLowerCase() === table.name.toLowerCase()).length;
             const rows = table.columns.map((column) => {
                 const foreignKey = schema.refs.some((ref) => ref.fromTable.toLowerCase() === table.name.toLowerCase() && ref.fromColumn.toLowerCase() === column.name.toLowerCase());
@@ -499,6 +672,8 @@ Ref: orders.user_id > users.id`;
                 if (erdTool !== "select") return;
                 document.querySelectorAll(".db-erd-table-node.is-selected").forEach((item) => item.classList.remove("is-selected"));
                 node.classList.add("is-selected");
+                selectedTableName = table.name;
+                renderProperties();
             });
             node.addEventListener("pointerdown", (event) => {
                 if (erdTool !== "select" || event.button !== 0) return;
@@ -619,13 +794,14 @@ Ref: orders.user_id > users.id`;
                 storageKey = `aastudio-db-modeling-schema:${decodeURIComponent(currentProjectId || "project-1")}:${dbCategoryId}`;
                 dbCategories = Array.isArray(document?.categories) ? document.categories : dbCategories;
                 const category = dbCategories.find((item) => item.categoryId === dbCategoryId);
-                if (currentSchemaName) currentSchemaName.textContent = category?.categoryName || "E-Commerce Schema";
+                const categoryName = category?.categoryName || "E-Commerce Schema";
+                if (currentSchemaName) currentSchemaName.textContent = categoryName;
                 renderSchemaOptions();
                 closeSchemaMenu();
                 erdPositions = parseErdLayout(document?.layoutJson);
                 const storedCategoryText = localStorage.getItem(storageKey);
                 const categoryText = document?.schemaText || storedCategoryText || sample;
-                if (editor) editor.value = categoryText;
+                setEditorText(categoryText);
                 highlightDbml(categoryText);
                 updateEditorGutter();
                 setInputType(categoryText);
@@ -634,7 +810,21 @@ Ref: orders.user_id > users.id`;
             .catch((error) => console.warn(error));
     };
 
-    const addSchemaCategory = () => {
+    const closeSchemaAddModal = () => {
+        schemaAddModal?.classList.add("hidden");
+        schemaAddModal?.classList.remove("flex");
+    };
+
+    const openSchemaAddModal = () => {
+        schemaAddModal?.classList.remove("hidden");
+        schemaAddModal?.classList.add("flex");
+        if (schemaAddName instanceof HTMLInputElement) {
+            schemaAddName.value = "";
+            schemaAddName.focus();
+        }
+    };
+
+    const legacyAddSchemaCategory = () => {
         const name = window.prompt("새 스키마 이름을 입력하세요.", "New Schema");
         if (!name?.trim()) return;
         const baseId = name.trim().toLowerCase().replace(/[^a-z0-9가-힣]+/g, "-").replace(/^-|-$/g, "") || "schema";
@@ -648,34 +838,43 @@ Ref: orders.user_id > users.id`;
         erdPositions = {};
         dbCategories = [...dbCategories, { categoryId, categoryName: name.trim() }];
         renderSchemaOptions();
-        if (editor) editor.value = sample;
+        setEditorText(sample);
         applySchema(sample, false, false);
         saveServerDocument(sample, {}, categoryId, name.trim());
         closeSchemaMenu();
     };
 
-    const setMode = (mode) => {
-        const editor_mode = mode === "editor";
-        editorView?.classList.add("hidden");
-        erdView?.classList.remove("hidden");
-        sidebarEditor?.classList.toggle("hidden", !editor_mode);
-        sidebarEditor?.classList.toggle("flex", editor_mode);
-        objectExplorer?.classList.toggle("hidden", editor_mode);
-        secondarySidebar?.classList.toggle("db-sidebar-editor-active", editor_mode);
-        if (editor_mode) {
-            setSidebarCollapsed(false);
-            document.getElementById("db-sidebar-controls")?.classList.add("hidden");
-        } else {
-            document.getElementById("db-sidebar-controls")?.classList.remove("hidden");
-            setSidebarCollapsed(localStorage.getItem("aastudio-db-sidebar-collapsed") === "true");
+    const addSchemaCategory = (rawName) => {
+        const name = String(rawName ?? "").trim();
+        if (!name) {
+            schemaAddName?.focus();
+            return false;
         }
-        document.querySelectorAll("[data-db-mode]").forEach((button) => {
-            const active = button.dataset.dbMode === mode;
-            button.classList.toggle("bg-surface-white", active);
-            button.classList.toggle("text-secondary", active);
-            button.classList.toggle("shadow-sm", active);
-            button.classList.toggle("text-on-surface-variant", !active);
-        });
+        const baseId = name.toLowerCase().replace(/[^a-z0-9가-힣]+/g, "-").replace(/^-|-$/g, "") || "schema";
+        let categoryId = baseId;
+        let suffix = 2;
+        while (dbCategories.some((item) => item.categoryId === categoryId)) categoryId = `${baseId}-${suffix++}`;
+        dbCategoryId = categoryId;
+        localStorage.setItem(categoryStorageKey, dbCategoryId);
+        storageKey = `aastudio-db-modeling-schema:${decodeURIComponent(currentProjectId || "project-1")}:${dbCategoryId}`;
+        if (currentSchemaName) currentSchemaName.textContent = name;
+        erdPositions = {};
+        dbCategories = [...dbCategories, { categoryId, categoryName: name }];
+        renderSchemaOptions();
+        setEditorText(sample);
+        applySchema(sample, false, false);
+        saveServerDocument(sample, {}, categoryId, name);
+        closeSchemaMenu();
+        return true;
+    };
+
+    const setMode = () => {
+        editorView?.classList.add("hidden");
+        sidebarEditor?.classList.remove("hidden");
+        sidebarEditor?.classList.add("flex");
+        objectExplorer?.classList.remove("hidden");
+        secondarySidebar?.classList.add("db-sidebar-editor-active");
+        setSidebarCollapsed(false);
         renderErd();
     };
 
@@ -685,8 +884,10 @@ Ref: orders.user_id > users.id`;
         secondarySidebar.classList.toggle("w-64", !collapsed);
         secondarySidebar.classList.toggle("w-14", collapsed);
         secondarySidebarToggle?.setAttribute("aria-expanded", String(!collapsed));
+        secondarySidebarToggle?.setAttribute("aria-label", collapsed ? "에디터 펼치기" : "에디터 접기");
+        secondarySidebarToggle?.setAttribute("title", collapsed ? "에디터 펼치기" : "에디터 접기");
         const icon = secondarySidebarToggle?.querySelector(".material-symbols-outlined");
-        if (icon) icon.textContent = collapsed ? "chevron_right" : "chevron_left";
+        if (icon) icon.textContent = "chevron_right";
         apply_sidebar_width(collapsed);
         localStorage.setItem("aastudio-db-sidebar-collapsed", String(collapsed));
     };
@@ -698,8 +899,9 @@ Ref: orders.user_id > users.id`;
             return;
         }
         const stored_width = Number(localStorage.getItem(sidebar_width_key));
-        if (Number.isFinite(stored_width)) {
-            secondarySidebar.style.setProperty("--db-sidebar-width", `${stored_width}px`);
+        if (Number.isFinite(stored_width) && stored_width > 0) {
+            const width = Math.min(Math.max(280, Math.floor(window.innerWidth * 0.6)), Math.max(280, stored_width));
+            secondarySidebar.style.setProperty("--db-sidebar-width", `${width}px`);
         } else {
             secondarySidebar.style.removeProperty("--db-sidebar-width");
         }
@@ -709,7 +911,9 @@ Ref: orders.user_id > users.id`;
         if (!(secondarySidebar instanceof HTMLElement)) return;
         const min_width = 280;
         const max_width = Math.max(min_width, Math.floor(window.innerWidth * 0.6));
-        const width = Math.min(max_width, Math.max(min_width, event.clientX - secondarySidebar.getBoundingClientRect().left));
+        const bounds = secondarySidebar.getBoundingClientRect();
+        const pointer_width = event.clientX - bounds.left;
+        const width = Math.min(max_width, Math.max(min_width, pointer_width));
         secondarySidebar.style.setProperty("--db-sidebar-width", `${width}px`);
         localStorage.setItem(sidebar_width_key, String(width));
     };
@@ -751,11 +955,24 @@ Ref: orders.user_id > users.id`;
         });
     };
 
+    const erdGridStorageKey = "aastudio-erd-grid-visible";
+    const setErdGridVisible = (visible) => {
+        erdGrid?.classList.toggle("is-hidden", !visible);
+        erdGridToggle?.setAttribute("aria-pressed", String(visible));
+        erdGridToggle?.setAttribute("title", visible ? "격자 숨기기" : "격자 표시");
+        erdGridToggle?.classList.toggle("bg-secondary/10", visible);
+        erdGridToggle?.classList.toggle("text-secondary", visible);
+        erdGridToggle?.classList.toggle("text-on-surface-variant", !visible);
+        const icon = erdGridToggle?.querySelector(".material-symbols-outlined");
+        if (icon) icon.textContent = visible ? "grid_on" : "grid_off";
+        localStorage.setItem(erdGridStorageKey, String(visible));
+    };
+
     document.querySelectorAll("[data-erd-tool]").forEach((button) => {
         button.addEventListener("click", () => setErdTool(button.dataset.erdTool ?? "select"));
     });
-    document.getElementById("erd-grid-toggle")?.addEventListener("click", () => {
-        erdGrid?.classList.toggle("is-hidden");
+    erdGridToggle?.addEventListener("click", () => {
+        setErdGridVisible(erdGrid?.classList.contains("is-hidden") ?? false);
     });
     document.getElementById("erd-zoom-in")?.parentElement?.addEventListener("click", () => {
         erdZoom = Math.min(2, Number((erdZoom + 0.1).toFixed(2)));
@@ -791,6 +1008,7 @@ Ref: orders.user_id > users.id`;
     });
     setErdTool("select");
     applyErdViewport();
+    setErdGridVisible(localStorage.getItem(erdGridStorageKey) !== "false");
 
     secondarySidebarToggle?.addEventListener("click", () => {
         setSidebarCollapsed(!secondarySidebar?.classList.contains("collapsed"));
@@ -812,19 +1030,27 @@ Ref: orders.user_id > users.id`;
         let name = `new_table_${suffix}`;
         while (existingNames.has(name)) name = `new_table_${++suffix}`;
         const block = `\n\nTable ${name} {\n  id int [pk]\n}`;
-        editor.value = `${editor.value.trimEnd()}${block}`;
+        setEditorText(`${editor.value.trimEnd()}${block}`);
         editor.dispatchEvent(new Event("input", { bubbles: true }));
         setMode("editor");
-        editor.focus();
+        monacoEditor?.focus();
     });
 
-    document.querySelectorAll("[data-db-mode]").forEach((button) => button.addEventListener("click", () => setMode(button.dataset.dbMode)));
     currentSchemaButton?.addEventListener("click", (event) => {
         event.stopPropagation();
         const isOpen = schemaMenu?.classList.toggle("hidden") === false;
         currentSchemaButton.setAttribute("aria-expanded", String(isOpen));
     });
-    schemaAddButton?.addEventListener("click", addSchemaCategory);
+    schemaAddButton?.addEventListener("click", openSchemaAddModal);
+    schemaAddCancel?.addEventListener("click", closeSchemaAddModal);
+    schemaAddCancelSecondary?.addEventListener("click", closeSchemaAddModal);
+    schemaAddModal?.addEventListener("click", (event) => {
+        if (event.target === schemaAddModal) closeSchemaAddModal();
+    });
+    schemaAddForm?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (addSchemaCategory(schemaAddName?.value)) closeSchemaAddModal();
+    });
     document.addEventListener("click", (event) => {
         if (!(event.target instanceof Node) || currentSchemaButton?.contains(event.target) || schemaMenu?.contains(event.target)) return;
         closeSchemaMenu();
@@ -833,7 +1059,7 @@ Ref: orders.user_id > users.id`;
     document.getElementById("db-editor-render")?.addEventListener("click", render_editor);
     document.getElementById("db-sidebar-editor-render")?.addEventListener("click", render_editor);
     document.getElementById("db-editor-example")?.addEventListener("click", () => {
-        if (editor) editor.value = sample;
+        setEditorText(sample);
         highlightDbml(sample);
         updateEditorGutter();
         applySchema(sample);
@@ -898,7 +1124,7 @@ Ref: orders.user_id > users.id`;
         editor.addEventListener("scroll", updateEditorGutter);
     }
     const initialText = stored || sample;
-    if (editor) editor.value = initialText;
+    setEditorText(initialText);
     highlightDbml(initialText);
     updateEditorGutter();
     setInputType(editor?.value ?? sample);

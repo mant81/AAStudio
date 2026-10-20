@@ -2,6 +2,25 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: layout(~{::div})}">
 <div class="db-modeling-page flex h-screen min-h-0 w-full flex-col" id="db-modeling-page">
+    <div class="common-name-modal hidden fixed inset-0 z-[70] items-center justify-center bg-on-background/30 p-4" id="db-schema-add-modal">
+        <form class="common-name-modal-card w-full max-w-md rounded-2xl bg-surface-white p-6 shadow-2xl" id="db-schema-add-form">
+            <div class="mb-5 flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="font-title-md text-title-md text-on-surface">스키마 추가</h2>
+                    <p class="mt-1 text-sm text-on-surface-variant">새 DB 스키마 카테고리를 추가합니다.</p>
+                </div>
+                <button aria-label="닫기" class="rounded-lg p-1 text-on-surface-variant hover:bg-surface-variant" id="db-schema-add-cancel" type="button">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <label class="block text-sm font-medium text-on-surface" for="db-schema-add-name">스키마 이름</label>
+            <input autofocus class="mt-2 h-11 w-full rounded-lg border border-outline-variant bg-surface px-3 text-on-surface outline-none focus:border-secondary" id="db-schema-add-name" placeholder="예: 주문 관리" type="text">
+            <div class="mt-6 flex justify-end gap-2">
+                <button class="rounded-lg px-4 py-2 text-on-surface-variant hover:bg-surface-variant" id="db-schema-add-cancel-secondary" type="button">취소</button>
+                <button class="rounded-lg bg-secondary px-4 py-2 text-on-secondary hover:opacity-90" type="submit">추가</button>
+            </div>
+        </form>
+    </div>
     <div class="h-14 bg-surface-white border-b border-surface-container flex items-center justify-between px-6 shrink-0 shadow-sm z-10 relative">
         <div class="flex items-center gap-4">
             <div class="relative" id="db-schema-selector">
@@ -23,7 +42,7 @@
                 <span id="db-save-status-text">저장 대기</span>
             </span>
             <div class="h-4 w-[1px] bg-outline-variant mx-2"></div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2" id="erd-toolbar">
                     <button aria-label="캔버스 이동" class="p-2 text-on-surface-variant hover:bg-surface hover:text-primary rounded-lg transition-colors flex items-center justify-center group relative" data-erd-tool="pan" id="erd-pan-tool" type="button">
                     <span class="material-symbols-outlined text-[20px]">pan_tool</span>
                 </button>
@@ -31,7 +50,7 @@
                     <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">arrow_selector_tool</span>
                 </button>
                 <div class="h-4 w-[1px] bg-outline-variant mx-1"></div>
-                <button aria-label="격자 표시 전환" class="p-2 text-on-surface-variant hover:bg-surface hover:text-primary rounded-lg transition-colors flex items-center justify-center group relative" id="erd-grid-toggle" type="button">
+                <button aria-pressed="true" aria-label="격자 표시 전환" class="p-2 bg-secondary/10 text-secondary rounded-lg transition-colors flex items-center justify-center group relative" id="erd-grid-toggle" title="격자 숨기기" type="button">
                     <span class="material-symbols-outlined text-[20px]">grid_on</span>
                 </button>
                 <div class="flex items-center bg-surface-container rounded-lg overflow-hidden ml-2">
@@ -42,10 +61,6 @@
                     <button class="p-1.5 text-on-surface-variant hover:bg-surface-variant hover:text-primary transition-colors flex items-center justify-center" type="button">
                         <span class="material-symbols-outlined text-[18px]" id="erd-zoom-in">add</span>
                     </button>
-                </div>
-                <div class="ml-2 flex items-center rounded-lg bg-surface-container p-0.5" id="db-editor-mode-toggle">
-                    <button class="rounded-md bg-surface-white px-2.5 py-1.5 text-[11px] font-semibold text-secondary shadow-sm" data-db-mode="editor" type="button">에디터</button>
-                    <button class="rounded-md px-2.5 py-1.5 text-[11px] font-semibold text-on-surface-variant hover:text-on-surface" data-db-mode="erd" type="button">ERD</button>
                 </div>
             </div>
         </div>
@@ -69,29 +84,9 @@
     </div>
         <div class="flex min-h-0 flex-1 overflow-hidden">
         <div class="w-64 bg-surface-white border-r border-surface-container flex flex-col shrink-0 relative z-10 shadow-[2px_0_12px_rgba(0,0,0,0.02)] sidebar-transition group/secondary-sidebar" id="secondary-sidebar">
-            <div class="p-4 group-[.collapsed]/secondary-sidebar:px-2" id="db-sidebar-controls">
-                <div class="flex items-center justify-end mb-2">
-                    <button class="p-1 hover:bg-secondary/10 text-on-surface-variant hover:text-secondary rounded transition-colors" id="secondary-sidebar-toggle" type="button">
-                        <span class="material-symbols-outlined text-[20px] transition-transform duration-300">chevron_left</span>
-                    </button>
-                </div>
-                <button class="w-full py-2 px-4 bg-secondary/10 hover:bg-secondary/20 text-secondary rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 transition-colors border border-secondary/20" id="db-new-table-button" type="button">
-                    <span class="material-symbols-outlined text-[18px]">add</span>
-                    <span class="group-[.collapsed]/secondary-sidebar:hidden">New Table</span>
-                </button>
-            </div>
             <div class="hidden min-h-0 flex-1 flex-col" id="db-sidebar-editor">
-                <div class="flex items-center justify-between border-b border-[#333] bg-[#252526] px-3 py-2.5 text-[#cccccc]">
-                    <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[15px] text-[#75beff]">description</span>
-                        <span class="font-code-sm text-[11px]">schema.dbml</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <span class="rounded bg-[#37373d] px-1.5 py-0.5 font-code-sm text-[10px] text-[#9cdcfe]">DBML</span>
-                        <button aria-label="ERD 생성" class="rounded px-2 py-1 text-[11px] text-[#cccccc] hover:bg-[#37373d]" id="db-sidebar-editor-render" type="button">GUI 생성</button>
-                    </div>
-                </div>
                 <div class="db-sidebar-editor-host flex min-h-0 flex-1 bg-[#1e1e1e]" id="db-sidebar-editor-host">
+                    <div aria-label="DBML 또는 DDL 입력" class="db-monaco-editor" id="db-monaco-editor"></div>
                     <div aria-hidden="true" class="db-sidebar-editor-gutter" id="db-sidebar-editor-gutter"></div>
                     <div aria-hidden="true" class="db-sidebar-editor-highlight" id="db-sidebar-editor-highlight"></div>
                 </div>
@@ -100,56 +95,16 @@
                     <span class="font-code-sm text-[#858585]" id="db-sidebar-editor-position">Ln 1, Col 1</span>
                 </div>
             </div>
-            <div class="flex-1 overflow-y-auto px-2 pb-4 custom-scrollbar group-[.collapsed]/secondary-sidebar:px-2" id="db-object-explorer">
-                <div class="px-2 mb-4">
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
-                        <input class="w-full bg-surface pl-9 pr-3 py-1.5 rounded-lg font-body-md text-body-md text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/50 border border-transparent focus:border-secondary/30 transition-all group-[.collapsed]/secondary-sidebar:hidden" id="db-object-search" placeholder="Search objects..." type="search">
-                    </div>
-                </div>
-                <div class="overflow-hidden">
-                    <div class="group border-b border-outline-variant/30">
-                        <div class="flex w-full items-center gap-1 rounded-lg px-2.5 py-2.5 text-left text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors" id="db-tables-view-toggle">
-                            <span class="material-symbols-outlined text-[16px] text-on-surface-variant transition-transform rotate-90">chevron_right</span>
-                            <span class="material-symbols-outlined text-[16px] text-accent-logic">table_chart</span>
-                            <span class="font-label-md text-label-md uppercase tracking-wider flex-1 group-[.collapsed]/secondary-sidebar:hidden">Tables</span>
-                            <span class="font-code-sm text-[10px] text-on-surface-variant group-[.collapsed]/secondary-sidebar:hidden">3</span>
-                        </div>
-                        <div class="space-y-0.5 pb-1 pl-7 pr-1">
-                            <div class="flex items-center justify-between rounded-md border-l-2 border-secondary bg-secondary/5 px-2 py-1.5 text-secondary cursor-pointer transition-colors relative group/item">
-                                <div class="flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[16px]">table</span>
-                                    <span class="font-code-sm text-code-sm font-medium group-[.collapsed]/secondary-sidebar:hidden">users</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-between rounded-md border-l-2 border-transparent px-2 py-1.5 text-on-surface-variant hover:bg-surface-container-lowest hover:text-primary cursor-pointer transition-colors relative group/item">
-                                <div class="flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[16px]">table</span>
-                                    <span class="font-code-sm text-code-sm group-[.collapsed]/secondary-sidebar:hidden">orders</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-between rounded-md border-l-2 border-transparent px-2 py-1.5 text-on-surface-variant hover:bg-surface-container-lowest hover:text-primary cursor-pointer transition-colors relative group/item">
-                                <div class="flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[16px]">table</span>
-                                    <span class="font-code-sm text-code-sm group-[.collapsed]/secondary-sidebar:hidden">products</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="group">
-                        <div class="flex w-full items-center gap-1 rounded-lg px-2.5 py-2.5 text-left text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors" data-db-group-toggle>
-                            <span class="material-symbols-outlined text-[16px] transition-transform">chevron_right</span>
-                            <span class="material-symbols-outlined text-[16px] text-accent-api">visibility</span>
-                            <span class="font-label-md text-label-md uppercase tracking-wider flex-1 group-[.collapsed]/secondary-sidebar:hidden">Views</span>
-                            <span class="font-code-sm text-[10px] group-[.collapsed]/secondary-sidebar:hidden">0</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <div aria-label="사이드바 너비 조절" class="db-sidebar-resize-handle" id="db-sidebar-resize-handle" role="separator" tabindex="0"></div>
         </div>
         <div class="flex-1 relative overflow-hidden bg-surface-container-low" id="db-modeling-workspace">
-            <section class="flex h-full flex-col bg-surface-container-low" id="db-editor-view">
+            <button aria-expanded="true" aria-label="에디터 접기" class="db-editor-collapse-toggle" id="secondary-sidebar-toggle" title="에디터 접기" type="button">
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+            <button aria-controls="db-properties-panel" aria-expanded="false" aria-label="속성 열기" class="db-erd-overlay-toggle" id="db-erd-overlay-toggle" title="속성 열기" type="button">
+                <i aria-hidden="true" class="ri-arrow-left-s-line"></i>
+            </button>
+            <section class="hidden h-full flex-col bg-surface-container-low" id="db-editor-view" style="display: none;">
                 <div class="flex items-center justify-between border-b border-outline-variant/50 bg-surface-white px-5 py-3">
                     <div>
                         <p class="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">Schema editor</p>
@@ -172,7 +127,7 @@
                             </div>
                             <button class="text-[11px] text-on-surface-variant hover:text-primary" id="db-editor-example" type="button">예시 불러오기</button>
                         </div>
-                        <textarea aria-label="DBML 또는 DDL 입력" class="min-h-0 flex-1 resize-none bg-surface-white p-4 font-mono text-[13px] leading-6 text-on-surface outline-none placeholder:text-on-surface-variant/50" id="db-schema-editor" spellcheck="false"></textarea>
+                        <textarea aria-label="DBML 또는 DDL 입력" class="hidden" id="db-schema-editor" spellcheck="false"></textarea>
                         <div class="flex items-center justify-between border-t border-outline-variant/40 px-4 py-2 text-[11px] text-on-surface-variant">
                             <span id="db-editor-hint">DBML을 직접 작성하거나 CREATE TABLE DDL을 붙여넣으세요.</span>
                             <span id="db-editor-status">자동 분석 대기</span>
@@ -198,9 +153,11 @@ Ref: orders.user_id &gt; users.id</pre>
                     </aside>
                 </div>
             </section>
-            <section class="hidden h-full bg-surface-container-low" id="db-erd-view">
+            <section aria-label="ERD 캔버스" id="db-erd-view">
                 <div class="flex h-full flex-col bg-surface-container-low relative overflow-hidden ERD-canvas" id="erd-canvas">
-            <div class="absolute inset-0 z-0 opacity-20 pointer-events-none" id="erd-grid" style="background-image: radial-gradient(circle at 1px 1px, var(--tw-colors-outline-variant) 1px, transparent 0); background-size: 24px 24px;"></div>
+            <div class="absolute inset-0 z-0 pointer-events-none" id="erd-grid">
+                <canvas aria-hidden="true" id="db-canvas-background"></canvas>
+            </div>
             <svg class="absolute inset-0 w-full h-full z-0 pointer-events-none" id="erd-lines">
                 <path class="text-outline-variant" d="M 280,180 L 330,180 C 350,180 350,260 380,260 L 420,260" fill="none" stroke="currentColor" stroke-dasharray="4 4" stroke-width="2"></path>
                 <circle class="text-outline-variant" cx="280" cy="180" fill="currentColor" r="4"></circle>
@@ -292,6 +249,66 @@ Ref: orders.user_id &gt; users.id</pre>
             </div>
             </div>
             </section>
+            <aside aria-labelledby="db-properties-title" id="db-properties-panel" hidden>
+                <div class="db-properties-header">
+                    <h2 id="db-properties-title">Properties</h2>
+                </div>
+                <div class="db-properties-body">
+                    <div class="p-4" id="db-sidebar-controls">
+                        <button class="w-full py-2 px-4 bg-secondary/10 hover:bg-secondary/20 text-secondary rounded-xl text-xs flex items-center justify-center gap-2 border border-secondary/20" id="db-new-table-button" type="button">
+                            <i aria-hidden="true" class="ri-add-line"></i>
+                            <span>New Table</span>
+                        </button>
+                    </div>
+            <div class="px-4 pb-4" id="db-object-explorer">
+                <div class="px-2 mb-4">
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
+                        <input class="w-full bg-surface pl-9 pr-3 py-1.5 rounded-lg font-body-md text-body-md text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/50 border border-transparent focus:border-secondary/30 transition-all" aria-label="테이블 검색" id="db-object-search" placeholder="Search objects..." type="search">
+                    </div>
+                </div>
+                <div class="overflow-hidden">
+                    <div class="group border-b border-outline-variant/30">
+                        <div class="flex w-full items-center gap-1 rounded-lg px-2.5 py-2.5 text-left text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors" id="db-tables-view-toggle">
+                            <span class="material-symbols-outlined text-[16px] text-on-surface-variant transition-transform rotate-90">chevron_right</span>
+                            <span class="material-symbols-outlined text-[16px] text-accent-logic">table_chart</span>
+                            <span class="font-label-md text-label-md uppercase tracking-wider flex-1">Tables</span>
+                            <span class="font-code-sm text-[10px] text-on-surface-variant" id="db-table-count">0</span>
+                        </div>
+                        <div class="space-y-0.5 pb-1 pl-7 pr-1" id="db-table-list">
+                            <div class="flex items-center justify-between rounded-md border-l-2 border-secondary bg-secondary/5 px-2 py-1.5 text-secondary cursor-pointer transition-colors relative group/item">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[16px]">table</span>
+                                    <span class="font-code-sm text-code-sm font-medium">users</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between rounded-md border-l-2 border-transparent px-2 py-1.5 text-on-surface-variant hover:bg-surface-container-lowest hover:text-primary cursor-pointer transition-colors relative group/item">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[16px]">table</span>
+                                    <span class="font-code-sm text-code-sm">orders</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between rounded-md border-l-2 border-transparent px-2 py-1.5 text-on-surface-variant hover:bg-surface-container-lowest hover:text-primary cursor-pointer transition-colors relative group/item">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[16px]">table</span>
+                                    <span class="font-code-sm text-code-sm">products</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="group">
+                        <div class="flex w-full items-center gap-1 rounded-lg px-2.5 py-2.5 text-left text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors" data-db-group-toggle>
+                            <span class="material-symbols-outlined text-[16px] transition-transform">chevron_right</span>
+                            <span class="material-symbols-outlined text-[16px] text-accent-api">visibility</span>
+                            <span class="font-label-md text-label-md uppercase tracking-wider flex-1">Views</span>
+                            <span class="font-code-sm text-[10px]">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                    <div id="db-properties-content" class="db-properties-content"></div>
+                </div>
+            </aside>
         </div>
     </div>
 </div>
