@@ -39,3 +39,12 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// STS/Eclipse runs with bin/main, independently of Gradle's build/resources/main.
+tasks.register('syncIdeResources', Copy) {
+    group = 'build'
+    description = 'Copies application resources into the STS/Eclipse runtime output.'
+    from sourceSets.main.resources
+    into layout.projectDirectory.dir('bin/main')
+    includeEmptyDirs = false
+}

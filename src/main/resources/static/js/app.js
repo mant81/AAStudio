@@ -1,32 +1,19 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const sidebarToggle = document.getElementById("sidebar-toggle");
-    const sidebar = document.getElementById("main-sidebar");
-    const contentWrapper = document.getElementById("content-wrapper");
-    const header = document.querySelector("header");
+    document.querySelector('.app-navigation-tab[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
 
-    if (sidebarToggle && sidebar && contentWrapper) {
-        const toggleIcon = sidebarToggle.querySelector("[data-sidebar-toggle-icon]");
-        const setSidebarCollapsed = (collapsed) => {
-            sidebar.classList.toggle("collapsed", collapsed);
-            sidebar.classList.toggle("w-sidebar-width", !collapsed);
-            sidebar.classList.toggle("w-20", collapsed);
-            contentWrapper.classList.toggle("pl-sidebar-width", !collapsed);
-            contentWrapper.classList.toggle("pl-20", collapsed);
-            contentWrapper.classList.toggle("sidebar-expanded", !collapsed);
-            header?.classList.toggle("left-sidebar-width", !collapsed);
-            header?.classList.toggle("left-20", collapsed);
-            toggleIcon?.classList.toggle("rotate-180", collapsed);
-            sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
-            sidebarToggle.setAttribute("aria-label", collapsed ? "사이드바 펼치기" : "사이드바 접기");
-            localStorage.setItem("aastudio-sidebar-collapsed", String(collapsed));
-        };
-
-        const storedCollapsed = localStorage.getItem("aastudio-sidebar-collapsed");
-        setSidebarCollapsed(storedCollapsed === null ? true : storedCollapsed === "true");
-        sidebarToggle.addEventListener("click", () => {
-            setSidebarCollapsed(!sidebar.classList.contains("collapsed"));
+    document.querySelectorAll("[data-workspace-export], [data-workspace-menu]").forEach((menu) => {
+        menu.addEventListener("click", (event) => {
+            if (event.target.closest("[data-diagram-export], [data-workspace-action]")) menu.open = false;
         });
-    }
+        menu.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape") return;
+            menu.open = false;
+            menu.querySelector("summary")?.focus();
+        });
+        document.addEventListener("click", (event) => {
+            if (!menu.contains(event.target)) menu.open = false;
+        }, true);
+    });
 
     const projectSelect = document.querySelector("[data-project-select]");
     if (projectSelect) {
@@ -39,10 +26,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const currentProjectId = projectCard?.dataset.currentProjectId;
         const currentProjectOption = [...projectSelect.options].find((option) => option.value === currentProjectId);
         if (currentProjectOption) projectSelect.value = currentProjectOption.value;
+        let selectedProjectId = projectSelect.value;
         const syncProjectDropdown = () => {
             const selected = projectSelect.options[projectSelect.selectedIndex];
             if (projectValue && selected) projectValue.textContent = selected.textContent;
-            projectOptions.forEach((option) => option.classList.toggle("is-selected", option.dataset.projectValue === projectSelect.value));
+            projectOptions.forEach((option) => {
+                const selected = option.dataset.projectValue === projectSelect.value;
+                option.classList.toggle("is-selected", selected);
+                option.setAttribute("aria-selected", String(selected));
+            });
         };
         const closeProjectDropdown = () => {
             projectCard?.classList.remove("is-open");
@@ -54,11 +46,42 @@ document.addEventListener("DOMContentLoaded", () => {
             projectArea?.classList.toggle("is-open", isOpen);
             projectTrigger.setAttribute("aria-expanded", String(isOpen));
         });
+        projectTrigger?.addEventListener("keydown", (event) => {
+            if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            projectCard?.classList.add("is-open");
+            projectArea?.classList.add("is-open");
+            projectTrigger.setAttribute("aria-expanded", "true");
+            const selected = projectOptions.find((option) => option.dataset.projectValue === projectSelect.value);
+            (selected || projectOptions[0])?.focus();
+        });
+        projectCard?.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                closeProjectDropdown();
+                projectTrigger?.focus();
+                return;
+            }
+            const index = projectOptions.indexOf(document.activeElement);
+            if (index < 0) return;
+            let next = index;
+            if (event.key === "ArrowDown") next = (index + 1) % projectOptions.length;
+            else if (event.key === "ArrowUp") next = (index - 1 + projectOptions.length) % projectOptions.length;
+            else if (event.key === "Home") next = 0;
+            else if (event.key === "End") next = projectOptions.length - 1;
+            else return;
+            event.preventDefault();
+            projectOptions[next].focus();
+        });
+        projectCard?.addEventListener("focusout", (event) => {
+            if (!projectCard.contains(event.relatedTarget)) closeProjectDropdown();
+        });
         projectOptions.forEach((option) => option.addEventListener("click", () => {
             projectSelect.value = option.dataset.projectValue;
             projectSelect.dispatchEvent(new Event("change", { bubbles: true }));
             syncProjectDropdown();
             closeProjectDropdown();
+            projectTrigger?.focus();
         }));
         projectSelect.addEventListener("change", syncProjectDropdown);
         document.addEventListener("click", (event) => {
@@ -73,6 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
             projectModal?.classList.add("hidden");
             projectModal?.classList.remove("flex");
             projectModal?.setAttribute("aria-hidden", "true");
+            projectTrigger?.focus();
         };
         const requestProjectName = () => new Promise((resolve) => {
             if (!(projectModal instanceof HTMLElement) || !(projectModalForm instanceof HTMLFormElement) || !(projectModalName instanceof HTMLInputElement)) {
@@ -93,9 +117,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (event.target === projectModal) finish(null);
             };
             const onCancel = () => finish(null);
+            const onKeydown = (event) => {
+                if (event.key === "Escape") finish(null);
+            };
             const finish = (value) => {
                 projectModalForm.removeEventListener("submit", onSubmit);
                 projectModal.removeEventListener("click", onBackdrop);
+                projectModal.removeEventListener("keydown", onKeydown);
                 document.getElementById("common-project-cancel")?.removeEventListener("click", onCancel);
                 document.getElementById("common-project-cancel-secondary")?.removeEventListener("click", onCancel);
                 closeProjectModal();
@@ -103,6 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
             };
             projectModalForm.addEventListener("submit", onSubmit);
             projectModal.addEventListener("click", onBackdrop);
+            projectModal.addEventListener("keydown", onKeydown);
             document.getElementById("common-project-cancel")?.addEventListener("click", onCancel);
             document.getElementById("common-project-cancel-secondary")?.addEventListener("click", onCancel);
         });
@@ -114,6 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
         projectSelect.addEventListener("change", async () => {
             const projectId = projectSelect.value;
             if (projectId !== "__create__") {
+                selectedProjectId = projectId;
                 setCurrentProject(projectId);
                 window.location.reload();
                 return;
@@ -121,7 +151,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const name = await requestProjectName();
             if (!name || !name.trim()) {
-                projectSelect.selectedIndex = 0;
+                projectSelect.value = selectedProjectId;
+                syncProjectDropdown();
                 return;
             }
 
@@ -140,7 +171,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 window.location.reload();
             } catch (error) {
                 window.alert(error.message);
-                projectSelect.selectedIndex = 0;
+                projectSelect.value = selectedProjectId;
+                syncProjectDropdown();
             }
         });
 
@@ -154,11 +186,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabs = document.querySelectorAll("[data-settings-tab]");
     const panels = document.querySelectorAll("[data-settings-panel]");
     tabs.forEach((tab) => {
+        const selected = [...panels].some((panel) => panel.classList.contains("is-active") && panel.dataset.settingsPanel === tab.dataset.settingsTab);
+        tab.classList.toggle("is-active", selected);
+        tab.setAttribute("aria-pressed", String(selected));
         tab.addEventListener("click", () => {
             const target = tab.getAttribute("data-settings-tab");
-            tabs.forEach((item) => item.classList.remove("is-active"));
+            tabs.forEach((item) => {
+                item.classList.remove("is-active");
+                item.setAttribute("aria-pressed", "false");
+            });
             panels.forEach((panel) => panel.classList.remove("is-active"));
             tab.classList.add("is-active");
+            tab.setAttribute("aria-pressed", "true");
             document.querySelector(`[data-settings-panel="${target}"]`)?.classList.add("is-active");
         });
     });

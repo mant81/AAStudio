@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<header class="app-navigation" th:fragment="navigation(activeNav)">
+    <div class="app-navigation-bar">
+        <a class="app-brand" href="/" aria-label="AAStudio 대시보드">
+            <span class="app-brand-mark" aria-hidden="true">A</span>
+            <span>AAStudio</span>
+        </a>
+        <span class="app-navigation-divider" aria-hidden="true"></span>
+
+        <div class="project-select-area">
+            <div class="project-select-card" th:data-current-project-id="${currentProjectId}">
+                <div class="project-select-content">
+                    <div class="project-select-control">
+                        <button class="project-select-trigger" id="project-select-trigger" type="button"
+                                aria-label="현재 프로젝트 선택" aria-haspopup="listbox" aria-controls="project-select-menu"
+                                aria-expanded="false" data-project-trigger>
+                            <span class="material-symbols-outlined" aria-hidden="true">folder_open</span>
+                            <span class="project-select-value" data-project-value
+                                  th:text="${currentProject != null ? currentProject['projectName'] : '프로젝트 없음'}">프로젝트 없음</span>
+                            <span class="material-symbols-outlined project-select-chevron" aria-hidden="true">expand_more</span>
+                        </button>
+                        <div class="project-select-menu" id="project-select-menu" role="listbox" aria-label="프로젝트" data-project-menu>
+                            <button class="project-select-option" type="button" role="option" aria-selected="false"
+                                    th:each="project : ${projects}"
+                                    th:data-project-value="${project['projectId']}"
+                                    th:text="${project['projectName']}">프로젝트 없음</button>
+                            <button class="project-select-option project-select-create" type="button" role="option"
+                                    aria-selected="false" data-project-value="__create__">+ 새 프로젝트</button>
+                        </div>
+                        <select class="project-select-native" id="current-project-select" aria-label="현재 프로젝트"
+                                tabindex="-1" aria-hidden="true" data-project-select>
+                            <option th:each="project : ${projects}" th:value="${project['projectId']}"
+                                    th:text="${project['projectName']}"
+                                    th:selected="${project['projectId'] == currentProjectId}">프로젝트 없음</option>
+                            <option value="__create__">+ 새 프로젝트</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <nav class="app-navigation-tabs" aria-label="프로젝트 메뉴">
+            <a class="app-navigation-tab" href="/" aria-label="대시보드" title="대시보드" th:classappend="${activeNav == 'dashboard'} ? ' is-active'"
+               th:attr="aria-current=${activeNav == 'dashboard' ? 'page' : null}">
+                <span class="material-symbols-outlined" aria-hidden="true">dashboard</span><span>대시보드</span>
+            </a>
+            <a class="app-navigation-tab" href="/diagram" aria-label="다이어그램" title="다이어그램" data-open-diagram-spaces
+               th:classappend="${activeNav == 'diagram'} ? ' is-active'"
+               th:attr="aria-current=${activeNav == 'diagram' ? 'page' : null}">
+                <span class="material-symbols-outlined" aria-hidden="true">share</span><span>다이어그램</span>
+            </a>
+            <a class="app-navigation-tab" href="/db-modeling" aria-label="DB 모델링" title="DB 모델링" th:classappend="${activeNav == 'db-modeling'} ? ' is-active'"
+               th:attr="aria-current=${activeNav == 'db-modeling' ? 'page' : null}">
+                <span class="material-symbols-outlined" aria-hidden="true">database</span><span>DB 모델링</span>
+            </a>
+            <a class="app-navigation-tab" href="/api" aria-label="API 명세" title="API 명세" th:classappend="${activeNav == 'api-specification'} ? ' is-active'"
+               th:attr="aria-current=${activeNav == 'api-specification' ? 'page' : null}">
+                <span class="material-symbols-outlined" aria-hidden="true">code</span><span>API 명세</span>
+            </a>
+            <a class="app-navigation-tab" href="/wiki" aria-label="WIKI" title="WIKI" th:classappend="${activeNav == 'wiki'} ? ' is-active'"
+               th:attr="aria-current=${activeNav == 'wiki' ? 'page' : null}">
+                <span class="material-symbols-outlined" aria-hidden="true">library_books</span><span>WIKI</span>
+            </a>
+        </nav>
+        <a class="app-settings-link" href="/settings" th:classappend="${activeNav == 'settings'} ? ' is-active'"
+           th:attr="aria-current=${activeNav == 'settings' ? 'page' : null}" aria-label="설정" title="설정">
+            <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+            <span class="app-settings-label">설정</span>
+        </a>
+    </div>
+
+</header>
+</body>
+</html>

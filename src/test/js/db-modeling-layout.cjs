@@ -6,6 +6,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
 const root = path.resolve(__dirname, "../../..");
 const resources = path.join(root, "src/main/resources");
 const read = (file) => fs.readFileSync(path.join(resources, file), "utf8");
+const baseUrl = process.env.AASTUDIO_BASE_URL;
 const schemaText = "Table users {\n id int [pk]\n email varchar\n}\nTable orders {\n id int [pk]\n user_id int\n}\nRef: orders.user_id > users.id";
 
 (async () => {
@@ -17,7 +18,7 @@ const schemaText = "Table users {\n id int [pk]\n email varchar\n}\nTable orders
         let head = read("templates/fragments/layout.html").match(/<head>([\s\S]*?)<\/head>/)[1];
         head = head.replace(/th:href="@\{([^}(]+)(?:\([^}]*\))?\}"/g, 'href="$1"');
         const template = read("templates/db-modeling.html");
-        const body = template.slice(template.indexOf('<div class="db-modeling-page'), template.lastIndexOf("</html>"));
+        const body = template.slice(template.indexOf('<div class="workspace-page db-modeling-page'), template.lastIndexOf("</html>"));
         await page.route("http://aastudio.test/**", async (route) => {
             const url = new URL(route.request().url());
             if (url.pathname === "/db-modeling") {
@@ -30,11 +31,18 @@ const schemaText = "Table users {\n id int [pk]\n email varchar\n}\nTable orders
             if (fs.existsSync(file)) return route.fulfill({ path: file });
             return route.fulfill({ status: 404, body: "" });
         });
-        await page.goto("http://aastudio.test/db-modeling");
+        if (baseUrl) {
+            await page.route(`${baseUrl}/api/db-modeling/schema**`, (route) => route.fulfill({
+                json: { schemaText, layoutJson: "{}", categories: [{ categoryId: "ecommerce", categoryName: "Test" }] }
+            }));
+        }
+        await page.goto(baseUrl ? `${baseUrl}/db-modeling` : "http://aastudio.test/db-modeling");
         await page.waitForFunction(() => typeof tailwind !== "undefined");
-        await page.addScriptTag({ path: path.join(resources, "static/js/db-modeling.js") });
-        await page.addScriptTag({ url: "http://aastudio.test/vendor/monaco/vs/loader.js" });
-        await page.addScriptTag({ content: 'require.config({ paths: { vs: "/vendor/monaco/vs" } }); require(["vs/editor/editor.main"], () => window.dispatchEvent(new Event("monaco-ready")));' });
+        if (!baseUrl) {
+            await page.addScriptTag({ path: path.join(resources, "static/js/db-modeling.js") });
+            await page.addScriptTag({ url: "http://aastudio.test/vendor/monaco/vs/loader.js" });
+            await page.addScriptTag({ content: 'require.config({ paths: { vs: "/vendor/monaco/vs" } }); require(["vs/editor/editor.main"], () => window.dispatchEvent(new Event("monaco-ready")));' });
+        }
         await page.locator("#db-monaco-editor .monaco-editor").waitFor({ state: "visible" });
         await page.waitForFunction(() => document.querySelectorAll(".db-erd-table-node").length === 2);
         const stage = page.locator("#erd-canvas");

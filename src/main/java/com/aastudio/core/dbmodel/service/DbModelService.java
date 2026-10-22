@@ -4,6 +4,7 @@ import com.aastudio.core.dbmodel.mapper.DbModelMapper;
 import java.util.Map;
 import java.util.List;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class DbModelService {
@@ -18,9 +19,10 @@ public class DbModelService {
         return dbModelMapper.selectDocument(projectId);
     }
 
+    @Transactional
     public List<Map<String, Object>> getCategories(String projectId) {
         List<Map<String, Object>> categories = dbModelMapper.selectCategories(projectId);
-        if (!categories.isEmpty()) return categories;
+        if (!categories.isEmpty() || dbModelMapper.countCategoryDocuments(projectId) > 0) return categories;
         Map<String, Object> legacy = dbModelMapper.selectDocument(projectId);
         insertCategoryDocument(projectId, "ecommerce", "E-Commerce Schema",
                 legacy == null ? "" : String.valueOf(legacy.getOrDefault("schemaText", "")),
@@ -34,11 +36,19 @@ public class DbModelService {
         return dbModelMapper.selectCategoryDocument(projectId, categoryId);
     }
 
+    @Transactional
     public void saveCategoryDocument(String projectId, String categoryId, String categoryName,
                                      String schemaText, String layoutJson) {
         if (dbModelMapper.updateCategoryDocument(projectId, categoryId, categoryName, schemaText, layoutJson) == 0) {
+            if (dbModelMapper.countCategoryDocument(projectId, categoryId) > 0) {
+                throw new IllegalStateException("삭제된 모델링은 저장할 수 없습니다.");
+            }
             insertCategoryDocument(projectId, categoryId, categoryName, schemaText, layoutJson);
         }
+    }
+
+    public boolean deleteCategoryDocument(String projectId, String categoryId) {
+        return dbModelMapper.deleteCategoryDocument(projectId, categoryId) > 0;
     }
 
     private void insertCategoryDocument(String projectId, String categoryId, String categoryName,

@@ -1,5 +1,5 @@
 #diagram-root {
-    height: 100vh;
+    height: var(--workspace-height, 100vh);
     overflow: hidden;
 }
 

@@ -11,6 +11,12 @@ public interface DbModelMapper {
 
     java.util.List<Map<String, Object>> selectCategories(@Param("projectId") String projectId);
 
+    int countCategoryDocuments(@Param("projectId") String projectId);
+
+    int countCategoryDocument(@Param("projectId") String projectId, @Param("categoryId") String categoryId);
+
+    int deleteCategoryDocument(@Param("projectId") String projectId, @Param("categoryId") String categoryId);
+
     Map<String, Object> selectCategoryDocument(@Param("projectId") String projectId,
                                                @Param("categoryId") String categoryId);
 

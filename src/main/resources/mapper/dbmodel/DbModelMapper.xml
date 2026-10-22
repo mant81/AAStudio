@@ -26,13 +26,26 @@
         SELECT category_id, category_name
         FROM db_model_category_document
         WHERE project_id = #{projectId}
+          AND deleted = FALSE
         ORDER BY updated_at, category_name
     </select>
+    <select id="countCategoryDocuments" resultType="int">
+        SELECT COUNT(*) FROM db_model_category_document WHERE project_id = #{projectId}
+    </select>
+    <select id="countCategoryDocument" resultType="int">
+        SELECT COUNT(*) FROM db_model_category_document
+        WHERE project_id = #{projectId} AND category_id = #{categoryId}
+    </select>
+    <update id="deleteCategoryDocument">
+        UPDATE db_model_category_document SET deleted = TRUE, updated_at = CURRENT_TIMESTAMP
+        WHERE project_id = #{projectId} AND category_id = #{categoryId} AND deleted = FALSE
+    </update>
     <select id="selectCategoryDocument" resultMap="dbModelMap">
         SELECT project_id, category_id, category_name, schema_text, layout_json, version, updated_at
         FROM db_model_category_document
         WHERE project_id = #{projectId}
           AND category_id = #{categoryId}
+          AND deleted = FALSE
     </select>
     <insert id="insertCategoryDocument">
         INSERT INTO db_model_category_document
@@ -49,6 +62,7 @@
             updated_at = CURRENT_TIMESTAMP
         WHERE project_id = #{projectId}
           AND category_id = #{categoryId}
+          AND deleted = FALSE
     </update>
     <insert id="insertDocument">
         INSERT INTO db_model_document (project_id, schema_text, layout_json, version, updated_at)

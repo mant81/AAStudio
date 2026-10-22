@@ -96,6 +96,8 @@ CREATE TABLE IF NOT EXISTS db_model_category_document (
     CONSTRAINT db_model_category_document_pk PRIMARY KEY (project_id, category_id)
 );
 
+ALTER TABLE db_model_category_document ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT FALSE;
+
 DELETE FROM db_model_document
 WHERE project_id = 'alpha'
   AND EXISTS (SELECT 1 FROM db_model_document WHERE project_id = 'project-1');

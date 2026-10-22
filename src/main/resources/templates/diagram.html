@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: layout(~{::div})}">
-<div class="flex flex-col w-full h-screen min-h-0 font-body-md text-on-background relative overflow-hidden bg-surface-container-lowest" id="diagram-root">
-    <div class="flex items-center justify-between px-gutter py-3 border-b border-outline-variant bg-surface-white shrink-0 z-10 shadow-sm relative">
-        <div class="flex items-center gap-4">
+<div class="workspace-page flex flex-col w-full min-h-0 font-body-md text-on-background relative overflow-hidden bg-surface-container-lowest" id="diagram-root">
+    <div class="workspace-toolbar flex items-center justify-between px-gutter py-3 border-b border-outline-variant bg-surface-white shrink-0 z-10 shadow-sm relative">
+        <div class="workspace-context flex items-center gap-4">
             <div class="relative" id="diagram-selector">
                 <button aria-expanded="false" aria-haspopup="menu" class="font-title-md text-title-md text-on-surface inline-flex items-center gap-2 rounded-lg px-2 py-1 -mx-2 hover:bg-surface-container transition-colors" id="diagram-current-button" title="다이어그램 선택" type="button">
                     <span class="material-symbols-outlined text-[22px] text-on-surface-variant">account_tree</span>
                     <span class="max-w-[32rem] truncate" id="diagram-current-name" th:text="${pageTitle}">다이어그램 1</span>
                     <span class="material-symbols-outlined text-[20px] text-on-surface-variant">expand_more</span>
                 </button>
-                <div class="hidden absolute left-0 top-full mt-2 z-50 w-56 rounded-xl border border-outline-variant/50 bg-surface-white p-1.5 shadow-xl" id="diagram-menu" role="menu">
+                <div class="workspace-menu hidden absolute left-0 top-full mt-2 z-50 w-56 rounded-xl border border-outline-variant/50 bg-surface-white p-1.5 shadow-xl" id="diagram-menu" role="menu">
                     <div class="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">다이어그램 선택</div>
                     <div class="space-y-0.5" id="diagram-options"></div>
                 </div>
@@ -18,62 +18,11 @@
             <button aria-label="다이어그램 추가" class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-label-md text-label-md inline-flex items-center gap-1 hover:opacity-80 transition-opacity" id="diagram-add-button" title="다이어그램 추가" type="button">
                 <span class="text-[16px] leading-none">+</span>
             </button>
-            <span class="inline-flex items-center gap-1 rounded-full border border-outline-variant/60 bg-surface-container-low px-2 py-1 text-[11px] font-medium text-on-surface-variant" id="diagram-save-status">
-                <span class="material-symbols-outlined text-[14px]" id="diagram-save-status-icon">cloud_off</span>
-                <span id="diagram-save-status-text">저장 대기</span>
-            </span>
-        </div>
-        <div class="flex items-center gap-3">
-            <input accept="application/json,.json" hidden id="diagram-import-input" type="file">
-            <div aria-label="샘플 다이어그램" class="flex items-center gap-1 rounded-xl border border-secondary/25 bg-secondary/5 p-1">
-                <div aria-hidden="true" class="pointer-events-none flex select-none items-center whitespace-nowrap border-l-2 border-secondary/50 pl-2 pr-1 text-[10px] font-semibold tracking-wide text-secondary/75">
-                    <span>샘플</span>
-                </div>
-                <span aria-hidden="true" class="h-5 w-px bg-secondary/20"></span>
-                <button aria-expanded="false" aria-label="샘플 다이어그램 열기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-secondary transition-colors" id="diagram-sample-button" title="샘플 다이어그램" type="button">
-                    <span class="material-symbols-outlined text-[18px]">view_compact</span>
-                    <span class="text-[11px] font-medium">다이어그램</span>
-                </button>
-            </div>
-            <div class="flex items-center gap-1 rounded-xl border border-outline-variant/50 bg-surface-container-low p-1" aria-label="다이어그램 내보내기">
-                <div aria-hidden="true" class="pointer-events-none flex select-none items-center whitespace-nowrap border-l-2 border-outline-variant pl-2 pr-1 text-[10px] font-semibold tracking-wide text-on-surface-variant/70">
-                    <span>내보내기</span>
-                </div>
-                <span class="h-5 w-px bg-outline-variant/60" aria-hidden="true"></span>
-                <button aria-label="JPG로 내보내기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" data-diagram-export="jpg" title="JPG로 내보내기" type="button">
-                    <span class="material-symbols-outlined text-[18px]">photo</span>
-                    <span class="text-[11px] font-medium">JPG</span>
-                </button>
-                <button aria-label="PNG로 내보내기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" data-diagram-export="png" title="PNG로 내보내기" type="button">
-                    <span class="material-symbols-outlined text-[18px]">image</span>
-                    <span class="text-[11px] font-medium">PNG</span>
-                </button>
-                <button aria-label="PDF로 내보내기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" data-diagram-export="pdf" title="PDF로 내보내기" type="button">
-                    <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
-                    <span class="text-[11px] font-medium">PDF</span>
-                </button>
-                <span class="h-5 w-px bg-outline-variant/60" aria-hidden="true"></span>
-                <div class="relative" id="diagram-share-picker">
-                    <button aria-expanded="false" aria-haspopup="dialog" aria-label="다이어그램 링크 공유" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" id="diagram-share-button" title="다이어그램 링크 공유" type="button">
-                        <span class="material-symbols-outlined text-[18px]">link</span>
-                        <span class="text-[11px] font-medium">링크 공유</span>
-                    </button>
-                    <div class="hidden fixed right-6 top-3 z-[100] w-[26rem] rounded-xl border border-outline-variant/50 bg-surface-white p-3 shadow-xl" id="diagram-share-menu" role="dialog">
-                        <div class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">읽기 전용 공유 링크</div>
-                        <div class="flex items-center gap-2">
-                            <input class="min-w-0 flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-xs text-on-surface outline-none" id="diagram-share-url" readonly type="text">
-                            <button aria-label="공유 링크 복사" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-on-secondary hover:bg-secondary/90" id="diagram-share-copy-button" title="공유 링크 복사" type="button">
-                                <span class="material-symbols-outlined text-[18px]">content_copy</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <div class="relative" id="diagram-manage-picker">
                 <button aria-expanded="false" aria-haspopup="menu" aria-label="다이어그램 관리" class="flex items-center justify-center w-10 h-10 text-on-surface-variant hover:bg-surface-variant rounded-xl transition-colors" id="diagram-manage-button" title="다이어그램 관리" type="button">
-                    <span class="material-symbols-outlined text-[20px]">settings</span>
+                    <span class="material-symbols-outlined text-[20px]">more_horiz</span>
                 </button>
-                <div class="hidden absolute right-0 top-full mt-2 z-50 w-48 rounded-xl border border-outline-variant/50 bg-surface-white p-1.5 shadow-xl" id="diagram-manage-menu" role="menu">
+                <div class="workspace-menu hidden absolute right-0 top-full mt-2 z-50 w-48 rounded-xl border border-outline-variant/50 bg-surface-white p-1.5 shadow-xl" id="diagram-manage-menu" role="menu">
                     <div class="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">현재 다이어그램</div>
                     <button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-on-surface-variant hover:bg-surface-variant transition-colors" id="diagram-rename-button" type="button">
                         <span class="material-symbols-outlined text-[18px]">edit</span>
@@ -94,6 +43,52 @@
                     </button>
                 </div>
             </div>
+            <span class="inline-flex items-center gap-1 rounded-full border border-outline-variant/60 bg-surface-container-low px-2 py-1 text-[11px] font-medium text-on-surface-variant" id="diagram-save-status">
+                <span class="material-symbols-outlined text-[14px]" id="diagram-save-status-icon">cloud_off</span>
+                <span id="diagram-save-status-text">저장 대기</span>
+            </span>
+        </div>
+        <div class="workspace-actions flex items-center gap-3">
+            <input accept="application/json,.json" hidden id="diagram-import-input" type="file">
+            <div aria-label="샘플 다이어그램" class="workspace-action-group flex items-center gap-1 rounded-xl border border-secondary/25 bg-secondary/5 p-1">
+                <button aria-expanded="false" aria-label="샘플 다이어그램 열기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-secondary transition-colors" id="diagram-sample-button" title="샘플 다이어그램" type="button">
+                    <span class="material-symbols-outlined text-[18px]">view_compact</span>
+                    <span class="text-[11px] font-medium">샘플</span>
+                </button>
+            </div>
+                        <details class="workspace-export-picker" data-workspace-export>
+                <summary aria-label="내보내기"><span class="material-symbols-outlined" aria-hidden="true">file_download</span><span>내보내기</span><span class="material-symbols-outlined workspace-export-chevron" aria-hidden="true">expand_more</span></summary>
+                <div class="workspace-menu workspace-export-menu">
+                    <button aria-label="JPG로 내보내기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" data-diagram-export="jpg" title="JPG로 내보내기" type="button">
+                    <span class="material-symbols-outlined text-[18px]">photo</span>
+                    <span class="text-[11px] font-medium">JPG</span>
+                    </button>
+                    <button aria-label="PNG로 내보내기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" data-diagram-export="png" title="PNG로 내보내기" type="button">
+                    <span class="material-symbols-outlined text-[18px]">image</span>
+                    <span class="text-[11px] font-medium">PNG</span>
+                    </button>
+                    <button aria-label="PDF로 내보내기" class="flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" data-diagram-export="pdf" title="PDF로 내보내기" type="button">
+                    <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                    <span class="text-[11px] font-medium">PDF</span>
+                    </button>
+                </div>
+            </details>
+            <div class="relative" id="diagram-share-picker">
+                    <button aria-expanded="false" aria-haspopup="dialog" aria-label="다이어그램 링크 공유" class="workspace-share-action flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-on-surface-variant hover:bg-surface-white hover:text-primary transition-colors" id="diagram-share-button" title="다이어그램 링크 공유" type="button">
+                        <span class="material-symbols-outlined text-[18px]">link</span>
+                        <span class="text-[11px] font-medium">링크 공유</span>
+                    </button>
+                    <div class="hidden absolute right-0 top-full mt-2 z-[100] w-[26rem] rounded-xl border border-outline-variant/50 bg-surface-white p-3 shadow-xl" id="diagram-share-menu" role="dialog">
+                        <div class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">읽기 전용 공유 링크</div>
+                        <div class="flex items-center gap-2">
+                            <input class="min-w-0 flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-xs text-on-surface outline-none" id="diagram-share-url" readonly type="text">
+                            <button aria-label="공유 링크 복사" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-on-secondary hover:bg-secondary/90" id="diagram-share-copy-button" title="공유 링크 복사" type="button">
+                                <span class="material-symbols-outlined text-[18px]">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
         </div>
     </div>
 
@@ -118,7 +113,7 @@
     </div>
 
     <div class="flex flex-1 min-h-0 overflow-hidden relative">
-        <div class="hidden w-0 opacity-0 pointer-events-none bg-transparent flex-col border-r border-transparent shrink-0 relative z-10 transition-all duration-300 ease-in-out overflow-hidden" id="spaces-panel">
+        <div class="workspace-sidebar-navigation hidden w-0 opacity-0 pointer-events-none bg-transparent flex-col border-r border-transparent shrink-0 relative z-10 transition-all duration-300 ease-in-out overflow-hidden" id="spaces-panel">
             <div class="p-4 flex items-center justify-between border-b border-outline-variant/50 transition-all duration-300 ease-in-out" data-spaces-header>
                 <div class="flex items-center gap-2" data-spaces-header-title>
                     <span class="material-symbols-outlined text-[20px] text-on-surface-variant transition-transform duration-200" data-spaces-header-expander>expand_more</span>

@@ -18,6 +18,14 @@ Spring Boot 기반의 기본 업무 포털 샘플입니다.
 gradlew bootRun
 ```
 
+STS/Eclipse는 `bin/main`의 리소스로 실행합니다. 외부 편집 후 `fragments/navigation` 등을 찾지 못하면 아래 명령으로 실행 리소스를 갱신한 뒤 앱을 재시작합니다. IDE에서는 프로젝트 Refresh(F5) 후 Project → Clean으로도 갱신할 수 있습니다.
+
+```bash
+gradlew syncIdeResources
+```
+
+이 명령은 리소스만 복사하며 컴파일된 Java 클래스는 보존합니다. Gradle의 `bootRun`과 빌드된 JAR는 Gradle이 처리한 리소스를 사용합니다.
+
 MariaDB로 실행할 때는 `application.yml`의 `mariadb` 프로필 값을 환경에 맞게 수정한 뒤 아래처럼 실행합니다.
 
 ```bash
@@ -45,7 +53,7 @@ gradlew bootRun --args='--spring.profiles.active=mariadb'
 
 ## 구조 포인트
 
-- 공통 헤더/좌측 메뉴는 Thymeleaf fragment로 분리
+- 프로젝트 선택과 공통 메뉴는 상단 Thymeleaf navigation fragment로 분리
 - DB 접근은 `DashboardMapper.xml` 중심의 XML 매퍼 구조
 - H2 URL에 `MODE=MariaDB`를 적용해 초기 개발과 추후 MariaDB 전환 간 차이를 줄임
 

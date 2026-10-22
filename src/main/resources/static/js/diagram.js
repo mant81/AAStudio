@@ -1184,6 +1184,7 @@ function initializeDiagramPage() {
             const option = document.createElement("button");
             option.className = "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-on-surface-variant hover:bg-surface-variant transition-colors";
             option.dataset.diagramOption = "";
+            option.setAttribute("aria-current", diagram.classList.contains("bg-secondary/10") ? "true" : "false");
             option.type = "button";
             option.innerHTML = '<span class="material-symbols-outlined text-[17px]">account_tree</span><span class="truncate"></span>';
             option.querySelector("span:last-child").textContent = name;
@@ -1613,21 +1614,44 @@ function initializeDiagramPage() {
     const isConnectorTool = () => activeTool === "connector";
     const isEraserTool = () => activeTool === "eraser";
 
+    let toolToastTimer;
+    const showToolToast = (icon, message) => {
+        let toast = document.getElementById("canvas-tool-toast");
+        if (!toast) {
+            toast = document.createElement("div");
+            toast.id = "canvas-tool-toast";
+            toast.className = "canvas-tool-toast";
+            toast.setAttribute("role", "status");
+            document.body.appendChild(toast);
+        }
+        toast.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${icon}</span><span>${message}</span>`;
+        toast.classList.add("is-visible");
+        clearTimeout(toolToastTimer);
+        toolToastTimer = setTimeout(() => toast.classList.remove("is-visible"), 1400);
+    };
+
     window.addEventListener("keydown", (event) => {
-        if (event.key === "Alt") {
+        if (event.code === "Space" && !(event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable='true'], .monaco-editor"))) {
+            event.preventDefault();
+            if (isAltKeyPressed) return;
             isAltKeyPressed = true;
-            syncCanvasCursor();
+            activeTool = "move";
+            syncToolButtons();
+            showToolToast("pan_tool", "이동 모드");
         }
     });
     window.addEventListener("keyup", (event) => {
-        if (event.key === "Alt") {
+        if (event.code === "Space" && isAltKeyPressed) {
             isAltKeyPressed = false;
-            syncCanvasCursor();
+            activeTool = "select";
+            syncToolButtons();
+            showToolToast("near_me", "선택 모드");
         }
     });
     window.addEventListener("blur", () => {
         isAltKeyPressed = false;
-        syncCanvasCursor();
+        activeTool = "select";
+        syncToolButtons();
     });
 
     const closeIconPicker = ({ restore = true } = {}) => {
@@ -5051,7 +5075,7 @@ function initializeDiagramPage() {
             return;
         }
 
-        if ((isCanvasMoveTool() && event.button === 0) || event.altKey || event.button === 1) {
+        if ((isCanvasMoveTool() && event.button === 0) || event.button === 1) {
             isPanning = true;
             isTemporaryMoveActive = !isCanvasMoveTool();
             startX = event.clientX;
