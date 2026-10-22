@@ -68,6 +68,10 @@ Ref: orders.user_id > users.id`;
     let schema = { tables: [], refs: [] };
     let parseTimer = null;
     let serverSaveTimer = null;
+    let saveQueue = Promise.resolve();
+    let schemaMutationPending = false;
+    let schemaNameMode = "add";
+    let schemaExportPending = false;
     const sidebar_width_key = "aastudio-db-sidebar-width";
     let erdTool = "select";
     let erdZoom = 1;
@@ -75,6 +79,11 @@ Ref: orders.user_id > users.id`;
     let erdPanY = 0;
     let erdPositions = {};
     let selectedTableName = null;
+    const columnEditModal = document.getElementById("db-column-edit-modal");
+    const columnEditForm = document.getElementById("db-column-edit-form");
+    const columnsModal = document.getElementById("db-columns-modal");
+    const columnsForm = document.getElementById("db-columns-form");
+    let editingColumn = null;
 
     const moveErdToolbarToCanvas = () => {
         if (!(erdToolbar instanceof HTMLElement) || !(erdCanvas instanceof HTMLElement)) return;
@@ -155,20 +164,6 @@ Ref: orders.user_id > users.id`;
             comment.textContent = table.comment;
             propertiesContent.appendChild(comment);
         }
-        table.columns.forEach((column) => {
-            const row = document.createElement("div");
-            row.className = "db-properties-column";
-            const name = document.createElement("strong");
-            name.textContent = column.name;
-            const detail = document.createElement("span");
-            const fk = schema.refs.some((ref) =>
-                ref.fromTable.toLowerCase() === table.name.toLowerCase()
-                && ref.fromColumn.toLowerCase() === column.name.toLowerCase());
-            detail.textContent = [column.type, column.pk ? "PK" : "", fk ? "FK" : "",
-                column.nullable ? "NULL" : "NOT NULL", column.comment || ""].filter(Boolean).join(" · ");
-            row.append(name, detail);
-            propertiesContent.appendChild(row);
-        });
     };
 
     let monacoEditor = null;
@@ -179,12 +174,36 @@ Ref: orders.user_id > users.id`;
         monacoEditor?.setValue(value);
     };
 
+    const selectTableInEditor = (tableName) => {
+        const source = monacoEditor?.getValue() ?? editor?.value ?? "";
+        const declaration = /\b(?:Table|CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?)\s+([`"\w.-]+)\s*([({])/gi;
+        let match;
+        while ((match = declaration.exec(source))) {
+            if (unquote(match[1]).toLowerCase() !== tableName.toLowerCase()) continue;
+            const opening = match.index + match[0].lastIndexOf(match[2]);
+            const closing = findClosing(source, opening, match[2], match[2] === "{" ? "}" : ")");
+            const end = closing < 0 ? opening + 1 : closing + 1;
+            if (monacoEditor) {
+                const model = monacoEditor.getModel();
+                const startPosition = model.getPositionAt(match.index);
+                const endPosition = model.getPositionAt(end);
+                monacoEditor.setSelection({ startLineNumber: startPosition.lineNumber, startColumn: startPosition.column, endLineNumber: endPosition.lineNumber, endColumn: endPosition.column });
+                monacoEditor.revealLineInCenter(startPosition.lineNumber);
+                monacoEditor.focus();
+            } else if (editor) {
+                editor.setSelectionRange(match.index, end);
+            }
+            return;
+        }
+    };
+
     const mountMonacoEditor = () => {
         if (monacoEditor || !(monacoEditorHost instanceof HTMLElement) || !window.monaco) return;
         monacoEditor = window.monaco.editor.create(monacoEditorHost, {
             value: editor?.value ?? "",
             language: "sql",
             theme: "vs-dark",
+            readOnly: !dbCategoryId,
             automaticLayout: true,
             minimap: { enabled: false },
             fontSize: 13,
@@ -440,10 +459,21 @@ Ref: orders.user_id > users.id`;
         && item.toColumn.toLowerCase() === ref.toColumn.toLowerCase()
     )));
 
+    const columnAttributes = (definition, dbml = false) => {
+        const source = dbml ? splitTopLevel(definition).find((attribute) => /^default\s*:/i.test(attribute)) || "" : definition.replace(/\bcomment\s+'(?:''|\\.|[^'])*'/gi, "");
+        const match = source.match(/\bdefault(?:\s*:\s*|\s*(?=\()|\s+)(`[^`]*`|N?'(?:''|\\.|[^'])*'|"(?:""|\\.|[^"])*"|[a-z_]\w*\([^)]*\)|\([^)]*\)|[^,\]\s]+)/i);
+        let defaultValue = match?.[1];
+        if (defaultValue?.startsWith("(") && defaultValue.endsWith(")")) defaultValue = defaultValue.slice(1, -1);
+        if (dbml && defaultValue?.startsWith("'")) defaultValue = defaultValue.replace(/\\'/g, "''");
+        const flags = definition.replace(/'(?:''|\\.|[^'])*'|"(?:""|\\.|[^"])*"|`[^`]*`/g, "");
+        return { defaultValue, unique: /\bunique\b/i.test(flags), increment: /\b(?:increment|auto_increment|identity)\b|generated\s+(?:always|by\s+default)\s+as\s+identity/i.test(flags), pk: dbml ? /\bpk\b/i.test(flags) : /\bprimary\s+key\b/i.test(flags) };
+    };
+
+    const stripSchemaComments = (text) => text.replace(/'(?:''|\\.|[^'])*'|"(?:""|\\.|[^"])*"|`(?:\\.|[^`])*`|\/\*[\s\S]*?\*\/|--[^\r\n]*|\/\/[^\r\n]*/g,
+        (token) => /^["'`]/.test(token) ? token : token.replace(/[^\r\n]/g, " "));
+
     const parseDdl = (text) => {
-        const cleaned = text
-            .replace(/\/\*[\s\S]*?\*\//g, "")
-            .replace(/--[^\r\n]*/g, "");
+        const cleaned = stripSchemaComments(text);
         const tables = [];
         const refs = [];
         const tablePattern = /create\s+table\s+(?:if\s+not\s+exists\s+)?([^\s(]+)\s*\(/gi;
@@ -453,18 +483,17 @@ Ref: orders.user_id > users.id`;
             const close = findClosing(cleaned, tableMatch.index + tableMatch[0].lastIndexOf("("), "(", ")");
             if (close < 0) continue;
             const body = cleaned.slice(tableMatch.index + tableMatch[0].length, close);
+            const primaryNames = [];
             splitTopLevel(body).forEach((definition) => {
                 const foreign = definition.match(/(?:constraint\s+[^\s]+\s+)?foreign\s+key\s*\(([^)]+)\)\s+references\s+([^\s(]+)\s*\(([^)]+)\)/i);
                 if (foreign) {
-                    refs.push({ fromTable: table.name, fromColumn: unquote(foreign[1].split(",")[0]), toTable: unquote(foreign[2]), toColumn: unquote(foreign[3].split(",")[0]) });
+                    const fromColumns = foreign[1].split(",").map(unquote), toColumns = foreign[3].split(",").map(unquote);
+                    refs.push({ fromTable: table.name, fromColumn: fromColumns[0], fromColumns, toTable: unquote(foreign[2]), toColumn: toColumns[0], toColumns });
                     return;
                 }
-                const primary = definition.match(/^primary\s+key\s*\(([^)]+)\)/i);
+                const primary = definition.match(/^(?:constraint\s+[^\s]+\s+)?primary\s+key\s*\(([^)]+)\)/i);
                 if (primary) {
-                    primary[1].split(",").map(unquote).forEach((name) => {
-                        const column = table.columns.find((item) => item.name.toLowerCase() === name.toLowerCase());
-                        if (column) column.pk = true;
-                    });
+                    primaryNames.push(...primary[1].split(",").map(unquote));
                     return;
                 }
                 if (/^(unique|check|constraint|key|index)\b/i.test(definition)) return;
@@ -476,9 +505,10 @@ Ref: orders.user_id > users.id`;
                 if (inlineRef) {
                     refs.push({ fromTable: table.name, fromColumn: name, toTable: unquote(inlineRef[1]), toColumn: unquote(inlineRef[2].split(",")[0]) });
                 }
-                const pk = /\bprimary\s+key\b/i.test(rest);
-                addColumn(table, { name, type: normalizeType(rest), pk, nullable: !pk && !/\bnot\s+null\b/i.test(rest) });
+                const metadata = columnAttributes(rest);
+                addColumn(table, { name, type: normalizeType(rest), ...metadata, nullable: !metadata.pk && !/\bnot\s+null\b/i.test(rest) });
             });
+            table.columns.forEach((column) => { if (primaryNames.some((name) => name.toLowerCase() === column.name.toLowerCase())) { column.pk = true; column.nullable = false; } });
             tableMatch.lastIndex = close + 1;
         }
         const alterReferencePattern = /alter\s+table\s+([^\s]+)[\s\S]*?foreign\s+key\s*\(([^)]+)\)\s+references\s+([^\s(]+)\s*\(([^)]+)\)/gi;
@@ -486,9 +516,9 @@ Ref: orders.user_id > users.id`;
         while ((alterReference = alterReferencePattern.exec(cleaned))) {
             refs.push({
                 fromTable: unquote(alterReference[1]),
-                fromColumn: unquote(alterReference[2].split(",")[0]),
+                fromColumn: unquote(alterReference[2].split(",")[0]), fromColumns: alterReference[2].split(",").map(unquote),
                 toTable: unquote(alterReference[3]),
-                toColumn: unquote(alterReference[4].split(",")[0])
+                toColumn: unquote(alterReference[4].split(",")[0]), toColumns: alterReference[4].split(",").map(unquote)
             });
         }
         return { tables, refs: uniqueReferences(refs) };
@@ -502,7 +532,7 @@ Ref: orders.user_id > users.id`;
             const valueMatch = noteMatch[2].match(/(?:value\s*:\s*)?['"]([\s\S]*?)['"]/i);
             if (valueMatch) notes.push({ target: unquote(noteMatch[1]), text: valueMatch[1].trim() });
         }
-        const cleaned = text.replace(/\/\/[^\r\n]*/g, "");
+        const cleaned = stripSchemaComments(text);
         const tables = [];
         const refs = [];
         const tablePattern = /table\s+([`"\w.-]+)\s*\{/gi;
@@ -513,12 +543,12 @@ Ref: orders.user_id > users.id`;
             const table = ensureTable(tables, unquote(tableMatch[1]));
             const body = cleaned.slice(tableMatch.index + tableMatch[0].length, close);
             body.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).forEach((line) => {
-                const columnMatch = line.match(/^([`"\w.-]+)\s+([^\s\[]+(?:\s+(?:varying|precision))?(?:\([^)]*\))?)(?:\s*\[([^\]]+)\])?/i);
+                const columnMatch = line.match(/^([`"\w.-]+)\s+([A-Za-z][\w]*(?:\s+(?:varying|precision))?(?:\s*\([^)]*\))?)(?:\s*\[([^\]]+)\])?/i);
                 if (!columnMatch) return;
                 const attributes = columnMatch[3] ?? "";
-                const pk = /\bpk\b/i.test(attributes);
+                const metadata = columnAttributes(attributes, true);
                 const inlineNote = attributes.match(/note\s*:\s*['"]([^'"]*)['"]/i)?.[1] ?? "";
-                addColumn(table, { name: unquote(columnMatch[1]), type: columnMatch[2], pk, nullable: !pk && !/not null/i.test(attributes), comment: inlineNote });
+                addColumn(table, { name: unquote(columnMatch[1]), type: columnMatch[2], ...metadata, nullable: !metadata.pk && !/not null/i.test(attributes), comment: inlineNote });
                 const inlineRef = attributes.match(/ref\s*:\s*[<>-]\s*([^.\s\]]+)\.([^\s\]]+)/i);
                 if (inlineRef) {
                     refs.push({ fromTable: table.name, fromColumn: unquote(columnMatch[1]), toTable: unquote(inlineRef[1]), toColumn: unquote(inlineRef[2]) });
@@ -551,6 +581,40 @@ Ref: orders.user_id > users.id`;
         if (inputType) inputType.textContent = ddl ? "DDL" : "DBML";
     };
 
+    const syncColumnEditorValues = (table) => {
+        [...document.querySelectorAll("#db-table-columns-editor .db-columns-grid-row")].forEach((row, index) => {
+            const column = table.columns[index];
+            const name = row.querySelector("[data-column-name]")?.value.trim();
+            const type = row.querySelector("[data-column-type]")?.value.trim();
+            if (column && name && type) Object.assign(column, {
+                name,
+                type,
+                comment: row.querySelector("[data-column-comment]")?.value.trim() || "",
+                defaultValue: row.querySelector("[data-column-default]")?.value.trim() || undefined,
+                nullable: row.querySelector("[data-column-nullable]")?.checked !== true
+            });
+        });
+    };
+    const openColumnsEditor = (table) => {
+        const columnEditor = document.getElementById("db-table-columns-editor");
+        if (!(columnEditor instanceof HTMLElement)) return;
+        columnEditor.replaceChildren(...table.columns.map((column, index) => {
+            const row = document.createElement("div");
+            row.className = "db-columns-grid db-columns-grid-row";
+            row.innerHTML = `<input id="db-column-name-${index}" name="column-name-${index}" data-column-name value="${escapeHtml(column.name)}" aria-label="컬럼명"><span>${index + 1}</span><input id="db-column-type-${index}" name="column-type-${index}" data-column-type value="${escapeHtml(column.type)}" aria-label="타입"><label><input id="db-column-nullable-${index}" name="column-nullable-${index}" data-column-nullable type="checkbox" ${column.nullable ? "" : "checked"}></label><input id="db-column-default-${index}" name="column-default-${index}" data-column-default value="${escapeHtml(column.defaultValue || "")}" aria-label="Default"><input id="db-column-comment-${index}" name="column-comment-${index}" data-column-comment value="${escapeHtml(column.comment || "")}" aria-label="Comment"><span class="db-columns-order-actions"><button type="button" data-column-up aria-label="위로 이동" title="위로 이동">▲</button><button type="button" data-column-down aria-label="아래로 이동" title="아래로 이동">▼</button><button type="button" data-column-delete aria-label="컬럼 삭제" title="컬럼 삭제">×</button></span>`;
+            const deleteCell = document.createElement("span");
+            deleteCell.className = "db-columns-delete-action";
+            const deleteButton = row.querySelector("[data-column-delete]");
+            if (deleteButton) { deleteButton.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">delete</span>'; deleteButton.parentElement?.removeChild(deleteButton); deleteCell.appendChild(deleteButton); row.appendChild(deleteCell); }
+            row.querySelector("[data-column-up]").disabled = index === 0;
+            row.querySelector("[data-column-down]").disabled = index === table.columns.length - 1;
+            row.querySelector("[data-column-up]")?.addEventListener("click", () => { syncColumnEditorValues(table); if (index > 0) [table.columns[index - 1], table.columns[index]] = [table.columns[index], table.columns[index - 1]]; openColumnsEditor(table); });
+            row.querySelector("[data-column-down]")?.addEventListener("click", () => { syncColumnEditorValues(table); if (index < table.columns.length - 1) [table.columns[index], table.columns[index + 1]] = [table.columns[index + 1], table.columns[index]]; openColumnsEditor(table); });
+            row.querySelector("[data-column-delete]")?.addEventListener("click", () => { syncColumnEditorValues(table); table.columns.splice(index, 1); openColumnsEditor(table); });
+            return row;
+        }));
+    };
+
     const renderSidebar = () => {
         const tableCount = document.getElementById("db-table-count");
         if (tableCount) tableCount.textContent = String(schema.tables.length);
@@ -558,6 +622,10 @@ Ref: orders.user_id > users.id`;
         if (!(list instanceof HTMLElement)) return;
         list.replaceChildren();
         schema.tables.forEach((table, index) => {
+            const key = table.name.toLowerCase();
+            const hidden = erdPositions[key]?.hidden === true;
+            const wrapper = document.createElement("div");
+            wrapper.className = "db-table-list-item";
             const row = document.createElement("button");
             const active = selectedTableName ? table.name === selectedTableName : index === 0;
             row.className = `flex w-full items-center gap-2 rounded-lg border-l-2 px-2 py-1.5 text-left font-code-sm text-code-sm transition-colors ${active ? "border-secondary bg-secondary/5 text-secondary" : "border-transparent text-on-surface-variant hover:bg-surface-container-lowest hover:text-primary"}`;
@@ -582,7 +650,60 @@ Ref: orders.user_id > users.id`;
                     renderProperties();
                 }
             });
-            list.appendChild(row);
+            const edit = document.createElement("button");
+            edit.type = "button";
+            edit.className = "db-table-edit-toggle";
+            edit.setAttribute("aria-label", `${table.name} 수정`);
+            edit.title = "테이블 설정";
+            edit.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">edit</span>';
+            edit.addEventListener("click", (event) => {
+                event.stopPropagation();
+                editingColumn = { tableName: table.name, table };
+                document.getElementById("db-columns-subtitle").textContent = table.name;
+                const columnEditor = document.getElementById("db-table-columns-editor");
+                columnEditor.replaceChildren(...table.columns.map((column, index) => {
+                    const row = document.createElement("div");
+                    row.className = "db-columns-grid db-columns-grid-row";
+                    row.innerHTML = `<input id="db-column-name-${index}" name="column-name-${index}" data-column-name value="${escapeHtml(column.name)}" aria-label="컬럼명"><span>${index + 1}</span><input id="db-column-type-${index}" name="column-type-${index}" data-column-type value="${escapeHtml(column.type)}" aria-label="타입"><label><input id="db-column-nullable-${index}" name="column-nullable-${index}" data-column-nullable type="checkbox" ${column.nullable ? "" : "checked"}></label><input id="db-column-default-${index}" name="column-default-${index}" data-column-default value="${escapeHtml(column.defaultValue || "")}" aria-label="Default"><input id="db-column-comment-${index}" name="column-comment-${index}" data-column-comment value="${escapeHtml(column.comment || "")}" aria-label="Comment"><span class="db-columns-order-actions"><button type="button" data-column-up aria-label="위로 이동" title="위로 이동">▲</button><button type="button" data-column-down aria-label="아래로 이동" title="아래로 이동">▼</button><button type="button" data-column-delete aria-label="컬럼 삭제" title="컬럼 삭제">×</button></span>`;
+                    const deleteCell = document.createElement("span");
+                    deleteCell.className = "db-columns-delete-action";
+                    const deleteButton = row.querySelector("[data-column-delete]");
+                    if (deleteButton) { deleteButton.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">delete</span>'; deleteButton.parentElement?.removeChild(deleteButton); deleteCell.appendChild(deleteButton); row.appendChild(deleteCell); }
+                    row.querySelector("[data-column-up]").disabled = index === 0;
+                    row.querySelector("[data-column-down]").disabled = index === table.columns.length - 1;
+                    return row;
+                }));
+                [...columnEditor.querySelectorAll(".db-columns-grid-row")].forEach((row, index) => {
+                    row.querySelector("[data-column-up]")?.addEventListener("click", () => {
+                        syncColumnEditorValues(table);
+                        if (index > 0) [table.columns[index - 1], table.columns[index]] = [table.columns[index], table.columns[index - 1]];
+                        openColumnsEditor(table);
+                    });
+                    row.querySelector("[data-column-down]")?.addEventListener("click", () => {
+                        syncColumnEditorValues(table);
+                        if (index < table.columns.length - 1) [table.columns[index], table.columns[index + 1]] = [table.columns[index + 1], table.columns[index]];
+                        openColumnsEditor(table);
+                    });
+                    row.querySelector("[data-column-delete]")?.addEventListener("click", () => { syncColumnEditorValues(table); table.columns.splice(index, 1); openColumnsEditor(table); });
+                });
+                columnsModal.classList.remove("hidden");
+                columnsModal.classList.add("flex");
+            });
+            const visibility = document.createElement("button");
+            visibility.type = "button";
+            visibility.className = "db-table-visibility-toggle";
+            visibility.setAttribute("aria-label", `${table.name} ${hidden ? "보이기" : "숨기기"}`);
+            visibility.title = hidden ? "테이블 보이기" : "테이블 숨기기";
+            visibility.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${hidden ? "visibility_off" : "visibility"}</span>`;
+            visibility.addEventListener("click", () => {
+                erdPositions[key] = { ...erdPositions[key], hidden: !hidden };
+                if (!hidden && selectedTableName === table.name) selectedTableName = null;
+                renderSidebar();
+                renderErd();
+                saveServerDocument(editor?.value ?? "", erdPositions);
+            });
+            wrapper.append(row, edit, visibility);
+            list.appendChild(wrapper);
         });
     };
 
@@ -641,28 +762,63 @@ Ref: orders.user_id > users.id`;
         const columns = Math.max(1, Math.min(3, Math.ceil(Math.sqrt(schema.tables.length))));
         schema.tables.forEach((table, index) => {
             const node = document.createElement("article");
-            node.className = "db-erd-table-node absolute w-64 overflow-hidden rounded-xl border border-outline-variant bg-surface-white shadow-md transition-shadow";
+            node.className = "db-erd-table-node absolute w-64 rounded-xl border border-outline-variant shadow-md transition-shadow";
             const savedPosition = erdPositions[table.name.toLowerCase()];
+            if (savedPosition?.hidden === true) return;
             const defaultX = 48 + (index % columns) * 300;
             const defaultY = 48 + Math.floor(index / columns) * 230;
             const x = Number.isFinite(savedPosition?.x) ? Math.max(12, savedPosition.x) : defaultX;
             const y = Number.isFinite(savedPosition?.y) ? Math.max(12, savedPosition.y) : defaultY;
             node.style.left = `${x}px`;
             node.style.top = `${y}px`;
+            node.style.setProperty("--erd-header-color", savedPosition?.color || "#006399");
             node.dataset.erdTable = table.name;
             node.classList.toggle("is-selected", table.name === selectedTableName);
-            const relationCount = schema.refs.filter((ref) => ref.fromTable.toLowerCase() === table.name.toLowerCase() || ref.toTable.toLowerCase() === table.name.toLowerCase()).length;
             const rows = table.columns.map((column) => {
                 const foreignKey = schema.refs.some((ref) => ref.fromTable.toLowerCase() === table.name.toLowerCase() && ref.fromColumn.toLowerCase() === column.name.toLowerCase());
                 const role = column.pk ? "PK" : foreignKey ? "FK" : "";
-                const comment = column.comment ? `<span class="material-symbols-outlined db-erd-comment-icon" title="${escapeHtml(column.comment)}">comment</span>` : "";
+                const comment = column.comment ? `<span class="db-erd-column-note" role="tooltip"><span class="db-erd-column-note-title"><span class="material-symbols-outlined">view_column</span><strong>${escapeHtml(column.name)}</strong><code>${escapeHtml(column.type)}</code></span><span class="db-erd-column-note-label">Note</span><span class="db-erd-column-note-text">${escapeHtml(column.comment)}</span></span>` : "";
                 const typeMatch = String(column.type).match(/^(.+?)(\s*\([^)]*\))?$/);
                 const typeName = typeMatch?.[1]?.trim() || column.type;
                 const typeSize = typeMatch?.[2]?.trim() || "";
                 const typeLabel = `${escapeHtml(typeName)}${typeSize ? `<span class="db-erd-column-size">${escapeHtml(typeSize)}</span>` : ""}`;
-                return `<div class="db-erd-column-row"><span class="db-erd-column-name ${column.pk ? "is-primary" : ""}">${role ? `<span class="db-erd-column-role ${column.pk ? "is-pk" : "is-fk"}">${role}</span>` : ""}<span class="truncate">${escapeHtml(column.name)}</span>${comment}</span><span class="db-erd-column-type">${typeLabel}${column.nullable ? "" : '<span class="db-erd-required">!</span>'}</span></div>`;
+                return `<div class="db-erd-column-row"><span class="db-erd-column-name ${column.pk ? "is-primary" : ""}">${role ? `<span class="db-erd-column-role ${column.pk ? "is-pk" : "is-fk"}">${role}</span>` : ""}<span class="truncate">${escapeHtml(column.name)}</span>${column.comment ? '<span class="material-symbols-outlined db-erd-column-comment-mark" aria-label="코멘트 있음">comment</span>' : ""}</span><span class="db-erd-column-type">${typeLabel}${column.nullable ? "" : '<span class="db-erd-required">!</span>'}</span>${comment}</div>`;
             }).join("");
-            node.innerHTML = `<header class="db-erd-table-header"><span class="flex min-w-0 items-center gap-2"><span class="material-symbols-outlined text-[17px]">table</span><span class="truncate font-code-sm text-code-sm font-semibold">${escapeHtml(table.name)}</span></span><span class="db-erd-relation-count">${relationCount}</span></header><div>${rows || '<div class="px-3 py-3 text-xs text-on-surface-variant">컬럼 없음</div>'}</div>`;
+            node.innerHTML = `<header class="db-erd-table-header"><span class="flex min-w-0 items-center gap-2"><span class="material-symbols-outlined text-[17px]">table</span><span class="truncate font-code-sm text-code-sm font-semibold">${escapeHtml(table.name)}</span></span><span class="db-erd-header-actions"><button class="db-erd-table-settings" type="button" aria-label="${escapeHtml(table.name)} 테이블 설정" title="테이블 설정"><span class="material-symbols-outlined">settings</span></button></span></header><div>${rows || '<div class="px-3 py-3 text-xs text-on-surface-variant">컬럼 없음</div>'}</div>`;
+            node.querySelector(".db-erd-table-settings")?.addEventListener("click", (event) => {
+                event.stopPropagation();
+                if (editingColumn?.tableName === table.name && !columnEditModal.classList.contains("hidden")) {
+                    closeColumnEditModal();
+                    return;
+                }
+                if (editingColumn) closeColumnEditModal();
+                editingColumn = { tableName: table.name, table, header: node.querySelector(".db-erd-table-header"), button: event.currentTarget, originalColor: savedPosition?.color || "#006399" };
+                editingColumn.button.setAttribute("aria-expanded", "true");
+                const name = document.getElementById("db-column-edit-name");
+                name.value = table.name;
+                const color = savedPosition?.color || "#006399";
+                editingColumn.selectedColor = color;
+                columnEditModal.classList.remove("hidden");
+                const bounds = node.getBoundingClientRect();
+                const cardWidth = columnEditForm.offsetWidth;
+                const cardHeight = columnEditForm.offsetHeight;
+                const right = bounds.right + 12;
+                const onRight = right + cardWidth <= window.innerWidth - 12;
+                const left = onRight ? right : Math.max(12, bounds.left - cardWidth - 12);
+                const top = Math.max(12, Math.min(bounds.top, window.innerHeight - cardHeight - 12));
+                columnEditForm.style.left = `${left}px`;
+                columnEditForm.style.top = `${top}px`;
+                columnEditModal.classList.toggle("is-left", !onRight);
+                const arrow = columnEditModal.querySelector(".db-table-settings-arrow");
+                arrow.style.left = `${onRight ? left - 7 : left + cardWidth - 5}px`;
+                arrow.style.top = `${Math.max(top + 20, Math.min(bounds.top + 18, top + cardHeight - 24))}px`;
+            });
+            node.addEventListener("dblclick", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const settings = node.querySelector(".db-erd-table-settings");
+                if (settings instanceof HTMLButtonElement) settings.dispatchEvent(new MouseEvent("click", { bubbles: false, cancelable: true, view: window }));
+            }, true);
             if (table.comment) {
                 node.querySelector(".db-erd-table-header > span")?.insertAdjacentHTML("beforeend", `<span class="material-symbols-outlined db-erd-comment-icon" title="${escapeHtml(table.comment)}">comment</span>`);
             }
@@ -674,8 +830,12 @@ Ref: orders.user_id > users.id`;
                 node.classList.add("is-selected");
                 selectedTableName = table.name;
                 renderProperties();
+                selectTableInEditor(table.name);
             });
             node.addEventListener("pointerdown", (event) => {
+                if (event.target.closest(".db-erd-table-settings")) return;
+                if (event.detail > 1) return;
+                if (erdCanvas?.classList.contains("is-space-pan")) return;
                 if (erdTool !== "select" || event.button !== 0) return;
                 event.preventDefault();
                 node.setPointerCapture?.(event.pointerId);
@@ -693,6 +853,7 @@ Ref: orders.user_id > users.id`;
                 const stop = () => {
                     node.classList.remove("is-dragging");
                     erdPositions[table.name.toLowerCase()] = {
+                        ...erdPositions[table.name.toLowerCase()],
                         x: Math.round(node.offsetLeft),
                         y: Math.round(node.offsetTop)
                     };
@@ -739,30 +900,41 @@ Ref: orders.user_id > users.id`;
         applyErdViewport();
     };
 
-    const saveServerDocument = async (text, layout = erdPositions, targetCategoryId = dbCategoryId, targetCategoryName = currentSchemaName?.textContent?.trim() || "E-Commerce Schema") => {
+    const saveServerDocument = (text, layout = erdPositions, targetCategoryId = dbCategoryId, targetCategoryName = currentSchemaName?.textContent?.trim() || "E-Commerce Schema") => {
+        if (!targetCategoryId) return Promise.resolve(false);
+        const body = JSON.stringify({ schemaText: text, layoutJson: JSON.stringify(layout) });
         setDbSaveStatus("pending");
-        try {
-            const query = new URLSearchParams({ categoryId: targetCategoryId, categoryName: targetCategoryName });
-            const response = await fetch(`/api/db-modeling/schema?${query.toString()}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                keepalive: true,
-                body: JSON.stringify({ schemaText: text, layoutJson: JSON.stringify(layout) })
-            });
-            if (!response.ok) throw new Error(`DB 모델 저장 실패: ${response.status}`);
-            setDbSaveStatus("saved");
-            setStatus(`${schema.tables.length}개 테이블 · DB 저장 완료`);
-        } catch (error) {
-            console.warn(error);
-            setDbSaveStatus("error");
-            setStatus("DB 저장에 실패했습니다. 입력 내용은 브라우저에 보관됩니다.", true);
-        }
+        saveQueue = saveQueue.then(async () => {
+            try {
+                const query = new URLSearchParams({ categoryId: targetCategoryId, categoryName: targetCategoryName });
+                const response = await fetch(`/api/db-modeling/schema?${query.toString()}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    keepalive: true,
+                    body
+                });
+                if (!response.ok) throw new Error(`DB 모델 저장 실패: ${response.status}`);
+                setDbSaveStatus("saved");
+                setStatus(`${schema.tables.length}개 테이블 · DB 저장 완료`);
+                return true;
+            } catch (error) {
+                console.warn(error);
+                setDbSaveStatus("error");
+                setStatus("DB 저장에 실패했습니다. 입력 내용은 브라우저에 보관됩니다.", true);
+                return false;
+            }
+        });
+        return saveQueue;
     };
 
     const scheduleServerSave = (text, layout = erdPositions) => {
         window.clearTimeout(serverSaveTimer);
+        if (schemaMutationPending || !dbCategoryId) return;
+        const categoryId = dbCategoryId;
+        const categoryName = currentSchemaName?.textContent?.trim() || "E-Commerce Schema";
+        const positions = structuredClone(layout);
         setDbSaveStatus("pending");
-        serverSaveTimer = window.setTimeout(() => saveServerDocument(text, layout), 700);
+        serverSaveTimer = window.setTimeout(() => saveServerDocument(text, positions, categoryId, categoryName), 700);
     };
 
     const applySchema = (text, switchToErd = false, persist = true) => {
@@ -782,6 +954,7 @@ Ref: orders.user_id > users.id`;
     };
 
     const loadCategory = (categoryId) => {
+        if (schemaMutationPending) return Promise.resolve();
         const query = new URLSearchParams({ categoryId });
         return fetch(`/api/db-modeling/schema?${query.toString()}`, { headers: { Accept: "application/json" } })
             .then((response) => {
@@ -789,10 +962,30 @@ Ref: orders.user_id > users.id`;
                 return response.json();
             })
             .then((document) => {
+                dbCategories = Array.isArray(document?.categories) ? document.categories : dbCategories;
+                if (!dbCategories.length) {
+                    dbCategoryId = "";
+                    localStorage.removeItem(categoryStorageKey);
+                    window.clearTimeout(parseTimer);
+                    window.clearTimeout(serverSaveTimer);
+                    setEditorText("");
+                    schema = { tables: [], refs: [] };
+                    erdPositions = {};
+                    selectedTableName = null;
+                    renderSidebar();
+                    renderErd();
+                    renderSchemaOptions();
+                    if (currentSchemaName) currentSchemaName.textContent = "모델링 없음";
+                    monacoEditor?.updateOptions({ readOnly: true });
+                    setManagementAvailability();
+                    setStatus("+ 버튼으로 새 모델링을 추가하세요.");
+                    setDbSaveStatus("saved", "모델링 없음");
+                    return;
+                }
+                if (!dbCategories.some((item) => item.categoryId === categoryId)) return loadCategory(dbCategories[0].categoryId);
                 dbCategoryId = categoryId;
                 localStorage.setItem(categoryStorageKey, dbCategoryId);
                 storageKey = `aastudio-db-modeling-schema:${decodeURIComponent(currentProjectId || "project-1")}:${dbCategoryId}`;
-                dbCategories = Array.isArray(document?.categories) ? document.categories : dbCategories;
                 const category = dbCategories.find((item) => item.categoryId === dbCategoryId);
                 const categoryName = category?.categoryName || "E-Commerce Schema";
                 if (currentSchemaName) currentSchemaName.textContent = categoryName;
@@ -806,6 +999,8 @@ Ref: orders.user_id > users.id`;
                 updateEditorGutter();
                 setInputType(categoryText);
                 applySchema(categoryText, false, false);
+                monacoEditor?.updateOptions({ readOnly: false });
+                setManagementAvailability();
             })
             .catch((error) => console.warn(error));
     };
@@ -815,11 +1010,17 @@ Ref: orders.user_id > users.id`;
         schemaAddModal?.classList.remove("flex");
     };
 
-    const openSchemaAddModal = () => {
+    const openSchemaAddModal = (mode = "add") => {
+        if (schemaMutationPending) return;
+        schemaNameMode = mode === "rename" ? "rename" : "add";
+        document.getElementById("db-schema-name-title").textContent = schemaNameMode === "rename" ? "이름 변경" : "스키마 추가";
+        document.getElementById("db-schema-name-description").textContent = schemaNameMode === "rename" ? "현재 모델링의 이름을 변경합니다." : "새 DB 스키마 카테고리를 추가합니다.";
+        document.getElementById("db-schema-name-submit").textContent = schemaNameMode === "rename" ? "변경" : "추가";
+        document.getElementById("db-schema-name-error").textContent = "";
         schemaAddModal?.classList.remove("hidden");
         schemaAddModal?.classList.add("flex");
         if (schemaAddName instanceof HTMLInputElement) {
-            schemaAddName.value = "";
+            schemaAddName.value = schemaNameMode === "rename" ? currentSchemaName?.textContent?.trim() || "" : "";
             schemaAddName.focus();
         }
     };
@@ -845,15 +1046,13 @@ Ref: orders.user_id > users.id`;
     };
 
     const addSchemaCategory = (rawName) => {
+        if (schemaMutationPending) return false;
         const name = String(rawName ?? "").trim();
-        if (!name) {
+        if (!name || name.length > 120) {
             schemaAddName?.focus();
             return false;
         }
-        const baseId = name.toLowerCase().replace(/[^a-z0-9가-힣]+/g, "-").replace(/^-|-$/g, "") || "schema";
-        let categoryId = baseId;
-        let suffix = 2;
-        while (dbCategories.some((item) => item.categoryId === categoryId)) categoryId = `${baseId}-${suffix++}`;
+        const categoryId = `schema-${crypto.randomUUID()}`;
         dbCategoryId = categoryId;
         localStorage.setItem(categoryStorageKey, dbCategoryId);
         storageKey = `aastudio-db-modeling-schema:${decodeURIComponent(currentProjectId || "project-1")}:${dbCategoryId}`;
@@ -864,6 +1063,8 @@ Ref: orders.user_id > users.id`;
         setEditorText(sample);
         applySchema(sample, false, false);
         saveServerDocument(sample, {}, categoryId, name);
+        monacoEditor?.updateOptions({ readOnly: false });
+        setManagementAvailability();
         closeSchemaMenu();
         return true;
     };
@@ -982,8 +1183,22 @@ Ref: orders.user_id > users.id`;
         erdZoom = Math.max(0.4, Number((erdZoom - 0.1).toFixed(2)));
         applyErdViewport();
     });
+    erdCanvas?.addEventListener("wheel", (event) => {
+        if (!event.ctrlKey || event.target.closest("#erd-toolbar")) return;
+        event.preventDefault();
+        const nextZoom = Math.max(0.4, Math.min(2, Number((erdZoom + (event.deltaY < 0 ? 0.1 : -0.1)).toFixed(2))));
+        if (nextZoom === erdZoom) return;
+        const bounds = erdCanvas.getBoundingClientRect();
+        const x = event.clientX - bounds.left;
+        const y = event.clientY - bounds.top;
+        erdPanX = x - (x - erdPanX) * nextZoom / erdZoom;
+        erdPanY = y - (y - erdPanY) * nextZoom / erdZoom;
+        erdZoom = nextZoom;
+        applyErdViewport();
+    }, { passive: false });
     erdCanvas?.addEventListener("pointerdown", (event) => {
-        if (erdTool !== "pan" && event.button !== 1) return;
+        if (!(erdTool === "pan" && event.button === 0) && event.button !== 1) return;
+        if (event.target.closest("#erd-toolbar, .db-erd-table-settings")) return;
         event.preventDefault();
         erdCanvas.setPointerCapture?.(event.pointerId);
         const startX = event.clientX;
@@ -1006,6 +1221,37 @@ Ref: orders.user_id > users.id`;
         erdCanvas.addEventListener("pointerup", stop, { once: true });
         erdCanvas.addEventListener("pointercancel", stop, { once: true });
     });
+    let toolToastTimer;
+    const showToolToast = (icon, message) => {
+        let toast = document.getElementById("canvas-tool-toast");
+        if (!toast) {
+            toast = document.createElement("div");
+            toast.id = "canvas-tool-toast";
+            toast.className = "canvas-tool-toast";
+            toast.setAttribute("role", "status");
+            erdCanvas.appendChild(toast);
+        }
+        toast.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${icon}</span><span>${message}</span>`;
+        toast.classList.add("is-visible");
+        clearTimeout(toolToastTimer);
+        toolToastTimer = setTimeout(() => toast.classList.remove("is-visible"), 1400);
+    };
+    document.addEventListener("keydown", (event) => {
+        if (event.code !== "Space" || (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable='true'], .monaco-editor"))) return;
+        event.preventDefault();
+        if (erdCanvas?.classList.contains("is-space-pan")) return;
+        erdCanvas?.classList.add("is-space-pan");
+        setErdTool("pan");
+        showToolToast("pan_tool", "이동 모드");
+    });
+    const releaseSpacePan = () => {
+        const wasMoving = erdCanvas?.classList.contains("is-space-pan");
+        erdCanvas?.classList.remove("is-space-pan");
+        setErdTool("select");
+        if (wasMoving) showToolToast("near_me", "선택 모드");
+    };
+    document.addEventListener("keyup", (event) => { if (event.code === "Space" && erdCanvas?.classList.contains("is-space-pan")) releaseSpacePan(); });
+    window.addEventListener("blur", releaseSpacePan);
     setErdTool("select");
     applyErdViewport();
     setErdGridVisible(localStorage.getItem(erdGridStorageKey) !== "false");
@@ -1047,15 +1293,117 @@ Ref: orders.user_id > users.id`;
     schemaAddModal?.addEventListener("click", (event) => {
         if (event.target === schemaAddModal) closeSchemaAddModal();
     });
-    schemaAddForm?.addEventListener("submit", (event) => {
+    schemaAddForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
-        if (addSchemaCategory(schemaAddName?.value)) closeSchemaAddModal();
+        if (schemaNameMode === "rename") {
+            if (await renameSchema(schemaAddName?.value)) closeSchemaAddModal();
+        } else if (addSchemaCategory(schemaAddName?.value)) closeSchemaAddModal();
     });
     document.addEventListener("click", (event) => {
         if (!(event.target instanceof Node) || currentSchemaButton?.contains(event.target) || schemaMenu?.contains(event.target)) return;
         closeSchemaMenu();
     });
     const render_editor = () => applySchema(editor?.value ?? "", true);
+    const closeColumnEditModal = (saved = false) => {
+        if (!saved && editingColumn?.header) editingColumn.header.parentElement.style.setProperty("--erd-header-color", editingColumn.originalColor);
+        editingColumn?.button?.setAttribute("aria-expanded", "false");
+        columnEditModal?.classList.add("hidden");
+        editingColumn = null;
+    };
+    columnEditModal?.addEventListener("pointerdown", (event) => { if (event.target === columnEditModal) closeColumnEditModal(); });
+    window.addEventListener("resize", () => closeColumnEditModal());
+    document.getElementById("db-column-edit-close")?.addEventListener("click", () => closeColumnEditModal());
+    document.getElementById("db-column-edit-cancel")?.addEventListener("click", () => closeColumnEditModal());
+    const closeColumnsModal = () => { columnsModal?.classList.add("hidden"); columnsModal?.classList.remove("flex"); editingColumn = null; };
+    document.getElementById("db-columns-close")?.addEventListener("click", closeColumnsModal);
+    document.getElementById("db-columns-cancel")?.addEventListener("click", closeColumnsModal);
+    columnsModal?.addEventListener("click", (event) => { if (event.target === columnsModal) closeColumnsModal(); });
+    const serializeTableInSource = (source, table) => {
+        const text = String(source ?? "");
+        const dbml = !/create\s+table/i.test(text);
+        const tablePattern = dbml
+            ? new RegExp(`(table\\s+${table.name.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}\\s*\\{)`, "i")
+            : new RegExp(`(create\\s+table\\s+(?:if\\s+not\\s+exists\\s+)?${table.name.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}\\s*\\()`, "i");
+        const match = tablePattern.exec(text);
+        if (!match) return text;
+        const opening = match.index + match[0].length - 1;
+        const closing = findClosing(text, opening, dbml ? "{" : "(", dbml ? "}" : ")");
+        if (closing < 0) return text;
+        const lines = table.columns.map((column) => {
+            const attrs = [];
+            if (column.pk) attrs.push(dbml ? "pk" : "PRIMARY KEY");
+            if (column.unique) attrs.push("unique");
+            if (column.increment) attrs.push("increment");
+            if (!column.nullable) attrs.push("not null");
+            if (column.defaultValue) attrs.push(dbml ? `default: ${column.defaultValue}` : `DEFAULT ${column.defaultValue}`);
+            if (dbml && column.comment) attrs.push(`note: "${String(column.comment).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
+            const suffix = dbml ? (attrs.length ? ` [${attrs.join(", ")}]` : "") : ` ${attrs.join(" ")}`;
+            return `  ${column.name} ${column.type}${suffix}${dbml ? "" : ","}`;
+        });
+        return `${text.slice(0, opening + 1)}\n${lines.join("\n")}\n${text.slice(closing)}`;
+    };
+    document.getElementById("db-column-add")?.addEventListener("click", () => {
+        if (!editingColumn?.table) return;
+        syncColumnEditorValues(editingColumn.table);
+        const index = editingColumn.table.columns.length + 1;
+        editingColumn.table.columns.push({ name: `new_column_${index}`, type: "varchar", nullable: true, comment: "" });
+        openColumnsEditor(editingColumn.table);
+    });
+    columnsForm?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (!editingColumn?.table) return;
+        syncColumnEditorValues(editingColumn.table);
+        [...document.querySelectorAll("#db-table-columns-editor .db-columns-grid-row")].forEach((row, index) => {
+            const column = editingColumn.table.columns[index];
+            const name = row.querySelector("[data-column-name]")?.value.trim();
+            const type = row.querySelector("[data-column-type]")?.value.trim();
+            const comment = row.querySelector("[data-column-comment]")?.value.trim() || "";
+            const defaultValue = row.querySelector("[data-column-default]")?.value.trim() || undefined;
+            if (column && name && type) Object.assign(column, { name, type, comment, defaultValue, nullable: row.querySelector("[data-column-nullable]")?.checked !== true });
+        });
+        const updatedSource = serializeTableInSource(monacoEditor?.getValue() ?? editor?.value ?? "", editingColumn.table);
+        setEditorText(updatedSource);
+        applySchema(updatedSource, false, false);
+        saveServerDocument(updatedSource, erdPositions);
+        closeColumnsModal();
+    });
+    const previewHeaderColor = (color) => { if (editingColumn?.header && /^#[0-9a-f]{6}$/i.test(color)) editingColumn.header.parentElement.style.setProperty("--erd-header-color", color); };
+    const headerPalette = ["#3498db", "#e74c3c", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c", "#34495e", "#e67e22", "#95a5a6", "#d35400", "#c0392b", "#16a085", "#2c3e50", "#f1c40f", "#27ae60", "#8e44ad", "#2980b9", "#e84393"];
+    document.getElementById("db-header-color-swatches")?.replaceChildren(...headerPalette.map((color) => {
+        const swatch = document.createElement("button");
+        swatch.type = "button"; swatch.className = "db-header-color-swatch"; swatch.style.backgroundColor = color; swatch.setAttribute("aria-label", color);
+        swatch.addEventListener("click", () => { if (editingColumn) editingColumn.selectedColor = color; previewHeaderColor(color); });
+        return swatch;
+    }));
+    columnEditForm?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (!editingColumn || !editor) return;
+        const oldName = editingColumn.tableName;
+        const newName = document.getElementById("db-column-edit-name").value.trim();
+        const color = editingColumn.selectedColor;
+        if (!/^[A-Za-z_][\w]*$/.test(newName) || !/^#[0-9a-f]{6}$/i.test(color)) return;
+        if (newName !== oldName && schema.tables.some((table) => table.name.toLowerCase() === newName.toLowerCase())) return;
+        const key = oldName.toLowerCase();
+        const layout = erdPositions[key] || {};
+        erdPositions[key] = { ...layout, color };
+        if (newName !== oldName) {
+            const escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const headerPattern = new RegExp("(Table\\s+)" + escaped + "(\\s*\\{)", "i");
+            if (!headerPattern.test(editor.value)) return;
+            let source = editor.value.replace(headerPattern, (match, before, after) => before + newName + after);
+            source = source.replace(new RegExp("\\b" + escaped + "\\.", "g"), `${newName}.`);
+            erdPositions[newName.toLowerCase()] = erdPositions[key];
+            delete erdPositions[key];
+            selectedTableName = newName;
+            setEditorText(source);
+            highlightDbml(source);
+            applySchema(source, false);
+        } else {
+            renderErd();
+            saveServerDocument(editor.value, erdPositions);
+        }
+        closeColumnEditModal(true);
+    });
     document.getElementById("db-editor-render")?.addEventListener("click", render_editor);
     document.getElementById("db-sidebar-editor-render")?.addEventListener("click", render_editor);
     document.getElementById("db-editor-example")?.addEventListener("click", () => {
@@ -1064,7 +1412,173 @@ Ref: orders.user_id > users.id`;
         updateEditorGutter();
         applySchema(sample);
     });
+    document.getElementById("db-schema-sample")?.addEventListener("click", () => {
+        document.getElementById("db-editor-example")?.click();
+    });
+    document.getElementById("db-schema-toggle-editor")?.addEventListener("click", () => secondarySidebarToggle?.click());
+
+    const downloadSchema = (contents, extension, contentType, rawName = currentSchemaName?.textContent?.trim() || "schema") => {
+        const name = rawName.replace(/[\\/:*?"<>|]/g, "-");
+        const url = URL.createObjectURL(contents instanceof Blob ? contents : new Blob([contents], { type: contentType }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${name}.${extension}`;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+    const createSchemaBackup = () => ({ version: 1, categoryName: currentSchemaName?.textContent?.trim(), schemaText: editor?.value ?? "", layout: erdPositions });
+    const setManagementAvailability = () => {
+        ["db-schema-rename", "db-schema-backup", "db-schema-delete", "db-schema-sample"].forEach((id) => {
+            const button = document.getElementById(id);
+            if (button) button.disabled = !dbCategoryId || schemaMutationPending;
+        });
+        document.querySelectorAll("[data-db-export-image], [data-db-export-sql]").forEach((button) => {
+            button.disabled = !dbCategoryId || schemaMutationPending || schemaExportPending;
+        });
+        const submit = document.getElementById("db-schema-name-submit");
+        if (submit) submit.disabled = schemaMutationPending;
+    };
+    const beginSchemaMutation = () => {
+        if (schemaMutationPending) return false;
+        schemaMutationPending = true;
+        window.clearTimeout(parseTimer);
+        window.clearTimeout(serverSaveTimer);
+        monacoEditor?.updateOptions({ readOnly: true });
+        document.getElementById("db-modeling-workspace")?.style.setProperty("pointer-events", "none");
+        setManagementAvailability();
+        return true;
+    };
+    const endSchemaMutation = () => {
+        schemaMutationPending = false;
+        monacoEditor?.updateOptions({ readOnly: !dbCategoryId });
+        document.getElementById("db-modeling-workspace")?.style.removeProperty("pointer-events");
+        setManagementAvailability();
+    };
+    const renameSchema = async (rawName) => {
+        const name = String(rawName ?? "").trim();
+        if (!dbCategoryId || !name || name.length > 120 || !beginSchemaMutation()) return false;
+        try {
+            if (!await saveServerDocument(editor?.value ?? "", erdPositions, dbCategoryId, name)) {
+                document.getElementById("db-schema-name-error").textContent = "이름을 변경하지 못했습니다. 다시 시도하세요.";
+                return false;
+            }
+            currentSchemaName.textContent = name;
+            dbCategories = dbCategories.map((item) => item.categoryId === dbCategoryId ? { ...item, categoryName: name } : item);
+            renderSchemaOptions();
+            return true;
+        } finally { endSchemaMutation(); }
+    };
+    document.getElementById("db-schema-rename")?.addEventListener("click", () => openSchemaAddModal("rename"));
+    document.getElementById("db-schema-backup")?.addEventListener("click", () => {
+        downloadSchema(JSON.stringify(createSchemaBackup(), null, 2), "json", "application/json;charset=utf-8");
+    });
+    const restoreInput = document.getElementById("db-schema-restore-input");
+    document.getElementById("db-schema-restore")?.addEventListener("click", () => {
+        if (!schemaMutationPending) restoreInput?.click();
+    });
+    restoreInput?.addEventListener("change", async () => {
+        const file = restoreInput.files?.[0];
+        restoreInput.value = "";
+        if (!file || schemaMutationPending) return;
+        let backup;
+        try {
+            if (file.size > 5 * 1024 * 1024) throw new Error("5MB 이하의 백업 파일을 선택하세요.");
+            backup = JSON.parse(await file.text());
+            if (!backup || backup.version !== 1 || typeof backup.schemaText !== "string" || !backup.schemaText.trim() || !parseSchema(backup.schemaText).tables.length || typeof backup.categoryName !== "string" || !backup.categoryName.trim() || backup.categoryName.length > 120) {
+                throw new Error("유효한 DB 모델링 백업 파일이 아닙니다.");
+            }
+            if (!backup.layout || typeof backup.layout !== "object" || Array.isArray(backup.layout)
+                || Object.values(backup.layout).some((point) => !point || !Number.isFinite(point.x) || !Number.isFinite(point.y))) {
+                throw new Error("백업 파일의 테이블 위치가 올바르지 않습니다.");
+            }
+        } catch (error) { window.alert(error.message); return; }
+        if (dbCategoryId && !window.confirm("현재 모델링을 백업 내용으로 복원하시겠습니까?")) return;
+        if (!beginSchemaMutation()) return;
+        try {
+            const id = dbCategoryId || `schema-${crypto.randomUUID()}`;
+            const name = backup.categoryName.trim();
+            if (!await saveServerDocument(backup.schemaText, backup.layout, id, name)) throw new Error("백업을 저장하지 못했습니다. 현재 모델링은 변경하지 않았습니다.");
+            dbCategoryId = id;
+            storageKey = `aastudio-db-modeling-schema:${decodeURIComponent(currentProjectId || "project-1")}:${id}`;
+            localStorage.setItem(categoryStorageKey, id);
+            erdPositions = backup.layout;
+            currentSchemaName.textContent = name;
+            dbCategories = [...dbCategories.filter((item) => item.categoryId !== id), { categoryId: id, categoryName: name }];
+            setEditorText(backup.schemaText);
+            setInputType(backup.schemaText);
+            applySchema(backup.schemaText, false, false);
+            renderSchemaOptions();
+            setStatus("백업을 복원했습니다.");
+        } catch (error) { window.alert(error.message); }
+        finally { endSchemaMutation(); }
+    });
+    document.getElementById("db-schema-delete")?.addEventListener("click", async () => {
+        if (!dbCategoryId || schemaMutationPending || !window.confirm(`'${currentSchemaName?.textContent?.trim()}' 모델링을 삭제하시겠습니까?`)) return;
+        if (!beginSchemaMutation()) return;
+        const id = dbCategoryId;
+        try {
+            await saveQueue;
+            const response = await fetch(`/api/db-modeling/schema?${new URLSearchParams({ categoryId: id })}`, { method: "DELETE" });
+            if (!response.ok) throw new Error("모델링을 삭제하지 못했습니다. 다시 시도하세요.");
+            localStorage.removeItem(storageKey);
+            dbCategories = dbCategories.filter((item) => item.categoryId !== id);
+            endSchemaMutation();
+            await loadCategory(dbCategories[0]?.categoryId || id);
+        } catch (error) { window.alert(error.message); }
+        finally { endSchemaMutation(); }
+    });
+    document.querySelectorAll("[data-db-export-image], [data-db-export-sql]").forEach((button) => {
+        button.addEventListener("click", async () => {
+            if (schemaExportPending || schemaMutationPending || !dbCategoryId) return;
+            schemaExportPending = true;
+            setManagementAvailability();
+            try {
+                const source = editor?.value ?? "";
+                const model = parseSchema(source);
+                const name = currentSchemaName?.textContent?.trim() || "schema";
+                if (button.dataset.dbExportSql) {
+                    const dialect = button.dataset.dbExportSql;
+                    const sql = window.DbModelExport.toSql(model, dialect, name, source);
+                    downloadSchema(sql, `${dialect}.sql`, "text/plain;charset=utf-8", name);
+                } else {
+                    const layout = structuredClone(erdPositions);
+                    document.querySelectorAll(".db-erd-table-node").forEach((node) => {
+                        layout[node.dataset.erdTable.toLowerCase()] = { x: node.offsetLeft, y: node.offsetTop };
+                    });
+                    const format = button.dataset.dbExportImage;
+                    const blob = await window.DbModelExport.imageBlob(model, layout, name, format);
+                    downloadSchema(blob, format, blob.type, name);
+                }
+                setStatus("내보내기 파일을 생성했습니다.");
+            } catch (error) {
+                window.alert(error.message || "파일을 내보내지 못했습니다.");
+            } finally {
+                schemaExportPending = false;
+                setManagementAvailability();
+            }
+        });
+    });
+    const shareSource = document.getElementById("db-share-source");
+    const shareStatus = document.getElementById("db-share-status");
+    document.getElementById("db-schema-share")?.addEventListener("toggle", (event) => {
+        if (!event.target.open) return;
+        if (shareSource) shareSource.value = editor?.value ?? "";
+        if (shareStatus) shareStatus.textContent = "";
+    });
+    document.getElementById("db-share-copy")?.addEventListener("click", async () => {
+        const text = editor?.value ?? "";
+        if (shareSource) shareSource.value = text;
+        try {
+            await navigator.clipboard.writeText(text);
+            if (shareStatus) shareStatus.textContent = "코드를 복사했습니다.";
+        } catch {
+            shareSource?.focus();
+            shareSource?.select();
+            if (shareStatus) shareStatus.textContent = "코드를 선택했습니다. Ctrl/Cmd+C로 복사하세요.";
+        }
+    });
     editor?.addEventListener("input", () => {
+        if (schemaMutationPending || !dbCategoryId) return;
         setInputType(editor.value);
         highlightDbml(editor.value);
         clearTimeout(parseTimer);

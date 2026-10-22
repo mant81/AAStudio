@@ -1,35 +1,54 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: layout(~{::div})}">
-<div class="db-modeling-page flex h-screen min-h-0 w-full flex-col" id="db-modeling-page">
+<div class="workspace-page db-modeling-page flex min-h-0 w-full flex-col" id="db-modeling-page">
+    <div class="db-table-settings-layer hidden" id="db-column-edit-modal">
+        <span class="db-table-settings-arrow" aria-hidden="true"></span>
+        <form class="common-name-modal-card db-table-settings-card rounded-2xl bg-surface-white p-6 shadow-2xl" id="db-column-edit-form" role="dialog" aria-label="테이블 설정">
+            <div class="mb-5 flex items-start justify-between"><h2 class="font-title-md text-title-md">테이블 설정</h2><button aria-label="닫기" id="db-column-edit-close" type="button">×</button></div>
+            <label class="block text-sm font-medium" for="db-column-edit-name">Table Name</label><input class="mt-2 h-10 w-full rounded-lg border border-outline-variant px-3" id="db-column-edit-name" maxlength="120" required>
+            <span class="mt-5 block text-sm font-medium">Header Color</span>
+            <div class="mt-3 grid grid-cols-6 gap-3" id="db-header-color-swatches"></div>
+            <div class="mt-6 flex justify-end gap-2"><button class="rounded-lg px-4 py-2" id="db-column-edit-cancel" type="button">취소</button><button class="rounded-lg bg-secondary px-4 py-2 text-on-secondary" type="submit">저장</button></div>
+        </form>
+    </div>
+    <div class="common-name-modal hidden fixed inset-0 z-[90] items-center justify-center bg-on-background/30 p-4" id="db-columns-modal">
+        <form class="common-name-modal-card db-columns-modal-card w-full rounded-2xl bg-surface-white p-6 shadow-2xl" id="db-columns-form">
+            <div class="db-columns-modal-header"><div class="db-columns-modal-heading"><h2 class="font-title-md text-title-md">컬럼 수정</h2></div><div class="db-columns-modal-actions"><button aria-label="닫기" class="db-columns-modal-close" id="db-columns-close" type="button">×</button></div></div>
+            <div class="db-columns-toolbar"><span>테이블: <strong class="db-columns-modal-table-name" id="db-columns-subtitle"></strong></span><button class="db-columns-add-button rounded-lg border border-outline-variant px-3 py-1.5 text-xs" id="db-column-add" type="button"><span class="material-symbols-outlined" aria-hidden="true">add</span><span>컬럼 추가</span></button></div>
+            <div class="db-columns-grid-wrap"><div class="db-columns-grid db-columns-grid-head"><span>컬럼명</span><span>#</span><span>Data type</span><span>Not Null</span><span>Default</span><span>Comment</span><span>순서</span><span aria-label="삭제" title="삭제"><span class="material-symbols-outlined db-columns-delete-head-icon" aria-hidden="true">delete</span></span></div><div id="db-table-columns-editor"></div></div>
+            <div class="db-columns-modal-footer mt-6 flex justify-end gap-2"><button class="db-columns-footer-button rounded-lg px-4 py-2" id="db-columns-cancel" type="button"><span class="material-symbols-outlined" aria-hidden="true">close</span><span>취소</span></button><button class="db-columns-footer-button rounded-lg bg-secondary px-4 py-2 text-on-secondary" type="submit"><span class="material-symbols-outlined" aria-hidden="true">check</span><span>저장</span></button></div>
+        </form>
+    </div>
     <div class="common-name-modal hidden fixed inset-0 z-[70] items-center justify-center bg-on-background/30 p-4" id="db-schema-add-modal">
         <form class="common-name-modal-card w-full max-w-md rounded-2xl bg-surface-white p-6 shadow-2xl" id="db-schema-add-form">
             <div class="mb-5 flex items-start justify-between gap-4">
                 <div>
-                    <h2 class="font-title-md text-title-md text-on-surface">스키마 추가</h2>
-                    <p class="mt-1 text-sm text-on-surface-variant">새 DB 스키마 카테고리를 추가합니다.</p>
+                    <h2 class="font-title-md text-title-md text-on-surface" id="db-schema-name-title">스키마 추가</h2>
+                    <p class="mt-1 text-sm text-on-surface-variant" id="db-schema-name-description">새 DB 스키마 카테고리를 추가합니다.</p>
                 </div>
                 <button aria-label="닫기" class="rounded-lg p-1 text-on-surface-variant hover:bg-surface-variant" id="db-schema-add-cancel" type="button">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
             <label class="block text-sm font-medium text-on-surface" for="db-schema-add-name">스키마 이름</label>
-            <input autofocus class="mt-2 h-11 w-full rounded-lg border border-outline-variant bg-surface px-3 text-on-surface outline-none focus:border-secondary" id="db-schema-add-name" placeholder="예: 주문 관리" type="text">
+            <input autofocus maxlength="120" class="mt-2 h-11 w-full rounded-lg border border-outline-variant bg-surface px-3 text-on-surface outline-none focus:border-secondary" id="db-schema-add-name" placeholder="예: 주문 관리" type="text">
+            <p aria-live="polite" class="mt-2 text-xs text-error" id="db-schema-name-error"></p>
             <div class="mt-6 flex justify-end gap-2">
                 <button class="rounded-lg px-4 py-2 text-on-surface-variant hover:bg-surface-variant" id="db-schema-add-cancel-secondary" type="button">취소</button>
-                <button class="rounded-lg bg-secondary px-4 py-2 text-on-secondary hover:opacity-90" type="submit">추가</button>
+                <button class="rounded-lg bg-secondary px-4 py-2 text-on-secondary hover:opacity-90" id="db-schema-name-submit" type="submit">추가</button>
             </div>
         </form>
     </div>
-    <div class="h-14 bg-surface-white border-b border-surface-container flex items-center justify-between px-6 shrink-0 shadow-sm z-10 relative">
-        <div class="flex items-center gap-4">
+    <div class="workspace-toolbar h-14 bg-surface-white border-b border-surface-container flex items-center justify-between px-6 shrink-0 shadow-sm z-10 relative">
+        <div class="workspace-context flex items-center gap-4">
             <div class="relative" id="db-schema-selector">
                 <button aria-expanded="false" aria-haspopup="menu" class="font-title-md text-title-md text-on-surface inline-flex items-center gap-2 rounded-lg px-2 py-1 -mx-2 hover:bg-surface-container transition-colors" id="db-current-schema-button" title="스키마 선택" type="button">
                     <span class="material-symbols-outlined text-[22px] text-on-surface-variant">database</span>
                     <span class="max-w-[32rem] truncate" id="db-current-schema-name" th:text="${pageTitle}">E-Commerce Schema</span>
                     <span class="material-symbols-outlined text-[20px] text-on-surface-variant">expand_more</span>
                 </button>
-                <div class="hidden absolute left-0 top-full mt-2 z-50 w-64 rounded-xl border border-outline-variant/50 bg-surface-white p-1.5 shadow-xl" id="db-schema-menu" role="menu">
+                <div class="workspace-menu hidden absolute left-0 top-full mt-2 z-50 w-64 rounded-xl border border-outline-variant/50 bg-surface-white p-1.5 shadow-xl" id="db-schema-menu" role="menu">
                     <div class="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">스키마 선택</div>
                     <div class="space-y-0.5" id="db-schema-options"></div>
                 </div>
@@ -37,11 +56,23 @@
             <button aria-label="스키마 추가" class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-label-md text-label-md inline-flex items-center gap-1 hover:opacity-80 transition-opacity" id="db-schema-add-button" title="스키마 추가" type="button">
                 <span class="text-[16px] leading-none">+</span>
             </button>
+            <details class="workspace-export-picker workspace-document-menu" data-workspace-menu>
+                <summary aria-label="스키마 관리" title="스키마 관리"><span class="material-symbols-outlined" aria-hidden="true">more_horiz</span></summary>
+                <div class="workspace-menu workspace-export-menu">
+                    <button class="flex items-center gap-2" data-workspace-action id="db-schema-rename" type="button"><span class="material-symbols-outlined" aria-hidden="true">edit</span><span>이름 변경</span></button>
+                    <button class="flex items-center gap-2" data-workspace-action id="db-schema-backup" type="button"><span class="material-symbols-outlined" aria-hidden="true">backup</span><span>백업하기</span></button>
+                    <button class="flex items-center gap-2" data-workspace-action id="db-schema-restore" type="button"><span class="material-symbols-outlined" aria-hidden="true">restore</span><span>복원하기</span></button>
+                    <div class="my-1 border-t border-outline-variant/40"></div>
+                    <button class="flex items-center gap-2" data-workspace-action id="db-schema-toggle-editor" type="button"><span class="material-symbols-outlined" aria-hidden="true">dock_to_left</span><span>에디터 접기/펼치기</span></button>
+                    <div class="my-1 border-t border-outline-variant/40"></div>
+                    <button class="flex items-center gap-2" data-workspace-action id="db-schema-delete" type="button"><span class="material-symbols-outlined" aria-hidden="true">delete</span><span>모델링 삭제</span></button>
+                </div>
+            </details>
+            <input accept="application/json,.json" hidden id="db-schema-restore-input" type="file">
             <span class="inline-flex items-center gap-1 rounded-full border border-outline-variant/60 bg-surface-container-low px-2 py-1 text-[11px] font-medium text-on-surface-variant" id="db-save-status">
                 <span class="material-symbols-outlined text-[14px]" id="db-save-status-icon">cloud_off</span>
                 <span id="db-save-status-text">저장 대기</span>
             </span>
-            <div class="h-4 w-[1px] bg-outline-variant mx-2"></div>
             <div class="flex items-center gap-2" id="erd-toolbar">
                     <button aria-label="캔버스 이동" class="p-2 text-on-surface-variant hover:bg-surface hover:text-primary rounded-lg transition-colors flex items-center justify-center group relative" data-erd-tool="pan" id="erd-pan-tool" type="button">
                     <span class="material-symbols-outlined text-[20px]">pan_tool</span>
@@ -64,22 +95,35 @@
                 </div>
             </div>
         </div>
-        <div class="flex items-center gap-3">
-            <div class="flex -space-x-2 mr-4 relative z-0">
-                <div class="w-8 h-8 rounded-full border-2 border-surface-white z-20 bg-secondary/20"></div>
-                <div class="w-8 h-8 rounded-full border-2 border-surface-white z-10 bg-accent-db/20"></div>
-                <div class="w-8 h-8 rounded-full border-2 border-surface-white bg-surface-container-high flex items-center justify-center z-0">
-                    <span class="font-label-md text-label-md text-on-surface-variant">+2</span>
-                </div>
+        <div class="workspace-actions flex items-center gap-3">
+            <div class="workspace-action-group flex items-center">
+                <button aria-label="샘플 스키마 불러오기" class="flex items-center gap-2" id="db-schema-sample" title="샘플 스키마 불러오기" type="button"><span class="material-symbols-outlined" aria-hidden="true">view_compact</span><span>샘플</span></button>
             </div>
-            <button class="px-4 py-2 bg-surface text-on-surface hover:bg-surface-container border border-outline-variant rounded-xl font-label-md text-label-md transition-colors flex items-center gap-2 shadow-sm" type="button">
-                <span class="material-symbols-outlined text-[18px]">share</span>
-                Share
-            </button>
-            <button class="px-4 py-2 bg-primary text-on-primary hover:bg-primary/90 rounded-xl font-label-md text-label-md transition-colors flex items-center gap-2 shadow-sm" type="button">
-                <span class="material-symbols-outlined text-[18px]">data_object</span>
-                Export SQL
-            </button>
+            <details class="workspace-export-picker" data-workspace-export>
+                <summary aria-label="내보내기"><span class="material-symbols-outlined" aria-hidden="true">file_download</span><span>내보내기</span><span class="material-symbols-outlined workspace-export-chevron" aria-hidden="true">expand_more</span></summary>
+                <div class="workspace-menu workspace-export-menu db-export-menu" aria-label="내보내기 형식">
+                    <p class="workspace-menu-label">이미지·문서</p>
+                    <button class="flex items-center gap-2" data-workspace-action data-db-export-image="pdf" type="button"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span><span>PDF로</span><small>.pdf</small></button>
+                    <button class="flex items-center gap-2" data-workspace-action data-db-export-image="png" type="button"><span class="material-symbols-outlined" aria-hidden="true">image</span><span>PNG로</span><small>.png</small></button>
+                    <button class="flex items-center gap-2" data-workspace-action data-db-export-image="svg" type="button"><span class="material-symbols-outlined" aria-hidden="true">draw</span><span>SVG로</span><small>.svg</small></button>
+                    <div class="my-1 border-t border-outline-variant/40"></div>
+                    <p class="workspace-menu-label">SQL 스크립트</p>
+                    <button class="flex items-center gap-2" data-workspace-action data-db-export-sql="postgresql" type="button"><span class="material-symbols-outlined" aria-hidden="true">database</span><span>PostgreSQL로</span><small>.sql</small></button>
+                    <button class="flex items-center gap-2" data-workspace-action data-db-export-sql="mysql" type="button"><span class="material-symbols-outlined" aria-hidden="true">database</span><span>MySQL / MariaDB로</span><small>.sql</small></button>
+                    <button class="flex items-center gap-2" data-workspace-action data-db-export-sql="sqlserver" type="button"><span class="material-symbols-outlined" aria-hidden="true">database</span><span>SQL Server로</span><small>.sql</small></button>
+                    <button class="flex items-center gap-2" data-workspace-action data-db-export-sql="oracle" type="button"><span class="material-symbols-outlined" aria-hidden="true">database</span><span>Oracle로</span><small>.sql</small></button>
+                </div>
+            </details>
+            <details class="workspace-export-picker" data-workspace-menu id="db-schema-share">
+                <summary aria-label="스키마 공유" class="workspace-share-action"><span class="material-symbols-outlined" aria-hidden="true">link</span><span>공유</span></summary>
+                <div class="workspace-menu workspace-share-menu">
+                    <p class="workspace-share-title">스키마 공유</p>
+                    <p class="workspace-share-hint">DBML/DDL 코드를 복사해 전달하세요.</p>
+                    <textarea aria-label="공유할 스키마 코드" id="db-share-source" readonly></textarea>
+                    <button class="flex items-center justify-center gap-2" id="db-share-copy" type="button"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span><span>코드 복사</span></button>
+                    <p aria-live="polite" class="workspace-share-hint" id="db-share-status"></p>
+                </div>
+            </details>
         </div>
     </div>
         <div class="flex min-h-0 flex-1 overflow-hidden">
